@@ -8,6 +8,8 @@ import (
 	"time"
 
 	js "server/homeManager/js"
+
+	"github.com/dop251/goja"
 )
 
 type Manager struct {
@@ -220,4 +222,15 @@ func (m *Manager) Shutdown() {
 	}
 
 	time.Sleep(10 * time.Second)
+}
+
+func (m *Manager) RunStartScript() {
+	log.Println("loading script server.js")
+	vm, err := js.NewScript("server.js")
+	if err != nil {
+		log.Println(err)
+	}
+
+	vm.RunJS("server_onStart", goja.Undefined())
+
 }

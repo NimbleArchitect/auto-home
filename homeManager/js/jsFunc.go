@@ -9,10 +9,10 @@ import (
 	"github.com/dop251/goja"
 )
 
-func (r *JavascriptVM) runJS(fName string, props goja.Value) (goja.Value, error) {
+func (r *JavascriptVM) RunJS(fName string, props goja.Value) (goja.Value, error) {
 	var jsHome jsHome
 
-	jsFunction := r.vm.Get(fName)
+	jsFunction := r.runtime.Get(fName)
 	jsTrigger, ok := goja.AssertFunction(jsFunction)
 	if !ok {
 		// slient ignore as the function dosent exist in javascript
@@ -22,7 +22,7 @@ func (r *JavascriptVM) runJS(fName string, props goja.Value) (goja.Value, error)
 
 	jsHome.devices = r.deviceState
 
-	r.vm.Set("home", jsHome)
+	r.runtime.Set("home", jsHome)
 
 	result, err := jsTrigger(goja.Undefined(), props)
 	if err != nil {

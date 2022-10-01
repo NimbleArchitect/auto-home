@@ -51,6 +51,9 @@ func main() {
 	}
 
 	www.LoadSystem()
+
+	homeMgr.RunStartScript()
+
 	// for _, v := range homeMgr.GetDevices() {
 	// 	www.AddDeviceActionList(v.ActionId)
 	// }

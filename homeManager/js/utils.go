@@ -16,7 +16,7 @@ type DeviceUpdator interface {
 }
 
 type JavascriptVM struct {
-	vm          *goja.Runtime
+	runtime     *goja.Runtime
 	deviceState map[string]jsDevice
 	Updater     DeviceUpdator
 }
@@ -54,7 +54,7 @@ func NewScript(actionFile string) (*JavascriptVM, error) {
 		log.Println("unable to run script", actionScript, "error reported was", err)
 	}
 
-	js.vm = vm
+	js.runtime = vm
 	return &js, nil
 
 }
@@ -113,7 +113,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 				if err != nil {
 					log.Println(err)
 				} else {
-					_, err := r.runJS(name+"_ontrigger", r.vm.ToValue(swi.label))
+					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(swi.label))
 					if err != nil {
 						log.Println(err)
 					}
@@ -135,7 +135,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 				if err != nil {
 					log.Println(err)
 				} else {
-					_, err := r.runJS(name+"_ontrigger", r.vm.ToValue(dial.Value))
+					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(dial.Value))
 					if err != nil {
 						log.Println(err)
 					}
@@ -154,7 +154,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 
 	for name, swi := range dev.propSwitch {
 		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.runJS(name+"_onchange", r.vm.ToValue(swi.label))
+		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(swi.label))
 		if err != nil {
 			log.Println(err)
 		}
@@ -168,7 +168,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 		// fmt.Println("$$>", deviceid, name, swi.Value)
 	}
 	for name, dial := range dev.propDial {
-		_, err := r.runJS(name+"_onchange", r.vm.ToValue(dial.Value))
+		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(dial.Value))
 		if err != nil {
 			log.Println(err)
 		}

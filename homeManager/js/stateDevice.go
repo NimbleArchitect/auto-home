@@ -27,7 +27,7 @@ func (r *JavascriptVM) SaveDevice(dev StateDevice) {
 	}
 
 	r.deviceState[dev.id] = jsDevice{
-		vm:         r,
+		js:         r,
 		Id:         dev.id,
 		Name:       dev.name,
 		propDial:   dev.propDial,

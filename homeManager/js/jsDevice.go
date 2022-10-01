@@ -8,7 +8,7 @@ import (
 )
 
 type jsDevice struct {
-	vm         *JavascriptVM
+	js         *JavascriptVM
 	Id         string
 	Name       string
 	groups     map[string]jsGroup
@@ -20,11 +20,11 @@ func (d *jsDevice) Get(name string) interface{} {
 
 	if val, ok := d.propDial[name]; ok {
 		// create a js object so we cn add a new property
-		jsVal := d.vm.vm.ToValue(val)
-		jsObj := d.vm.vm.CreateObject(jsVal.ToObject(d.vm.vm))
+		jsVal := d.js.runtime.ToValue(val)
+		jsObj := d.js.runtime.CreateObject(jsVal.ToObject(d.js.runtime))
 		// add a readonly .latest propery that gets the live device property value
-		jsObj.DefineAccessorProperty("latest", d.vm.vm.ToValue(func() interface{} {
-			if val, ok := d.vm.Updater.GetDialValue(d.Id, name); ok {
+		jsObj.DefineAccessorProperty("latest", d.js.runtime.ToValue(func() interface{} {
+			if val, ok := d.js.Updater.GetDialValue(d.Id, name); ok {
 				return val
 			}
 			return nil
@@ -32,7 +32,7 @@ func (d *jsDevice) Get(name string) interface{} {
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
 
 		// we also add previous as a readonly property
-		jsObj.DefineAccessorProperty("previous", d.vm.vm.ToValue(func() int {
+		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() int {
 			return val.previous
 		}),
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
@@ -42,11 +42,11 @@ func (d *jsDevice) Get(name string) interface{} {
 
 	if val, ok := d.propSwitch[name]; ok {
 		// create a js object so we cn add a new property
-		jsVal := d.vm.vm.ToValue(val)
-		jsObj := d.vm.vm.CreateObject(jsVal.ToObject(d.vm.vm))
+		jsVal := d.js.runtime.ToValue(val)
+		jsObj := d.js.runtime.CreateObject(jsVal.ToObject(d.js.runtime))
 		// add a readonly .latest propery that gets the live device property value
-		jsObj.DefineAccessorProperty("latest", d.vm.vm.ToValue(func() interface{} {
-			if val, ok := d.vm.Updater.GetDialValue(d.Id, name); ok {
+		jsObj.DefineAccessorProperty("latest", d.js.runtime.ToValue(func() interface{} {
+			if val, ok := d.js.Updater.GetDialValue(d.Id, name); ok {
 				return val
 			}
 			return nil
@@ -54,7 +54,7 @@ func (d *jsDevice) Get(name string) interface{} {
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
 
 		// also add previous as a readonly property
-		jsObj.DefineAccessorProperty("previous", d.vm.vm.ToValue(func() string {
+		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() string {
 			return val.previous
 		}),
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
@@ -74,13 +74,13 @@ func (d *jsDevice) Set(name string, value string) {
 				log.Println("Not a valid number")
 				continue
 			}
-			d.vm.Updater.UpdateDial(d.Id, name, i)
+			d.js.Updater.UpdateDial(d.Id, name, i)
 		}
 	}
 
 	for _, v := range d.propSwitch {
 		if v.Name == name {
-			d.vm.Updater.UpdateSwitch(d.Id, name, value)
+			d.js.Updater.UpdateSwitch(d.Id, name, value)
 		}
 	}
 
