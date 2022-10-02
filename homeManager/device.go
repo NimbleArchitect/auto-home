@@ -93,6 +93,8 @@ func (m *Manager) AddDevice(d Device) error {
 		m.devices = make(map[string]Device)
 	}
 
+	//TODO: make sure we dont add properties of different types with the same name
+
 	// TODO: this isnt thread safe
 	if updated, ok := m.devices[d.Id]; ok {
 		// device already exists, so check/update the properties
@@ -101,6 +103,9 @@ func (m *Manager) AddDevice(d Device) error {
 		updated.Description = d.Description
 		updated.PropertyDial = d.PropertyDial
 		updated.PropertySwitch = d.PropertySwitch
+		updated.PropertyButton = d.PropertyButton
+		updated.PropertyText = d.PropertyText
+
 		updated.Uploads = d.Uploads
 
 		//TODO: need to find a way to authorize the actionid update as rouge clients could reregister and take over the device from teh servers point of view
@@ -209,6 +214,114 @@ func (m *Manager) UpdateSwitch(id string, name string, value string) error {
 				prop := m.devices[id].PropertySwitch[name]
 				prop.Value.Set(value)
 				m.devices[id].PropertySwitch[name] = prop
+			}
+			return nil
+		}
+	}
+
+	return err
+}
+
+func (m *Manager) GetButton(id string, name string) (ButtonProperty, error) {
+	var err error
+
+	if dev, found := m.devices[id]; found {
+		if prop, ok := dev.PropertyButton[name]; ok {
+			return prop, nil
+		} else {
+			err = errors.New("missing button property " + name)
+		}
+	} else {
+		err = errors.New("missing device " + id)
+	}
+
+	return ButtonProperty{}, err
+}
+
+func (m *Manager) GetButtonValue(id string, name string) (bool, bool) {
+	prop, err := m.GetButton(id, name)
+	if err != nil {
+		return false, false
+	}
+	return prop.Value, true
+}
+
+func (m *Manager) UpdateButton(id string, name string, value bool) error {
+	var boolOut string
+	prop, err := m.GetButton(id, name)
+
+	if err == nil {
+		if prop.Mode == RW || prop.Mode == WO {
+			clientid := m.devices[id].ClientId
+
+			if value {
+				boolOut = "true"
+			} else {
+				boolOut = "false"
+			}
+
+			jsonOut := m.MakeAction(id, name, BUTTON, boolOut)
+			log.Println("sending action", jsonOut, "to", clientid)
+			if _, ok := m.actionChannel[id]; ok {
+				_, err := m.actionChannel[clientid].Write(jsonOut)
+				if err != nil {
+					log.Println(err)
+				}
+
+				prop := m.devices[id].PropertyButton[name]
+				prop.Value = value
+				m.devices[id].PropertyButton[name] = prop
+			}
+			return nil
+		}
+	}
+
+	return err
+}
+
+func (m *Manager) GetText(id string, name string) (TextProperty, error) {
+	var err error
+
+	if dev, found := m.devices[id]; found {
+		if prop, ok := dev.PropertyText[name]; ok {
+			return prop, nil
+		} else {
+			err = errors.New("missing text property " + name)
+		}
+	} else {
+		err = errors.New("missing device " + id)
+	}
+
+	return TextProperty{}, err
+}
+
+func (m *Manager) GetTextValue(id string, name string) (string, bool) {
+	prop, err := m.GetText(id, name)
+	if err != nil {
+		return "", false
+	}
+	return prop.Value, true
+}
+
+func (m *Manager) UpdateText(id string, name string, value string) error {
+
+	prop, err := m.GetText(id, name)
+
+	if err == nil {
+		if prop.Mode == RW || prop.Mode == WO {
+			clientid := m.devices[id].ClientId
+
+			jsonOut := m.MakeAction(id, name, TEXT, value)
+			log.Println("sending action", jsonOut, "to", clientid)
+			if _, ok := m.actionChannel[id]; ok {
+				_, err := m.actionChannel[clientid].Write(jsonOut)
+				if err != nil {
+					log.Println(err)
+				}
+
+				prop := m.devices[id].PropertyText[name]
+				prop.Value = value
+				m.devices[id].PropertyText[name] = prop
 			}
 			return nil
 		}

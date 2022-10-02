@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	event "server/eventManager"
+	"time"
 )
 
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
@@ -73,6 +74,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// processEvent reads the incoming event as json, checks it valid and passes it off to the event manager
 func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId sessionItem) {
 	var jEvent JsonEvent
 
@@ -93,7 +95,7 @@ func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId 
 		// and verify device exists
 
 		// id = deviceid
-		fmt.Println("!>>", jEvent.Data.Id, actionId.ClientId)
+		// fmt.Println("!>>", jEvent.Data.Id, actionId.ClientId)
 		// fmt.Println("!>>", actionId.ClientId)
 
 		if !h.HomeManager.DeviceExistsWithClientId(jEvent.Data.Id, actionId.ClientId) {
@@ -105,9 +107,11 @@ func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId 
 	}
 
 	// TODO: validate the timestamp
+	// jEvent.Data.Timestamp
+
 	msg := event.EventMsg{
 		Id:         jEvent.Data.Id,
-		Timestamp:  jEvent.Data.Timestamp,
+		Timestamp:  time.Now(),
 		Properties: jEvent.Data.Properties,
 	}
 

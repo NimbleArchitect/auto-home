@@ -70,6 +70,37 @@ func (h *Handler) regDeviceList(d jsonDevice, clientId string) error {
 				} else {
 					return err
 				}
+
+			case "button":
+				if prop, err := home.ReadPropertyButton(v); err == nil {
+					if n.PropertyButton == nil {
+						n.PropertyButton = make(map[string]home.ButtonProperty)
+					}
+					if _, ok := n.PropertyButton[prop.Name]; !ok {
+						log.Println("adding property", prop.Name)
+						n.PropertyButton[prop.Name] = prop
+					} else {
+						return errors.New("duplicate property name detected, peoperty " + prop.Name + " is already in use")
+					}
+				} else {
+					return err
+				}
+
+			case "text":
+				if prop, err := home.ReadPropertyText(v); err == nil {
+					if n.PropertyText == nil {
+						n.PropertyText = make(map[string]home.TextProperty)
+					}
+					if _, ok := n.PropertyText[prop.Name]; !ok {
+						log.Println("adding property", prop.Name)
+						n.PropertyText[prop.Name] = prop
+					} else {
+						return errors.New("duplicate property name detected, peoperty " + prop.Name + " is already in use")
+					}
+				} else {
+					return err
+				}
+
 			}
 		}
 	}

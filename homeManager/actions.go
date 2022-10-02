@@ -23,3 +23,28 @@ func (m *Manager) RegisterActionChannel(id string, ch actionsChannel) error {
 	}
 	return nil
 }
+
+// MakeAction builds the json string needed to send actions to the device
+func (m *Manager) MakeAction(deviceid string, propName string, propType int, value string) string {
+	var val string
+	var kind string
+
+	switch propType {
+	case DIAL:
+		kind = "dial"
+		val = value
+	case SWITCH:
+		kind = "switch"
+		val = "\"" + value + "\""
+		//TODO: add button and text props
+	case BUTTON:
+		kind = "button"
+		val = "\"" + value + "\""
+	case TEXT:
+		kind = "text"
+		val = "\"" + value + "\""
+
+	}
+	json := `{"Method": "action","data": {"id": "` + deviceid + `", "properties": [{"name": "` + propName + `","type": "` + kind + `","value": ` + val + `}]}}`
+	return json
+}

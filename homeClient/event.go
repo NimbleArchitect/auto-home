@@ -30,7 +30,7 @@ func (e *event) AddDial(name string, value int) error {
 	}
 
 	if _, ok := e.props[name]; ok {
-		return errors.New("dial exists with that name")
+		return errors.New("property exists with that name")
 	} else {
 		e.props[name] = property{
 			kind:  FLAG_DIAL,
@@ -51,12 +51,46 @@ func (e *event) AddSwitch(name string, state interface{}) error {
 	}
 
 	if _, ok := e.props[name]; ok {
-		return errors.New("switch exists with that name")
+		return errors.New("property exists with that name")
 	} else {
 		e.props[name] = property{
 			kind:  FLAG_SWITCH,
 			value: state,
 			json:  fmt.Sprintf("{\"name\":\"%s\",\"type\":\"switch\",\"value\":\"%s\"},", name, state),
+		}
+		return nil
+	}
+}
+
+func (e *event) AddButton(name string, value bool) error {
+	if len(name) == 0 {
+		return errors.New("invalid name")
+	}
+
+	if _, ok := e.props[name]; ok {
+		return errors.New("property exists with that name")
+	} else {
+		e.props[name] = property{
+			kind:  FLAG_BUTTON,
+			value: value,
+			json:  fmt.Sprintf("{\"name\":\"%s\",\"type\":\"button\",\"value\":%t},", name, value),
+		}
+		return nil
+	}
+}
+
+func (e *event) AddText(name string, value string) error {
+	if len(name) == 0 {
+		return errors.New("invalid name")
+	}
+
+	if _, ok := e.props[name]; ok {
+		return errors.New("property exists with that name")
+	} else {
+		e.props[name] = property{
+			kind:  FLAG_TEXT,
+			value: value,
+			json:  fmt.Sprintf("{\"name\":\"%s\",\"type\":\"button\",\"value\":%s},", name, value),
 		}
 		return nil
 	}

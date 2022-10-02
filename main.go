@@ -19,8 +19,9 @@ import (
 )
 
 type settings struct {
-	HostAddress string
-	PublicPath  string
+	HostAddress   string
+	PublicPath    string
+	RecordHistory bool
 }
 
 func main() {
@@ -40,6 +41,8 @@ func main() {
 	json.Unmarshal(byteValue, &conf)
 
 	evtMgr := event.NewManager(200, 50)
+	evtMgr.RecordHistory = conf.RecordHistory
+
 	homeMgr := home.NewManager()
 	homeMgr.LoadSystem()
 

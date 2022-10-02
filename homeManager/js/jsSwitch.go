@@ -15,6 +15,12 @@ func (d *jsSwitch) IsSwitch() bool {
 func (d *jsSwitch) IsDial() bool {
 	return false
 }
+func (d *jsSwitch) IsButton() bool {
+	return false
+}
+func (d *jsSwitch) IsText() bool {
+	return false
+}
 
 func (d *jsSwitch) Type() string {
 	return "switch"

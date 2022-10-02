@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/dop251/goja"
 )
@@ -11,8 +12,14 @@ import (
 type DeviceUpdator interface {
 	UpdateDial(string, string, int) error
 	UpdateSwitch(string, string, string) error
+	UpdateButton(string, string, bool) error
+	UpdateText(string, string, string) error
 	GetDialValue(string, string) (int, bool)
 	GetSwitchValue(string, string) (string, bool)
+	GetButtonValue(string, string) (bool, bool)
+	GetTextValue(string, string) (string, bool)
+	//TODO: add button and text props
+
 }
 
 type JavascriptVM struct {
@@ -69,7 +76,7 @@ func runAsThread(obj goja.Value, val goja.Value) {
 	}
 }
 
-func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[string]interface{}) {
+func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map[string]interface{}) {
 	var dev jsDevice
 
 	log.Println("event triggered")
@@ -80,6 +87,14 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 
 	if len(dev.propDial) == 0 {
 		dev.propDial = make(map[string]jsDial)
+	}
+
+	if len(dev.propButton) == 0 {
+		dev.propButton = make(map[string]jsButton)
+	}
+
+	if len(dev.propText) == 0 {
+		dev.propText = make(map[string]jsText)
 	}
 
 	// log.Println("state:", m.devices)
@@ -129,6 +144,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 				}
 
 			case "dial":
+				// TODO: check min and max are within range
 				oldValue := r.deviceState[deviceid].propDial[name].Value
 
 				dial, err := mapToJsDial(prop)
@@ -146,6 +162,46 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 					}
 					r.deviceState[deviceid].propDial[name] = dial
 				}
+
+			case "button":
+				// TODO: check min and max are within range
+				oldValue := r.deviceState[deviceid].propButton[name].Value
+
+				button, err := mapToJsButton(prop)
+				if err != nil {
+					log.Println(err)
+				} else {
+					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(button.Value))
+					if err != nil {
+						log.Println(err)
+					}
+
+					if oldValue != button.Value {
+						dev.propButton[name] = button
+						changeList[name] = 0
+					}
+					// r.deviceState[deviceid].propButton[name] = button
+				}
+
+			case "text":
+				oldValue := r.deviceState[deviceid].propText[name].Value
+
+				text, err := mapToJsText(prop)
+				if err != nil {
+					log.Println(err)
+				} else {
+					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(text.Value))
+					if err != nil {
+						log.Println(err)
+					}
+
+					if oldValue != text.Value {
+						dev.propText[name] = text
+						changeList[name] = 0
+					}
+					r.deviceState[deviceid].propText[name] = text
+				}
+
 			default:
 				fmt.Println("unknown property type")
 			}
@@ -164,8 +220,6 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 		if err != nil {
 			log.Println("unable to update device state:", err)
 		}
-
-		// fmt.Println("$$>", deviceid, name, swi.Value)
 	}
 	for name, dial := range dev.propDial {
 		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(dial.Value))
@@ -177,7 +231,26 @@ func (r *JavascriptVM) Process(deviceid string, timestamp string, props []map[st
 		if err != nil {
 			log.Println("unable to update device state:", err)
 		}
-
 	}
-
+	for name, but := range dev.propButton {
+		// all state props have been updated for the device so we call onchange with the property that was changed
+		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(but.Value))
+		if err != nil {
+			log.Println(err)
+		}
+		// buttons are never updated so we end here
+	}
+	for name, txt := range dev.propText {
+		// all state props have been updated for the device so we call onchange with the property that was changed
+		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(txt.Value))
+		if err != nil {
+			log.Println(err)
+		}
+		// now everything has finished we can update the device props
+		// save value to device state
+		err = r.Updater.UpdateText(deviceid, name, txt.Value)
+		if err != nil {
+			log.Println("unable to update device state:", err)
+		}
+	}
 }

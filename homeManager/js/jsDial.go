@@ -14,6 +14,12 @@ func (d *jsDial) IsSwitch() bool {
 func (d *jsDial) IsDial() bool {
 	return true
 }
+func (d *jsDial) IsButton() bool {
+	return true
+}
+func (d *jsDial) IsText() bool {
+	return true
+}
 
 func (d *jsDial) Type() string {
 	return "dial"

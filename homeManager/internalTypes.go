@@ -34,6 +34,8 @@ type Device struct {
 	Groups         []group
 	PropertySwitch map[string]SwitchProperty
 	PropertyDial   map[string]DialProperty
+	PropertyButton map[string]ButtonProperty
+	PropertyText   map[string]TextProperty
 	Uploads        []Upload
 }
 
@@ -71,5 +73,21 @@ type SwitchProperty struct {
 	Description string
 	Value       booltype.BoolType
 	Previous    booltype.BoolType
+	Mode        uint
+}
+
+type ButtonProperty struct {
+	Name        string
+	Description string
+	Value       bool
+	Previous    bool
+	Mode        uint
+}
+
+type TextProperty struct {
+	Name        string
+	Description string
+	Value       string
+	Previous    string
 	Mode        uint
 }

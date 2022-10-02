@@ -41,7 +41,7 @@ func (d *Device) AddDial(name string, description string, value int, min int, ma
 	}
 
 	if _, ok := d.props[name]; ok {
-		return errors.New("dial exists with that name")
+		return errors.New("property exists with that name")
 	} else {
 		d.props[name] = fmt.Sprintf("{\"name\":\"%s\",\"description\":\"%s\",\"type\":\"dial\",\"value\":%d,\"min\":%d,\"max\":%d,\"mode\":\"%s\"},", name, description, value, min, max, mode)
 		return nil
@@ -58,11 +58,37 @@ func (d *Device) AddSwitch(name string, description string, state interface{}, m
 	}
 
 	if _, ok := d.props[name]; ok {
-		return errors.New("switch exists with that name")
+		return errors.New("property exists with that name")
 	} else {
 		// TODO: needs fixing converstion to string is lazy
 		s := fmt.Sprint(state)
 		d.props[name] = fmt.Sprintf("{\"name\":\"%s\",\"description\":\"%s\",\"type\":\"switch\",\"value\":\"%s\",\"mode\":\"%s\"},", name, description, s, mode)
+		return nil
+	}
+}
+
+func (d *Device) AddButton(name string, description string, value bool, normally bool, mode string) error {
+	if len(name) == 0 {
+		return errors.New("invalid name")
+	}
+
+	if _, ok := d.props[name]; ok {
+		return errors.New("property exists with that name")
+	} else {
+		d.props[name] = fmt.Sprintf("{\"name\":\"%s\",\"description\":\"%s\",\"type\":\"button\",\"value\":%t,\"normally\":%t,\"mode\":\"%s\"},", name, description, value, normally, mode)
+		return nil
+	}
+}
+
+func (d *Device) AddText(name string, description string, value string, mode string) error {
+	if len(name) == 0 {
+		return errors.New("invalid name")
+	}
+
+	if _, ok := d.props[name]; ok {
+		return errors.New("property exists with that name")
+	} else {
+		d.props[name] = fmt.Sprintf("{\"name\":\"%s\",\"description\":\"%s\",\"type\":\"text\",\"value\":%s,\"mode\":\"%s\"},", name, description, value, mode)
 		return nil
 	}
 }

@@ -1,7 +1,10 @@
 package event
 
 import (
+	"encoding/json"
 	"log"
+	"os"
+	"time"
 )
 
 // event queue reads the event coming in on the channel
@@ -9,7 +12,8 @@ import (
 // lines out the message on the correct outbound channel
 
 type Manager struct {
-	events []EventMsg
+	events        []EventMsg
+	RecordHistory bool
 	//list of historic events, number of event held shoud be based on length of time
 	eventHistory      []EventMsg
 	chAdd             chan EventMsg
@@ -28,7 +32,7 @@ type EventMsg struct {
 	Id         string
 	EventId    string
 	Properties []map[string]interface{}
-	Timestamp  string
+	Timestamp  time.Time
 }
 
 // func loopEvents() {
@@ -103,7 +107,7 @@ func (e *Manager) AddEvent(event EventMsg) {
 }
 
 type EventLoop interface {
-	Trigger(string, string, []map[string]interface{}) error
+	Trigger(string, time.Time, []map[string]interface{}) error
 	// SaveState() (interface{}, error)
 }
 
@@ -132,6 +136,27 @@ func (e *Manager) EventLoop(looper EventLoop) {
 				}
 				// }
 
+				if e.RecordHistory {
+					// now save history to file, we do this after processing the event so we have a quicker response to the event
+
+					fileData, err := json.Marshal(msg)
+					if err != nil {
+						log.Println("unable to serialize event", err)
+					}
+					var f *os.File
+
+					if f, err = os.OpenFile("history.json", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
+						log.Println("unable to open file", err)
+					} else {
+						defer f.Close()
+					}
+
+					_, err = f.Write(append(fileData, []byte("\n")...))
+					if err != nil {
+						log.Println("unable to write groups.json", err)
+					}
+
+				}
 				// signal to the remove channel that we have finished processing the event
 				e.chRemove <- evtid
 			}()

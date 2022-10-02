@@ -148,7 +148,7 @@ func (m *Manager) initActions() {
 }
 
 // Trigger is called once at a time, with the deviceid
-func (m *Manager) Trigger(deviceid string, timestamp string, props []map[string]interface{}) error {
+func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[string]interface{}) error {
 	// var dev jsDevice
 
 	log.Println("event triggered")
@@ -172,51 +172,10 @@ func (m *Manager) Trigger(deviceid string, timestamp string, props []map[string]
 		vm.Updater = m
 		vm.Process(deviceid, timestamp, props)
 
-		// now save history to file, we do this after processing the event so we have a quicker response to the event
-		evt := eventHistory{
-			Deviceid:   deviceid,
-			Timestamp:  time.Now(),
-			Properties: props,
-		}
-
-		fileData, err := json.Marshal(evt)
-		if err != nil {
-			log.Println("unable to serialize groups", err)
-		}
-		var f *os.File
-
-		if f, err = os.OpenFile("history.json", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
-			log.Println("unable to open file", err)
-		} else {
-			defer f.Close()
-		}
-
-		_, err = f.Write(append(fileData, []byte("\n")...))
-		if err != nil {
-			log.Println("unable to write groups.json", err)
-		}
-
 	}
 
 	log.Println("event finished")
 	return nil
-}
-
-// MakeAction builds the json string needed to send actions to the device
-func (m *Manager) MakeAction(deviceid string, propName string, propType int, value string) string {
-	var val string
-	var kind string
-
-	switch propType {
-	case DIAL:
-		kind = "dial"
-		val = value
-	case SWITCH:
-		kind = "switch"
-		val = "\"" + value + "\""
-	}
-	json := `{"Method": "action","data": {"id": "` + deviceid + `", "properties": [{"name": "` + propName + `","type": "` + kind + `","value": ` + val + `}]}}`
-	return json
 }
 
 // SaveState copies the current device state into the javascript vm
@@ -234,6 +193,14 @@ func (m *Manager) SaveState(js *js.JavascriptVM) error {
 
 		for sKey, swi := range v.PropertySwitch {
 			dev.AddSwitch(sKey, swi.Name, swi.Value.GetBool(), swi.Value.String())
+		}
+
+		for sKey, but := range v.PropertyButton {
+			dev.AddButton(sKey, but.Name, but.Value)
+		}
+
+		for sKey, txt := range v.PropertyText {
+			dev.AddText(sKey, txt.Name, txt.Value)
 		}
 
 		js.SaveDevice(dev)
