@@ -21,6 +21,12 @@ type Manager struct {
 	actions       map[string]Action
 }
 
+type eventHistory struct {
+	Deviceid   string
+	Timestamp  time.Time
+	Properties []map[string]interface{}
+}
+
 func NewManager() *Manager {
 	m := Manager{}
 
@@ -146,14 +152,8 @@ func (m *Manager) Trigger(deviceid string, timestamp string, props []map[string]
 	// var dev jsDevice
 
 	log.Println("event triggered")
+	//TODO: call client on trigger, need to work out the client script to run
 
-	// if len(dev.propSwitch) == 0 {
-	// 	dev.propSwitch = make(map[string]jsSwitch)
-	// }
-
-	// if len(dev.propDial) == 0 {
-	// 	dev.propDial = make(map[string]jsDial)
-	// }
 	if vm := m.actions[deviceid].jsvm; vm == nil {
 		log.Println("js vm not found for device", deviceid)
 	} else {
@@ -168,8 +168,34 @@ func (m *Manager) Trigger(deviceid string, timestamp string, props []map[string]
 		// dev := m.devices[deviceid]
 		// fmt.Println(">>", deviceid)
 
+		// process the event
 		vm.Updater = m
 		vm.Process(deviceid, timestamp, props)
+
+		// now save history to file, we do this after processing the event so we have a quicker response to the event
+		evt := eventHistory{
+			Deviceid:   deviceid,
+			Timestamp:  time.Now(),
+			Properties: props,
+		}
+
+		fileData, err := json.Marshal(evt)
+		if err != nil {
+			log.Println("unable to serialize groups", err)
+		}
+		var f *os.File
+
+		if f, err = os.OpenFile("history.json", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
+			log.Println("unable to open file", err)
+		} else {
+			defer f.Close()
+		}
+
+		_, err = f.Write(append(fileData, []byte("\n")...))
+		if err != nil {
+			log.Println("unable to write groups.json", err)
+		}
+
 	}
 
 	log.Println("event finished")

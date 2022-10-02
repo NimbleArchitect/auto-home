@@ -137,6 +137,7 @@ func (h *Handler) callV1api(w http.ResponseWriter, r *http.Request, elements []s
 		fmt.Println("session id:", newSession)
 		w.Header().Set("session", newSession)
 		w.Write([]byte(``))
+		// TODO: load js script and call onConnection function
 
 		return
 

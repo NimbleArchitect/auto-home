@@ -59,9 +59,9 @@ function sendmessage(msg) {
     
     for (let i = 0; i < users.length; i++) {
         if (users[i].presence == true) {
-            home.plugin("telegram").sendmessage(info, msg)
+            home.plugin("telegram").sendMessage(info, msg)
         } else {
-            home.plugin("telegram").sendmessage(alert, msg)
+            home.plugin("telegram").sendMessage(alert, msg)
         }
     } 
 }
