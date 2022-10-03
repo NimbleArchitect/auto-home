@@ -42,34 +42,41 @@ func (r *JavascriptVM) SaveDevice(dev StateDevice) {
 }
 
 // AddDial adds the dial property to the StateDevice
-func (r *StateDevice) AddDial(id string, name string, value int) {
+func (r *StateDevice) AddDial(id string, name string, value int, min int, max int) {
 	r.propDial[id] = jsDial{
-		Name:  name,
-		Value: value,
+		Name:     name,
+		Value:    value,
+		min:      min,
+		max:      max,
+		previous: value,
 	}
 }
 
 // AddSwitch adds the switch property to the StateDevice
 func (r *StateDevice) AddSwitch(id string, name string, value bool, label string) {
 	r.propSwitch[id] = jsSwitch{
-		Name:  name,
-		Value: value,
-		label: label,
+		Name:     name,
+		Value:    value,
+		label:    label,
+		previous: label,
 	}
 }
 
 // AddButton adds the button property to the StateDevice
-func (r *StateDevice) AddButton(id string, name string, value bool) {
+func (r *StateDevice) AddButton(id string, name string, value bool, label string) {
 	r.propButton[id] = jsButton{
-		Name:  name,
-		Value: value,
+		Name:     name,
+		Value:    value,
+		label:    label,
+		previous: label,
 	}
 }
 
 // AddDial adds the dial property to the StateDevice
 func (r *StateDevice) AddText(id string, name string, value string) {
 	r.propText[id] = jsText{
-		Name:  name,
-		Value: value,
+		Name:     name,
+		Value:    value,
+		previous: value,
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	event "server/eventManager"
-	"time"
 )
 
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
@@ -93,11 +92,6 @@ func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId 
 	case "event":
 		// make sure the client id has ownership of the device id
 		// and verify device exists
-
-		// id = deviceid
-		// fmt.Println("!>>", jEvent.Data.Id, actionId.ClientId)
-		// fmt.Println("!>>", actionId.ClientId)
-
 		if !h.HomeManager.DeviceExistsWithClientId(jEvent.Data.Id, actionId.ClientId) {
 			log.Println("Error: invalid device id")
 			w.WriteHeader(http.StatusBadRequest)
@@ -110,8 +104,8 @@ func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId 
 	// jEvent.Data.Timestamp
 
 	msg := event.EventMsg{
-		Id:         jEvent.Data.Id,
-		Timestamp:  time.Now(),
+		Id: jEvent.Data.Id,
+		// Timestamp:  time.Now(),
 		Properties: jEvent.Data.Properties,
 	}
 

@@ -1,9 +1,7 @@
 package event
 
 import (
-	"encoding/json"
 	"log"
-	"os"
 	"time"
 )
 
@@ -12,10 +10,7 @@ import (
 // lines out the message on the correct outbound channel
 
 type Manager struct {
-	events        []EventMsg
-	RecordHistory bool
-	//list of historic events, number of event held shoud be based on length of time
-	eventHistory      []EventMsg
+	events            []EventMsg
 	chAdd             chan EventMsg
 	chCurrentEvent    chan int
 	chRemove          chan int
@@ -34,29 +29,6 @@ type EventMsg struct {
 	Properties []map[string]interface{}
 	Timestamp  time.Time
 }
-
-// func loopEvents() {
-// 	events := make([]string, 200)
-// 	addEvent := make(chan string)
-// 	eventId := make(chan int, 50)
-// 	removeEvent := make(chan int, 50)
-// 	closeEventManager := make(chan bool)
-
-// 	go eventLoop(events, eventId, removeEvent)
-// 	go eventManager(events, addEvent, eventId, removeEvent, closeEventManager)
-
-// 	go func() {
-// 		// time.Sleep(time.Duration(rand.Intn(4000)) * time.Millisecond)
-// 		for i := 0; i < 30; i++ {
-// 			// create 20 events
-// 			fmt.Println("new event a" + strconv.Itoa(i))
-// 			time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-// 			addEvent <- "event a" + strconv.Itoa(i)
-// 		}
-// 	}()
-
-// 	<-closeEventManager
-// }
 
 func NewManager(eventQueueLen int, bufferLen int) *Manager {
 	m := Manager{
@@ -134,29 +106,7 @@ func (e *Manager) EventLoop(looper EventLoop) {
 				if err != nil {
 					log.Println("event error", err)
 				}
-				// }
 
-				if e.RecordHistory {
-					// now save history to file, we do this after processing the event so we have a quicker response to the event
-
-					fileData, err := json.Marshal(msg)
-					if err != nil {
-						log.Println("unable to serialize event", err)
-					}
-					var f *os.File
-
-					if f, err = os.OpenFile("history.json", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
-						log.Println("unable to open file", err)
-					} else {
-						defer f.Close()
-					}
-
-					_, err = f.Write(append(fileData, []byte("\n")...))
-					if err != nil {
-						log.Println("unable to write groups.json", err)
-					}
-
-				}
 				// signal to the remove channel that we have finished processing the event
 				e.chRemove <- evtid
 			}()

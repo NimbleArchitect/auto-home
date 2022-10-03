@@ -6,6 +6,8 @@ type jsDial struct {
 	Name     string
 	Value    int
 	previous int
+	min      int
+	max      int
 }
 
 func (d *jsDial) IsSwitch() bool {
@@ -26,8 +28,12 @@ func (d *jsDial) Type() string {
 }
 
 func (d *jsDial) AsPercent() int {
-	log.Println("TODO: not implemented")
-	return 0
+
+	v := d.Value - d.min
+	m := d.max - d.min
+	p := (v / m) * 100
+
+	return p
 }
 
 func (d *jsDial) Last(x int) interface{} {

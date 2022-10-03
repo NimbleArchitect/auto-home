@@ -79,7 +79,7 @@ type SwitchProperty struct {
 type ButtonProperty struct {
 	Name        string
 	Description string
-	Value       bool
+	Value       booltype.BoolType
 	Previous    bool
 	Mode        uint
 }

@@ -41,9 +41,8 @@ func main() {
 	json.Unmarshal(byteValue, &conf)
 
 	evtMgr := event.NewManager(200, 50)
-	evtMgr.RecordHistory = conf.RecordHistory
 
-	homeMgr := home.NewManager()
+	homeMgr := home.NewManager(conf.RecordHistory)
 	homeMgr.LoadSystem()
 
 	www := webHandle.Handler{

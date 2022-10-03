@@ -5,8 +5,8 @@ import "log"
 type jsButton struct {
 	Name     string
 	Value    bool
-	normally bool
-	previous bool
+	label    string
+	previous string
 }
 
 func (d *jsButton) IsSwitch() bool {

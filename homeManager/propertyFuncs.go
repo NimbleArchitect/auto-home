@@ -6,6 +6,7 @@ import (
 )
 
 func GetModeFromString(value string) (uint, error) {
+	// TODO: have I finished coding RW permissions?
 	b := strings.ToLower(value)
 	switch b {
 	case "ro":
@@ -94,6 +95,13 @@ func ReadPropertyDial(props map[string]interface{}) (DialProperty, error) {
 		prop.Max = int(f)
 	}
 
+	// if min is bigger than max swap them around
+	if prop.Max < prop.Min {
+		tmp := prop.Max
+		prop.Max = prop.Min
+		prop.Max = tmp
+	}
+
 	if v, ok := props["value"]; !ok {
 		return DialProperty{}, ErrMissingPropertyValue
 	} else {
@@ -102,6 +110,12 @@ func ReadPropertyDial(props map[string]interface{}) (DialProperty, error) {
 			return DialProperty{}, ErrConvertingPropteryValue
 		}
 		prop.Value = int(f)
+		if prop.Value > prop.Max {
+			prop.Value = prop.Max
+		}
+		if prop.Value < prop.Min {
+			prop.Value = prop.Min
+		}
 	}
 
 	if v, ok := props["mode"]; !ok {
@@ -137,7 +151,7 @@ func ReadPropertyButton(props map[string]interface{}) (ButtonProperty, error) {
 	if v, ok := props["value"]; !ok {
 		return ButtonProperty{}, ErrMissingPropertyValue
 	} else {
-		prop.Value = v.(bool)
+		prop.Value.Set(v.(string))
 	}
 
 	if v, ok := props["mode"]; !ok {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	js "server/homeManager/js"
@@ -13,8 +14,10 @@ import (
 )
 
 type Manager struct {
-	devices map[string]Device
-	hubs    map[string]Hub
+	RecordHistory bool
+	eventHistory  *historyProcessor //TODO: finish history capture
+	devices       map[string]Device
+	hubs          map[string]Hub
 	// events  event.Manager
 	actionChannel map[string]actionsChannel
 	groups        map[string]group
@@ -27,20 +30,16 @@ type eventHistory struct {
 	Properties []map[string]interface{}
 }
 
-func NewManager() *Manager {
-	m := Manager{}
+func NewManager(recordHistory bool) *Manager {
+	eventProc := historyProcessor{
+		lock: sync.RWMutex{},
+	}
 
-	// m.groups = make(map[string]group)
-	// m.groups["living-room"] = group{
-	// 	Id:     "living-room",
-	// 	Name:   "Living Room",
-	// 	Device: []string{"123-living-room-321"},
-	// }
-	// m.groups["downstairs"] = group{
-	// 	Id:     "downstairs",
-	// 	Name:   "Downstairs",
-	// 	Device: []string{"123-living-room-321"},
-	// }
+	m := Manager{
+		RecordHistory: recordHistory,
+		eventHistory:  &eventProc,
+	}
+
 	return &m
 }
 
@@ -157,12 +156,19 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 	if vm := m.actions[deviceid].jsvm; vm == nil {
 		log.Println("js vm not found for device", deviceid)
 	} else {
+		// TODO: somewhere I need to validate the properties so I only save valid states
 		log.Println("state:", m.devices)
 		// save the current state of all devices
 		err := m.SaveState(vm)
 		_ = err
 		// lookup changes, trigger change notifications, what am I supposed
 		//  to trigger and how am I supposed to trigger it???
+
+		msg := eventHistory{
+			Deviceid:   deviceid,
+			Timestamp:  timestamp,
+			Properties: props,
+		}
 
 		// lookup device, trigger device scripts
 		// dev := m.devices[deviceid]
@@ -171,6 +177,30 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 		// process the event
 		vm.Updater = m
 		vm.Process(deviceid, timestamp, props)
+
+		//now we have finished processing save the event to out history list
+		m.eventHistory.Add(msg)
+
+		if m.RecordHistory {
+			// save history to file, we do this after processing the event so we have a quicker response to the event
+			fileData, err := json.Marshal(msg)
+			if err != nil {
+				log.Println("unable to serialize event", err)
+			}
+			var f *os.File
+
+			if f, err = os.OpenFile("history.json", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
+				log.Println("unable to open file", err)
+			} else {
+				defer f.Close()
+			}
+
+			_, err = f.Write(append(fileData, []byte("\n")...))
+			if err != nil {
+				log.Println("unable to write groups.json", err)
+			}
+
+		}
 
 	}
 
@@ -188,7 +218,7 @@ func (m *Manager) SaveState(js *js.JavascriptVM) error {
 		dev := js.NewDevice(k, v.Name)
 
 		for dKey, dial := range v.PropertyDial {
-			dev.AddDial(dKey, dial.Name, dial.Value)
+			dev.AddDial(dKey, dial.Name, dial.Value, dial.Min, dial.Max)
 		}
 
 		for sKey, swi := range v.PropertySwitch {
@@ -196,7 +226,7 @@ func (m *Manager) SaveState(js *js.JavascriptVM) error {
 		}
 
 		for sKey, but := range v.PropertyButton {
-			dev.AddButton(sKey, but.Name, but.Value)
+			dev.AddButton(sKey, but.Name, but.Value.GetBool(), but.Value.String())
 		}
 
 		for sKey, txt := range v.PropertyText {

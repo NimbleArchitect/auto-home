@@ -12,14 +12,15 @@ import (
 type DeviceUpdator interface {
 	UpdateDial(string, string, int) error
 	UpdateSwitch(string, string, string) error
-	UpdateButton(string, string, bool) error
+	UpdateButton(string, string, string) error
 	UpdateText(string, string, string) error
+
 	GetDialValue(string, string) (int, bool)
 	GetSwitchValue(string, string) (string, bool)
-	GetButtonValue(string, string) (bool, bool)
+	GetButtonValue(string, string) (string, bool)
 	GetTextValue(string, string) (string, bool)
-	//TODO: add button and text props
 
+	// GetDialHistory()
 }
 
 type JavascriptVM struct {
@@ -48,8 +49,10 @@ func NewScript(actionFile string) (*JavascriptVM, error) {
 
 	vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
-	// TODO: needs fixing, can seem to use goja to read the file I have to do it by hand :(
 	file, err := os.ReadFile(actionFile)
+	if err != nil {
+		log.Println("unable to read file:", err)
+	}
 
 	actionScript, err := goja.Compile(actionFile, string(file), true)
 	if err != nil {
@@ -81,35 +84,20 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 
 	log.Println("event triggered")
 
-	if len(dev.propSwitch) == 0 {
-		dev.propSwitch = make(map[string]jsSwitch)
-	}
-
-	if len(dev.propDial) == 0 {
-		dev.propDial = make(map[string]jsDial)
-	}
-
-	if len(dev.propButton) == 0 {
-		dev.propButton = make(map[string]jsButton)
-	}
-
-	if len(dev.propText) == 0 {
-		dev.propText = make(map[string]jsText)
-	}
+	dev.propSwitch = make(map[string]jsSwitch)
+	dev.propDial = make(map[string]jsDial)
+	dev.propButton = make(map[string]jsButton)
+	dev.propText = make(map[string]jsText)
 
 	// log.Println("state:", m.devices)
-	// save the current state of all devices
-	// jsState, _ := m.SaveState()
 
-	// lookup changes, trigger change notifications, what am I supposed
-	//  to trigger and how am I supposed to trigger it???
+	// lookup changes and trigger change notifications
+	r.processOnTrigger(deviceid, timestamp, props, dev)
 
-	// lookup device, trigger device scripts
-	// dev := m.devices[deviceid]
-	// fmt.Println(">>", deviceid)
-	// vm := m.actions[deviceid].jsvm
+	r.processOnChange(deviceid, timestamp, props, dev)
 
-	changeList := map[string]int{}
+}
+func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props []map[string]interface{}, dev jsDevice) {
 
 	for _, prop := range props {
 		rawName, ok := prop["name"]
@@ -135,36 +123,36 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 
 					if oldValue != swi.Value {
 						dev.propSwitch[name] = swi
-						changeList[name] = 0
 					}
-					// fmt.Println("3>>", deviceid)
-					// fmt.Println("4>>", r.deviceState)
-
 					r.deviceState[deviceid].propSwitch[name] = swi
 				}
 
 			case "dial":
-				// TODO: check min and max are within range
-				oldValue := r.deviceState[deviceid].propDial[name].Value
+				oldValue := r.deviceState[deviceid].propDial[name]
 
 				dial, err := mapToJsDial(prop)
 				if err != nil {
 					log.Println(err)
 				} else {
+					// check min and max are within range
+					if dial.Value > oldValue.max {
+						dial.Value = oldValue.max
+					}
+					if dial.Value < oldValue.min {
+						dial.Value = oldValue.min
+					}
 					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(dial.Value))
 					if err != nil {
 						log.Println(err)
 					}
 
-					if oldValue != dial.Value {
+					if oldValue.Value != dial.Value {
 						dev.propDial[name] = dial
-						changeList[name] = 0
 					}
 					r.deviceState[deviceid].propDial[name] = dial
 				}
 
 			case "button":
-				// TODO: check min and max are within range
 				oldValue := r.deviceState[deviceid].propButton[name].Value
 
 				button, err := mapToJsButton(prop)
@@ -178,9 +166,8 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 
 					if oldValue != button.Value {
 						dev.propButton[name] = button
-						changeList[name] = 0
 					}
-					// r.deviceState[deviceid].propButton[name] = button
+					r.deviceState[deviceid].propButton[name] = button
 				}
 
 			case "text":
@@ -197,7 +184,6 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 
 					if oldValue != text.Value {
 						dev.propText[name] = text
-						changeList[name] = 0
 					}
 					r.deviceState[deviceid].propText[name] = text
 				}
@@ -207,6 +193,9 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 			}
 		}
 	}
+}
+
+func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, props []map[string]interface{}, dev jsDevice) {
 
 	for name, swi := range dev.propSwitch {
 		// all state props have been updated for the device so we call onchange with the property that was changed
@@ -221,6 +210,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 			log.Println("unable to update device state:", err)
 		}
 	}
+
 	for name, dial := range dev.propDial {
 		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(dial.Value))
 		if err != nil {
@@ -232,14 +222,21 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 			log.Println("unable to update device state:", err)
 		}
 	}
+
 	for name, but := range dev.propButton {
 		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(but.Value))
+		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(but.label))
 		if err != nil {
 			log.Println(err)
 		}
-		// buttons are never updated so we end here
+		// now everything has finished we can update the device props
+		// save value to device state
+		err = r.Updater.UpdateButton(deviceid, name, but.label)
+		if err != nil {
+			log.Println("unable to update device state:", err)
+		}
 	}
+
 	for name, txt := range dev.propText {
 		// all state props have been updated for the device so we call onchange with the property that was changed
 		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(txt.Value))

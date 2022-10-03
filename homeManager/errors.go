@@ -14,4 +14,6 @@ var (
 	ErrConvertingPropteryValue = errors.New("error converting property value")
 
 	ErrInvalidModeValue = errors.New("invalid value for property mode")
+
+	ErrWriteOnlyProperty = errors.New("unable to read from write only property")
 )

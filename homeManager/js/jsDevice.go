@@ -75,7 +75,7 @@ func (d *jsDevice) GetButton(name string) interface{} {
 		// create a js object so we cn add a new property
 		jsVal := d.js.runtime.ToValue(val)
 		jsObj := d.js.runtime.CreateObject(jsVal.ToObject(d.js.runtime))
-		// add a readonly .latest propery that gets the live device property value
+		// add a readonly .latest propery that gets the live property value from the device
 		jsObj.DefineAccessorProperty("latest", d.js.runtime.ToValue(func() interface{} {
 			if val, ok := d.js.Updater.GetButtonValue(d.Id, name); ok {
 				return val
@@ -85,7 +85,7 @@ func (d *jsDevice) GetButton(name string) interface{} {
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
 
 		// also add previous as a readonly property
-		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() bool {
+		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() string {
 			return val.previous
 		}),
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
@@ -161,11 +161,11 @@ func (d *jsDevice) Set(name string, value string) {
 		}
 	}
 
-	// for _, v := range d.propButton {
-	// 	// if v.Name == name {
-	// 	// 	d.js.Updater.UpdateButton(d.Id, name, value)
-	// 	// }
-	// }
+	for _, v := range d.propButton {
+		if v.Name == name {
+			d.js.Updater.UpdateButton(d.Id, name, value)
+		}
+	}
 
 	for _, v := range d.propText {
 		if v.Name == name {

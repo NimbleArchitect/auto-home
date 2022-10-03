@@ -18,28 +18,6 @@ func (m *Manager) AddHub(h Hub) error {
 	return nil
 }
 
-// func (h *Handler) AddHubFromJson(json string) (string, error) {
-// 	n := home.Hub{}
-
-// 	n.Description = d.Description
-// 	n.Id = d.Id
-// 	n.ClientId = clientId
-// 	n.Name = d.Name
-// 	n.Help = d.Help
-
-// 	for _, v := range d.Devices {
-// 		if err := h.regDeviceList(v, clientId); err == nil {
-// 			n.Devices = append(n.Devices, v.Id)
-// 		} else {
-// 			return err
-// 		}
-
-// 	}
-
-// 	fmt.Println("current-devices:", h.HomeManager.GetDevices())
-// 	return h.HomeManager.AddHub(n)
-// }
-
 func (m *Manager) GetDevices() map[string]Device {
 	return m.devices
 }
@@ -61,9 +39,6 @@ func (m *Manager) DeviceExistsWithClientId(deviceId string, clientId string) boo
 	if len(deviceId) <= 1 {
 		return false
 	}
-
-	// fmt.Println("1>>", deviceId)
-	// fmt.Println("2>>", m.devices)
 
 	dev, ok := m.devices[deviceId]
 	if ok {
@@ -125,6 +100,10 @@ func (m *Manager) GetDial(id string, name string) (DialProperty, error) {
 
 	if dev, found := m.devices[id]; found {
 		if prop, ok := dev.PropertyDial[name]; ok {
+			if prop.Mode == WO {
+				return DialProperty{}, ErrWriteOnlyProperty
+			}
+
 			return prop, nil
 		} else {
 			err = errors.New("missing dial property " + name)
@@ -176,6 +155,10 @@ func (m *Manager) GetSwitch(id string, name string) (SwitchProperty, error) {
 
 	if dev, found := m.devices[id]; found {
 		if prop, ok := dev.PropertySwitch[name]; ok {
+			if prop.Mode == WO {
+				return SwitchProperty{}, ErrWriteOnlyProperty
+			}
+
 			return prop, nil
 		} else {
 			err = errors.New("missing switch property " + name)
@@ -227,6 +210,10 @@ func (m *Manager) GetButton(id string, name string) (ButtonProperty, error) {
 
 	if dev, found := m.devices[id]; found {
 		if prop, ok := dev.PropertyButton[name]; ok {
+			if prop.Mode == WO {
+				return ButtonProperty{}, ErrWriteOnlyProperty
+			}
+
 			return prop, nil
 		} else {
 			err = errors.New("missing button property " + name)
@@ -238,29 +225,22 @@ func (m *Manager) GetButton(id string, name string) (ButtonProperty, error) {
 	return ButtonProperty{}, err
 }
 
-func (m *Manager) GetButtonValue(id string, name string) (bool, bool) {
+func (m *Manager) GetButtonValue(id string, name string) (string, bool) {
 	prop, err := m.GetButton(id, name)
 	if err != nil {
-		return false, false
+		return "", false
 	}
-	return prop.Value, true
+	return prop.Value.String(), true
 }
 
-func (m *Manager) UpdateButton(id string, name string, value bool) error {
-	var boolOut string
+func (m *Manager) UpdateButton(id string, name string, value string) error {
 	prop, err := m.GetButton(id, name)
 
 	if err == nil {
 		if prop.Mode == RW || prop.Mode == WO {
 			clientid := m.devices[id].ClientId
 
-			if value {
-				boolOut = "true"
-			} else {
-				boolOut = "false"
-			}
-
-			jsonOut := m.MakeAction(id, name, BUTTON, boolOut)
+			jsonOut := m.MakeAction(id, name, BUTTON, value)
 			log.Println("sending action", jsonOut, "to", clientid)
 			if _, ok := m.actionChannel[id]; ok {
 				_, err := m.actionChannel[clientid].Write(jsonOut)
@@ -268,9 +248,9 @@ func (m *Manager) UpdateButton(id string, name string, value bool) error {
 					log.Println(err)
 				}
 
-				prop := m.devices[id].PropertyButton[name]
-				prop.Value = value
-				m.devices[id].PropertyButton[name] = prop
+				// prop := m.devices[id].PropertyButton[name]
+				// prop.Value.Set(value)
+				// m.devices[id].PropertyButton[name] = prop
 			}
 			return nil
 		}
@@ -284,6 +264,10 @@ func (m *Manager) GetText(id string, name string) (TextProperty, error) {
 
 	if dev, found := m.devices[id]; found {
 		if prop, ok := dev.PropertyText[name]; ok {
+			if prop.Mode == WO {
+				return TextProperty{}, ErrWriteOnlyProperty
+			}
+
 			return prop, nil
 		} else {
 			err = errors.New("missing text property " + name)
