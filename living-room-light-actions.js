@@ -70,5 +70,3 @@ function flash() {
 function set_colour() {
 
 }
-
-

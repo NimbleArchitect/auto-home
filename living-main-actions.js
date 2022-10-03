@@ -32,10 +32,6 @@ function doorbell_onchange() {
     // doorbell pressed event
     let adult = home.getGroupByPath("users/adults")
     
-    const greeting = new Promise((resolve, reject) => {
-        resolve("Hello!");
-      });
-    
     // need to run this as a seprate thread... how??
     adult.sendmessage("doorbell pressed at " + Date)
 
@@ -64,4 +60,24 @@ function sendmessage(msg) {
             home.plugin("telegram").sendMessage(alert, msg)
         }
     } 
+}
+
+//
+// alarm group module
+//
+
+// alarm group holds all sensor devices, any change to a sensor calls this onChange function
+function group_onchange(props) {
+
+    if (home.getDevice("alarm").get("state").asBool == true) {
+        // fire alarm
+
+        return true
+    } 
+
+    if (home.getDevice("alarm").get("downstairs").asBool == true) {
+        // fire alarm
+
+        return true
+    }
 }

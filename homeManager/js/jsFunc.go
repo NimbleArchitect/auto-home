@@ -13,18 +13,21 @@ func (r *JavascriptVM) RunJS(fName string, props goja.Value) (goja.Value, error)
 	var jsHome jsHome
 
 	jsFunction := r.runtime.Get(fName)
-	jsTrigger, ok := goja.AssertFunction(jsFunction)
+	call, ok := goja.AssertFunction(jsFunction)
 	if !ok {
 		// slient ignore as the function dosent exist in javascript
 		log.Println("function", fName, "doesn't exist, skipping")
 		return nil, nil
 	}
 
+	jsHome.StopProcessing = FLAG_STOPPROCESSING
+	jsHome.ContinueProcessing = FLAG_CONTINUEPROCESSING
+	jsHome.GroupProcessing = FLAG_GROUPPROCESSING
 	jsHome.devices = r.deviceState
 
 	r.runtime.Set("home", jsHome)
 
-	result, err := jsTrigger(goja.Undefined(), props)
+	result, err := call(goja.Undefined(), props)
 	if err != nil {
 		log.Println(err)
 	}

@@ -5,8 +5,18 @@ import (
 	"time"
 )
 
+const (
+	FLAG_CONTINUEPROCESSING = iota
+	FLAG_GROUPPROCESSING
+	FLAG_STOPPROCESSING
+)
+
 type jsHome struct {
-	devices map[string]jsDevice
+	devices            map[string]jsDevice
+	groups             map[string]jsGroup
+	StopProcessing     int
+	GroupProcessing    int
+	ContinueProcessing int
 }
 
 func (d *jsHome) GetDeviceByName(name string) jsDevice {
@@ -31,6 +41,18 @@ func (d *jsHome) GetDevices() []jsDevice {
 }
 
 func (d *jsHome) GetDevicesStartName(s string) []jsDevice {
+	var out []jsDevice
+	// fmt.Println("hello")
+	for k, v := range d.devices {
+		if strings.HasPrefix(k, s) {
+			out = append(out, v)
+		}
+	}
+
+	return out
+}
+
+func (d *jsHome) GetGroupByName(s string) []jsDevice {
 	var out []jsDevice
 	// fmt.Println("hello")
 	for k, v := range d.devices {

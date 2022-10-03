@@ -21,11 +21,14 @@ type DeviceUpdator interface {
 	GetTextValue(string, string) (string, bool)
 
 	// GetDialHistory()
+
+	RunGroupAction(string, string, []map[string]interface{}) (interface{}, error)
 }
 
 type JavascriptVM struct {
 	runtime     *goja.Runtime
 	deviceState map[string]jsDevice
+	groups      map[string]jsGroup
 	Updater     DeviceUpdator
 }
 
@@ -47,7 +50,7 @@ func NewScript(actionFile string) (*JavascriptVM, error) {
 		log.Println(err)
 	}
 
-	vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
+	// vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
 	file, err := os.ReadFile(actionFile)
 	if err != nil {
@@ -79,6 +82,27 @@ func runAsThread(obj goja.Value, val goja.Value) {
 	}
 }
 
+func (r *JavascriptVM) RunJSGroupAction(fnName string, props []map[string]interface{}) (interface{}, error) {
+	// var dev jsDevice
+
+	log.Println("event triggered")
+
+	// dev.propSwitch = make(map[string]jsSwitch)
+	// dev.propDial = make(map[string]jsDial)
+	// dev.propButton = make(map[string]jsButton)
+	// dev.propText = make(map[string]jsText)
+
+	// log.Println("state:", m.devices)
+
+	// lookup changes and trigger change notifications
+	out, err := r.RunJS(fnName, r.runtime.ToValue(props))
+	if err != nil {
+		log.Println(err)
+	}
+
+	return out, nil
+}
+
 func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map[string]interface{}) {
 	var dev jsDevice
 
@@ -92,12 +116,16 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 	// log.Println("state:", m.devices)
 
 	// lookup changes and trigger change notifications
-	r.processOnTrigger(deviceid, timestamp, props, dev)
+	r.processOnTrigger(deviceid, timestamp, props, &dev)
 
-	r.processOnChange(deviceid, timestamp, props, dev)
+	// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
+	continueFlag := r.processGroupChange(deviceid, timestamp, props, &dev)
+	if continueFlag != FLAG_STOPPROCESSING {
+		r.processOnChange(deviceid, timestamp, props, &dev)
+	}
 
 }
-func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props []map[string]interface{}, dev jsDevice) {
+func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props []map[string]interface{}, dev *jsDevice) {
 
 	for _, prop := range props {
 		rawName, ok := prop["name"]
@@ -195,7 +223,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 	}
 }
 
-func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, props []map[string]interface{}, dev jsDevice) {
+func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, props []map[string]interface{}, dev *jsDevice) {
 
 	for name, swi := range dev.propSwitch {
 		// all state props have been updated for the device so we call onchange with the property that was changed
@@ -250,4 +278,35 @@ func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, pro
 			log.Println("unable to update device state:", err)
 		}
 	}
+}
+
+func (r *JavascriptVM) processGroupChange(deviceid string, timestamp time.Time, props []map[string]interface{}, dev *jsDevice) int {
+	var finisheAfterGroups bool
+
+	for _, group := range r.groups {
+		for _, v := range group.devices {
+			if v == deviceid {
+				// TODO: how to I run the group scrip functions??
+				val, err := r.Updater.RunGroupAction(group.Id, "group_onchange", props)
+				if err != nil {
+					log.Println(err)
+				} else {
+					// r.runtime.ToValue(val).ToInteger()
+					continueFlag := r.runtime.ToValue(val).ToInteger()
+					if continueFlag == FLAG_STOPPROCESSING {
+						return int(continueFlag)
+					}
+					if continueFlag == FLAG_GROUPPROCESSING {
+						finisheAfterGroups = true
+					}
+				}
+			}
+		}
+	}
+
+	if finisheAfterGroups {
+		return FLAG_STOPPROCESSING
+	}
+
+	return FLAG_CONTINUEPROCESSING
 }

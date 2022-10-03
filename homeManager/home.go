@@ -257,3 +257,22 @@ func (m *Manager) RunStartScript() {
 	vm.RunJS("server_onStart", goja.Undefined())
 
 }
+
+func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {
+
+	if vm := m.actions[groupId].jsvm; vm == nil {
+		log.Println("js vm not found for group", groupId)
+	} else {
+
+		// lookup changes, trigger change notifications, what am I supposed
+		//  to trigger and how am I supposed to trigger it???
+
+		// process the event
+		vm.Updater = m
+		return vm.RunJSGroupAction(fnName, props)
+	}
+
+	log.Println("event finished")
+
+	return nil, nil
+}
