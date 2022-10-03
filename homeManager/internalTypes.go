@@ -43,8 +43,9 @@ type group struct {
 	Id          string
 	Name        string
 	Description string
-	Device      []string
-	Actions     map[string]string
+	Devices     []string
+	Groups      []string
+	Users       []string
 }
 
 type Upload struct {

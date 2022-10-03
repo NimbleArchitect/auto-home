@@ -85,7 +85,7 @@ func runAsThread(obj goja.Value, val goja.Value) {
 func (r *JavascriptVM) RunJSGroupAction(fnName string, props []map[string]interface{}) (interface{}, error) {
 	// var dev jsDevice
 
-	log.Println("event triggered")
+	log.Println("group action triggered:", fnName)
 
 	// dev.propSwitch = make(map[string]jsSwitch)
 	// dev.propDial = make(map[string]jsDial)
