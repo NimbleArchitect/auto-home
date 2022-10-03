@@ -22,6 +22,7 @@ type settings struct {
 	HostAddress   string
 	PublicPath    string
 	RecordHistory bool
+	MaxHistory    int
 }
 
 func main() {
