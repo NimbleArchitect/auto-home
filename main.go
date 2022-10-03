@@ -42,7 +42,7 @@ func main() {
 
 	evtMgr := event.NewManager(200, 50)
 
-	homeMgr := home.NewManager(conf.RecordHistory)
+	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory)
 	homeMgr.LoadSystem()
 
 	www := webHandle.Handler{

@@ -30,9 +30,10 @@ type eventHistory struct {
 	Properties []map[string]interface{}
 }
 
-func NewManager(recordHistory bool) *Manager {
+func NewManager(recordHistory bool, maxHistory int) *Manager {
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
+		max:  maxHistory,
 	}
 
 	m := Manager{
