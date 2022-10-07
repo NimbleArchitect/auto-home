@@ -3,6 +3,7 @@ package home
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/rpc"
 	"os"
@@ -22,8 +23,14 @@ type Manager struct {
 	// events  event.Manager
 	actionChannel map[string]actionsChannel
 	groups        map[string]group
-	actions       map[string]Action
-	plugins       map[string]rpc.Client
+	// actions       map[string]Action
+
+	MaxVMCount int
+	activeVMs  []*js.JavascriptVM
+	chActiveVM chan int
+
+	compiledScripts js.CompiledScripts
+	plugins         map[string]rpc.Client
 }
 
 type eventHistory struct {
@@ -32,7 +39,7 @@ type eventHistory struct {
 	Properties []map[string]interface{}
 }
 
-func NewManager(recordHistory bool, maxHistory int) *Manager {
+func NewManager(recordHistory bool, maxHistory int, maxVMs int) *Manager {
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
 		max:  maxHistory,
@@ -41,6 +48,8 @@ func NewManager(recordHistory bool, maxHistory int) *Manager {
 	m := Manager{
 		RecordHistory: recordHistory,
 		eventHistory:  &eventProc,
+		MaxVMCount:    maxVMs,
+		chActiveVM:    make(chan int, maxVMs),
 	}
 
 	return &m
@@ -113,51 +122,95 @@ func (m *Manager) LoadSystem() {
 		}
 	}
 
-	file, err = os.ReadFile("actions.json")
-	if !errors.Is(err, os.ErrNotExist) {
-		if err != nil {
-			log.Panic("unable to read actions.json ", err)
-		}
-		err = json.Unmarshal(file, &m.actions)
-		if err != nil {
-			log.Panic("unable to read previous system state ", err)
-		}
-	}
+	// file, err = os.ReadFile("actions.json")
+	// if !errors.Is(err, os.ErrNotExist) {
+	// 	if err != nil {
+	// 		log.Panic("unable to read actions.json ", err)
+	// 	}
+	// 	err = json.Unmarshal(file, &m.actions)
+	// 	if err != nil {
+	// 		log.Panic("unable to read previous system state ", err)
+	// 	}
+	// }
 
-	m.initActions()
+	m.initVMs()
 }
 
-func (m *Manager) initActions() {
-	if len(m.actions) == 0 {
-		m.actions = make(map[string]Action)
-		return
+// func (m *Manager) initActions() {
+// 	if len(m.actions) == 0 {
+// 		m.actions = make(map[string]Action)
+// 		return
+// 	}
+
+// 	for deviceid, v := range m.actions {
+// 		actionFile := v.Location
+// 		log.Println("loading script", actionFile, "for device", deviceid)
+// 		vm, err := js.NewScript(actionFile)
+// 		if err != nil {
+// 			log.Println(err)
+// 		}
+
+// 		newAction := Action{
+// 			jsvm: vm,
+// 		}
+
+// 		m.actions[deviceid] = newAction
+// 	}
+// }
+
+func (m *Manager) initVMs() {
+	// fmt.Println("1>>", count)
+	m.compiledScripts = js.LoadAllScripts("./scripts/")
+
+	for i := 0; i < m.MaxVMCount; i++ {
+		js, err := m.compiledScripts.NewVM()
+		if err == nil {
+			m.activeVMs = append(m.activeVMs, js)
+			m.chActiveVM <- i
+		}
 	}
 
-	for deviceid, v := range m.actions {
-		actionFile := v.Location
-		log.Println("loading script", actionFile, "for device", deviceid)
-		vm, err := js.NewScript(actionFile)
-		if err != nil {
-			log.Println(err)
-		}
-
-		newAction := Action{
-			jsvm: vm,
-		}
-
-		m.actions[deviceid] = newAction
+	if len(m.activeVMs) != m.MaxVMCount {
+		log.Println("error unable to start enough javascript instances")
 	}
+
+}
+
+func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
+	tryagain := true
+
+	// TODO: finish ME
+	for tryagain {
+		select {
+		case id := <-m.chActiveVM:
+			if len(m.activeVMs) >= id {
+				log.Printf("selected javascript VM #%d", id)
+				return m.activeVMs[id], id
+			}
+			tryagain = false
+		case <-time.After(time.Second * 5):
+			log.Println("WARN: not enough javascript VMs avaliable for use")
+			tryagain = true
+		}
+	}
+
+	return nil, 0
 }
 
 // Trigger is called once at a time, with the deviceid
 func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[string]interface{}) error {
-	// var dev jsDevice
-
 	log.Println("event triggered")
 	//TODO: call client on trigger, need to work out the client script to run
 
-	if vm := m.actions[deviceid].jsvm; vm == nil {
-		log.Println("js vm not found for device", deviceid)
+	//get next avaliable vm
+
+	// if vm := m.actions[deviceid].jsvm; vm == nil {
+
+	vm, id := m.GetNextVM()
+	defer func() { m.chActiveVM <- id }()
+
+	if vm == nil {
+		log.Println("invalid javascript vm")
 	} else {
 		// TODO: somewhere I need to validate the properties so I only save valid states
 		log.Println("state:", m.devices)
@@ -250,13 +303,18 @@ func (m *Manager) Shutdown() {
 	time.Sleep(10 * time.Second)
 }
 
-func (m *Manager) RunStartScript() {
+func (m *Manager) runStartScript() {
+	// TODO: needs to be called during startup and needs to run the server onsart function
+
 	log.Println("loading script server.js")
-	vm, err := js.NewScript("server.js")
+	// vm, err := js.NewScript("server.js")
+	code := js.LoadAllScripts("scripts/")
+	vm, err := code.NewVM()
+
 	if err != nil {
 		log.Println(err)
 	} else {
-		vm.RunJS("server_onStart", goja.Undefined())
+		vm.RunJS("server", "server_onStart", goja.Undefined())
 	}
 
 }
@@ -270,19 +328,21 @@ func (m *Manager) StartPlugins() {
 
 func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {
 
-	if vm := m.actions[groupId].jsvm; vm == nil {
-		log.Println("js vm not found for group", groupId)
-	} else {
+	// if vm := m.actions[groupId].jsvm; vm == nil {
+	// 	log.Println("js vm not found for group", groupId)
+	// } else {
 
-		// lookup changes, trigger change notifications, what am I supposed
-		//  to trigger and how am I supposed to trigger it???
+	// 	// lookup changes, trigger change notifications, what am I supposed
+	// 	//  to trigger and how am I supposed to trigger it???
 
-		// process the event
-		vm.Updater = m
-		return vm.RunJSGroupAction(fnName, props)
-	}
+	// 	// process the event
+	// 	vm.Updater = m
+	// 	return vm.RunJSGroupAction(groupId, fnName, props)
+	// }
 
-	log.Println("event finished")
+	// log.Println("event finished")
 
+	fmt.Println(">> NOT IMPLEMENTED <<")
 	return nil, nil
+
 }

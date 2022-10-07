@@ -23,6 +23,7 @@ type settings struct {
 	PublicPath    string
 	RecordHistory bool
 	MaxHistory    int
+	Maxvms        int
 }
 
 func main() {
@@ -43,7 +44,7 @@ func main() {
 
 	evtMgr := event.NewManager(200, 50)
 
-	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory)
+	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.Maxvms)
 	homeMgr.LoadSystem()
 
 	www := webHandle.Handler{
@@ -56,7 +57,7 @@ func main() {
 	www.LoadSystem()
 
 	homeMgr.StartPlugins()
-	homeMgr.RunStartScript()
+	// homeMgr.RunStartScript()
 
 	// for _, v := range homeMgr.GetDevices() {
 	// 	www.AddDeviceActionList(v.ActionId)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dop251/goja"
@@ -27,6 +28,7 @@ type DeviceUpdator interface {
 
 type JavascriptVM struct {
 	runtime     *goja.Runtime
+	deviceCode  map[string]*goja.Object
 	deviceState map[string]jsDevice
 	groups      map[string]jsGroup
 	Updater     DeviceUpdator
@@ -43,7 +45,7 @@ func init() {
 	globalPlugins = &prtPlugins
 }
 
-func NewScript(actionFile string) (*JavascriptVM, error) {
+func newScript(actionFile string) (*JavascriptVM, error) {
 	var js JavascriptVM
 
 	vm := goja.New()
@@ -101,6 +103,118 @@ func NewScript(actionFile string) (*JavascriptVM, error) {
 
 }
 
+// type jsvm struct {
+// 	runtime    *goja.Runtime
+// 	deviceCode map[string]*goja.Object
+// }
+
+func (v *JavascriptVM) objLoader(value goja.Value, value1 goja.Value) {
+	// fmt.Println("run this:", value)
+	if v.deviceCode == nil {
+		v.deviceCode = make(map[string]*goja.Object)
+	}
+
+	v.deviceCode[value.String()] = value1.(*goja.Object)
+}
+
+func (c *CompiledScripts) NewVM() (*JavascriptVM, error) {
+	var console jsConsole
+
+	runtime := goja.New()
+	runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
+
+	vm := JavascriptVM{
+		runtime: runtime,
+	}
+
+	err := runtime.Set("console", console)
+	if err != nil {
+		return nil, err
+	}
+
+	err = runtime.Set("thread", runAsThread)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: rename run to something better, also I still need to add ability to set common functions
+	err = runtime.Set("run", vm.objLoader)
+	if err != nil {
+		return nil, err
+	}
+
+	// load all scripts one after the other and call the
+	//  returned object
+	for scriptName, code := range c.compiled {
+		// run the script module
+		module, err := runtime.RunProgram(code)
+		if err != nil {
+			log.Println("error running script", scriptName, err)
+		} else {
+			call, ok := goja.AssertFunction(module)
+			if ok {
+				_, err := call(goja.Undefined())
+				if err != nil {
+					log.Println("script error", err)
+				}
+			} else {
+				log.Println("internal: not a function")
+			}
+		}
+	}
+
+	return &vm, nil
+}
+
+type CompiledScripts struct {
+	compiled map[string]*goja.Program
+}
+
+func loadScript(filename string) *goja.Program {
+	cfile, err := os.ReadFile(filename)
+	if err != nil {
+		log.Println("unable to read file:", err)
+	}
+
+	prog, err := goja.Compile(filename, ";(function () {"+string(cfile)+"\n})", true)
+
+	// prog, err := goja.Compile(filename, string(cfile), true)
+	if err != nil {
+		log.Println("unable to compile script", err)
+	}
+
+	return prog
+}
+
+func LoadAllScripts(path string) CompiledScripts {
+	compiled := make(map[string]*goja.Program)
+
+	sep := string(os.PathSeparator)
+
+	pathname := strings.TrimSuffix(path, sep)
+	entires, err := os.ReadDir(pathname)
+	if err != nil {
+		return CompiledScripts{}
+	}
+
+	for _, item := range entires {
+		if !item.IsDir() {
+			fullname := pathname + sep + item.Name()
+			log.Println("loading script", fullname)
+			p := loadScript(fullname)
+			fmt.Println(p)
+			if p != nil {
+				// log.Println("saving compiled code")
+				compiled[item.Name()] = p
+			}
+		}
+	}
+
+	return CompiledScripts{
+		compiled: compiled,
+	}
+}
+
 // runAsThread runs the js function as a new thread, this could be dangerous/not thread safe
 func runAsThread(obj goja.Value, val goja.Value) {
 	call, ok := goja.AssertFunction(obj)
@@ -111,7 +225,7 @@ func runAsThread(obj goja.Value, val goja.Value) {
 	}
 }
 
-func (r *JavascriptVM) RunJSGroupAction(fnName string, props []map[string]interface{}) (interface{}, error) {
+func (r *JavascriptVM) RunJSGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {
 	// var dev jsDevice
 
 	log.Println("group action triggered:", fnName)
@@ -124,7 +238,7 @@ func (r *JavascriptVM) RunJSGroupAction(fnName string, props []map[string]interf
 	// log.Println("state:", m.devices)
 
 	// lookup changes and trigger change notifications
-	out, err := r.RunJS(fnName, r.runtime.ToValue(props))
+	out, err := r.RunJS(groupId, fnName, r.runtime.ToValue(props))
 	if err != nil {
 		log.Println(err)
 	}
@@ -154,6 +268,10 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 	}
 
 }
+
+// processOnTrigger call processes the properties and call the *_ontrigger for each property
+//
+// dev is then updated with the new properties and values
 func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props []map[string]interface{}, dev *jsDevice) {
 
 	for _, prop := range props {
@@ -173,7 +291,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 				if err != nil {
 					log.Println(err)
 				} else {
-					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(swi.label))
+					_, err := r.RunJS(deviceid, name+"_ontrigger", r.runtime.ToValue(swi.label))
 					if err != nil {
 						log.Println(err)
 					}
@@ -198,7 +316,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 					if dial.Value < oldValue.min {
 						dial.Value = oldValue.min
 					}
-					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(dial.Value))
+					_, err := r.RunJS(deviceid, name+"_ontrigger", r.runtime.ToValue(dial.Value))
 					if err != nil {
 						log.Println(err)
 					}
@@ -216,7 +334,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 				if err != nil {
 					log.Println(err)
 				} else {
-					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(button.Value))
+					_, err := r.RunJS(deviceid, name+"_ontrigger", r.runtime.ToValue(button.Value))
 					if err != nil {
 						log.Println(err)
 					}
@@ -234,7 +352,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 				if err != nil {
 					log.Println(err)
 				} else {
-					_, err := r.RunJS(name+"_ontrigger", r.runtime.ToValue(text.Value))
+					_, err := r.RunJS(deviceid, name+"_ontrigger", r.runtime.ToValue(text.Value))
 					if err != nil {
 						log.Println(err)
 					}
@@ -252,11 +370,14 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 	}
 }
 
+// processOnChange call loops through all the properties and call the *_onchange for each property
+//
+// once _onchange has been called the changed value is sent to Updater.Update*
 func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, props []map[string]interface{}, dev *jsDevice) {
 
 	for name, swi := range dev.propSwitch {
 		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(swi.label))
+		_, err := r.RunJS(deviceid, name+"_onchange", r.runtime.ToValue(swi.label))
 		if err != nil {
 			log.Println(err)
 		}
@@ -269,7 +390,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, pro
 	}
 
 	for name, dial := range dev.propDial {
-		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(dial.Value))
+		_, err := r.RunJS(deviceid, name+"_onchange", r.runtime.ToValue(dial.Value))
 		if err != nil {
 			log.Println(err)
 		}
@@ -282,7 +403,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, pro
 
 	for name, but := range dev.propButton {
 		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(but.label))
+		_, err := r.RunJS(deviceid, name+"_onchange", r.runtime.ToValue(but.label))
 		if err != nil {
 			log.Println(err)
 		}
@@ -296,7 +417,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, pro
 
 	for name, txt := range dev.propText {
 		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.RunJS(name+"_onchange", r.runtime.ToValue(txt.Value))
+		_, err := r.RunJS(deviceid, name+"_onchange", r.runtime.ToValue(txt.Value))
 		if err != nil {
 			log.Println(err)
 		}

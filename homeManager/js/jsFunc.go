@@ -10,18 +10,20 @@ import (
 	"github.com/dop251/goja"
 )
 
-func (r *JavascriptVM) RunJS(fName string, props goja.Value) (goja.Value, error) {
+func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (goja.Value, error) {
 	var jsHome jsHome
 
 	if r.runtime == nil {
 		return nil, nil
 	}
-	jsFunction := r.runtime.Get(fName)
+
+	// fmt.Println("5>>", r.deviceCode)
+	jsFunction := r.deviceCode[deviceid].Get(fName)
 
 	call, ok := goja.AssertFunction(jsFunction)
 	if !ok {
 		// slient ignore as the function dosent exist in javascript
-		log.Println("function", fName, "doesn't exist, skipping")
+		log.Println("function", fName, "doesn't exist for device", deviceid, ", skipping")
 		return nil, nil
 	}
 
