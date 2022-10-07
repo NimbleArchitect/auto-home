@@ -26,9 +26,6 @@ func (r *JavascriptVM) NewDevice(id string, name string) StateDevice {
 // SaveDevice adds the StateDevice to the VMs deviceState list
 // making it avaliable to the JS VM
 func (r *JavascriptVM) SaveDevice(dev StateDevice) {
-	if len(r.deviceState) == 0 {
-		r.deviceState = make(map[string]jsDevice)
-	}
 
 	r.deviceState[dev.id] = jsDevice{
 		js:         r,

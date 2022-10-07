@@ -3,7 +3,6 @@ package home
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/rpc"
 	"os"
@@ -160,11 +159,16 @@ func (m *Manager) LoadSystem() {
 
 func (m *Manager) initVMs() {
 	// fmt.Println("1>>", count)
+
 	m.compiledScripts = js.LoadAllScripts("./scripts/")
 
 	for i := 0; i < m.MaxVMCount; i++ {
 		js, err := m.compiledScripts.NewVM()
 		if err == nil {
+			// Set the group properties, this is not expected to change very oftern so we run it during vm creation
+			for _, v := range m.groups {
+				js.SetGroup(v.Id, v.Name, v.Groups, v.Devices)
+			}
 			m.activeVMs = append(m.activeVMs, js)
 			m.chActiveVM <- i
 		}
@@ -327,23 +331,23 @@ func (m *Manager) StartPlugins() {
 	// }()
 }
 
-func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {
+// func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {
 
-	// if vm := m.actions[groupId].jsvm; vm == nil {
-	// 	log.Println("js vm not found for group", groupId)
-	// } else {
+// 	// if vm := m.actions[groupId].jsvm; vm == nil {
+// 	// 	log.Println("js vm not found for group", groupId)
+// 	// } else {
 
-	// 	// lookup changes, trigger change notifications, what am I supposed
-	// 	//  to trigger and how am I supposed to trigger it???
+// 	// 	// lookup changes, trigger change notifications, what am I supposed
+// 	// 	//  to trigger and how am I supposed to trigger it???
 
-	// 	// process the event
-	// 	vm.Updater = m
-	// 	return vm.RunJSGroupAction(groupId, fnName, props)
-	// }
+// 	// 	// process the event
+// 	// 	vm.Updater = m
+// 	// 	return vm.RunJSGroupAction(groupId, fnName, props)
+// 	// }
 
-	// log.Println("event finished")
+// 	// log.Println("event finished")
 
-	fmt.Println(">> NOT IMPLEMENTED <<")
-	return nil, nil
+// 	fmt.Println(">> NOT IMPLEMENTED <<")
+// 	return nil, nil
 
-}
+// }

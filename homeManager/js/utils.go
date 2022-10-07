@@ -3,6 +3,7 @@ package js
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/dop251/goja"
@@ -21,24 +22,31 @@ type DeviceUpdator interface {
 
 	// GetDialHistory()
 
-	RunGroupAction(string, string, []map[string]interface{}) (interface{}, error)
+	// RunGroupAction(string, string, []map[string]interface{}) (interface{}, error)
 }
 
 type JavascriptVM struct {
 	runtime     *goja.Runtime
 	deviceCode  map[string]*goja.Object
 	deviceState map[string]jsDevice
+	groupCode   map[string]*goja.Object
 	groups      map[string]jsGroup
 	Updater     DeviceUpdator
 }
 
-func (v *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
+func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
 	// TODO: make name safe as its use input
-	if v.deviceCode == nil {
-		v.deviceCode = make(map[string]*goja.Object)
+	n := name.String()
+
+	parts := strings.Split(n, "/")
+	switch parts[0] {
+	case "group":
+		r.groupCode[n] = object.(*goja.Object)
+	default:
+		r.deviceCode[n] = object.(*goja.Object)
 	}
 
-	v.deviceCode[name.String()] = object.(*goja.Object)
+	r.deviceCode[n] = object.(*goja.Object)
 }
 
 // runAsThread runs the js function as a new thread, this could be dangerous/not thread safe
@@ -54,7 +62,7 @@ func runAsThread(obj goja.Value, val goja.Value) {
 func (r *JavascriptVM) RunJSGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {
 	// var dev jsDevice
 
-	log.Println("group action triggered:", fnName)
+	log.Println("group action triggered:", groupId, fnName)
 
 	// dev.propSwitch = make(map[string]jsSwitch)
 	// dev.propDial = make(map[string]jsDial)
@@ -64,7 +72,7 @@ func (r *JavascriptVM) RunJSGroupAction(groupId string, fnName string, props []m
 	// log.Println("state:", m.devices)
 
 	// lookup changes and trigger change notifications
-	out, err := r.RunJS(groupId, fnName, r.runtime.ToValue(props))
+	out, err := r.RunJS("group/"+groupId, fnName, r.runtime.ToValue(props))
 	if err != nil {
 		log.Println(err)
 	}
@@ -72,6 +80,7 @@ func (r *JavascriptVM) RunJSGroupAction(groupId string, fnName string, props []m
 	return out, nil
 }
 
+// Process main entry point after a trigger, this allows processin gthe event data
 func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map[string]interface{}) {
 	var dev jsDevice
 
@@ -261,9 +270,10 @@ func (r *JavascriptVM) processGroupChange(deviceid string, timestamp time.Time, 
 
 	for _, group := range r.groups {
 		for _, v := range group.devices {
+			fmt.Println("6>>", v, deviceid)
 			if v == deviceid {
 				// TODO: how to I run the group scrip functions??
-				val, err := r.Updater.RunGroupAction(group.Id, "group_onchange", props)
+				val, err := r.RunJSGroupAction(group.Id, "onchange", props)
 				if err != nil {
 					log.Println(err)
 				} else {

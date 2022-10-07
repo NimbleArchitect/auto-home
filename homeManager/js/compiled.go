@@ -35,7 +35,11 @@ func (c *CompiledScripts) NewVM() (*JavascriptVM, error) {
 	runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
 	vm := JavascriptVM{
-		runtime: runtime,
+		runtime:     runtime,
+		deviceCode:  make(map[string]*goja.Object),
+		deviceState: make(map[string]jsDevice),
+		groupCode:   make(map[string]*goja.Object),
+		groups:      make(map[string]jsGroup),
 	}
 
 	err := runtime.Set("console", console)

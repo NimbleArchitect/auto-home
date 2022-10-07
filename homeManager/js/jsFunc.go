@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/rpc"
+	"strings"
 
 	booltype "server/booltype"
 
@@ -12,13 +13,27 @@ import (
 
 func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (goja.Value, error) {
 	var jsHome jsHome
+	var jsFunction goja.Value
 
 	if r.runtime == nil {
 		return nil, nil
 	}
 
-	// fmt.Println("5>>", r.deviceCode)
-	jsFunction := r.deviceCode[deviceid].Get(fName)
+	parts := strings.Split(deviceid, "/")
+	switch parts[0] {
+	case "group":
+		if val, ok := r.groupCode[deviceid]; ok {
+			jsFunction = val.Get(fName)
+		}
+	default:
+		if val, ok := r.deviceCode[deviceid]; ok {
+			jsFunction = val.Get(fName)
+		}
+	}
+
+	if jsFunction == nil {
+		return nil, nil
+	}
 
 	call, ok := goja.AssertFunction(jsFunction)
 	if !ok {
