@@ -189,6 +189,7 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 			}
 			tryagain = false
 		case <-time.After(time.Second * 5):
+			// TODO: this warning needs to be visible in the UI
 			log.Println("WARN: not enough javascript VMs avaliable for use")
 			tryagain = true
 		}
@@ -202,11 +203,11 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 	log.Println("event triggered")
 	//TODO: call client on trigger, need to work out the client script to run
 
-	//get next avaliable vm
-
 	// if vm := m.actions[deviceid].jsvm; vm == nil {
 
+	//get next avaliable vm
 	vm, id := m.GetNextVM()
+	// once we have finished we make sure to add the vm id back to the channel list ready for next use
 	defer func() { m.chActiveVM <- id }()
 
 	if vm == nil {

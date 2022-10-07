@@ -3,8 +3,6 @@ package js
 import (
 	"fmt"
 	"log"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/dop251/goja"
@@ -34,185 +32,13 @@ type JavascriptVM struct {
 	Updater     DeviceUpdator
 }
 
-var globalConsole *jsConsole
-var globalPlugins *jsPlugin
-
-func init() {
-	var ptrConsole jsConsole
-	var prtPlugins jsPlugin
-
-	globalConsole = &ptrConsole
-	globalPlugins = &prtPlugins
-}
-
-func newScript(actionFile string) (*JavascriptVM, error) {
-	var js JavascriptVM
-
-	vm := goja.New()
-	// vm.SetFieldNameMapper(goja.TagFieldNameMapper("json", true))
-	vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
-
-	//TODO: move console to a global area, so we dont have a new copy for every JS VM
-	var console jsConsole
-	err := vm.Set("console", console)
-	if err != nil {
-		log.Println(err)
-	}
-
-	vm.Set("thread", runAsThread)
-	if err != nil {
-		log.Println(err)
-	}
-
-	// vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
-
-	cfile, err := os.ReadFile("common.js")
-	if err != nil {
-		log.Println("unable to read file:", err)
-	}
-
-	commonScript, err := goja.Compile("common.js", string(cfile), true)
-	if err != nil {
-		log.Println("unable to compile script", err)
-	}
-
-	_, err = vm.RunProgram(commonScript)
-	if err != nil {
-		log.Println("unable to run script", commonScript, "error reported was", err)
-	}
-
-	// run the devices assocated script
-	file, err := os.ReadFile(actionFile)
-	if err != nil {
-		log.Println("unable to read file:", err)
-	}
-
-	actionScript, err := goja.Compile(actionFile, string(file), true)
-	if err != nil {
-		log.Println("unable to compile script", err)
-	}
-
-	_, err = vm.RunProgram(actionScript)
-	if err != nil {
-		log.Println("unable to run script", actionScript, "error reported was", err)
-	}
-	fmt.Println(">>>", vm.GlobalObject())
-
-	// js.runtime = vm.
-	return &js, nil
-
-}
-
-// type jsvm struct {
-// 	runtime    *goja.Runtime
-// 	deviceCode map[string]*goja.Object
-// }
-
-func (v *JavascriptVM) objLoader(value goja.Value, value1 goja.Value) {
-	// fmt.Println("run this:", value)
+func (v *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
+	// TODO: make name safe as its use input
 	if v.deviceCode == nil {
 		v.deviceCode = make(map[string]*goja.Object)
 	}
 
-	v.deviceCode[value.String()] = value1.(*goja.Object)
-}
-
-func (c *CompiledScripts) NewVM() (*JavascriptVM, error) {
-	var console jsConsole
-
-	runtime := goja.New()
-	runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
-
-	vm := JavascriptVM{
-		runtime: runtime,
-	}
-
-	err := runtime.Set("console", console)
-	if err != nil {
-		return nil, err
-	}
-
-	err = runtime.Set("thread", runAsThread)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: rename run to something better, also I still need to add ability to set common functions
-	err = runtime.Set("run", vm.objLoader)
-	if err != nil {
-		return nil, err
-	}
-
-	// load all scripts one after the other and call the
-	//  returned object
-	for scriptName, code := range c.compiled {
-		// run the script module
-		module, err := runtime.RunProgram(code)
-		if err != nil {
-			log.Println("error running script", scriptName, err)
-		} else {
-			call, ok := goja.AssertFunction(module)
-			if ok {
-				_, err := call(goja.Undefined())
-				if err != nil {
-					log.Println("script error", err)
-				}
-			} else {
-				log.Println("internal: not a function")
-			}
-		}
-	}
-
-	return &vm, nil
-}
-
-type CompiledScripts struct {
-	compiled map[string]*goja.Program
-}
-
-func loadScript(filename string) *goja.Program {
-	cfile, err := os.ReadFile(filename)
-	if err != nil {
-		log.Println("unable to read file:", err)
-	}
-
-	prog, err := goja.Compile(filename, ";(function () {"+string(cfile)+"\n})", true)
-
-	// prog, err := goja.Compile(filename, string(cfile), true)
-	if err != nil {
-		log.Println("unable to compile script", err)
-	}
-
-	return prog
-}
-
-func LoadAllScripts(path string) CompiledScripts {
-	compiled := make(map[string]*goja.Program)
-
-	sep := string(os.PathSeparator)
-
-	pathname := strings.TrimSuffix(path, sep)
-	entires, err := os.ReadDir(pathname)
-	if err != nil {
-		return CompiledScripts{}
-	}
-
-	for _, item := range entires {
-		if !item.IsDir() {
-			fullname := pathname + sep + item.Name()
-			log.Println("loading script", fullname)
-			p := loadScript(fullname)
-			fmt.Println(p)
-			if p != nil {
-				// log.Println("saving compiled code")
-				compiled[item.Name()] = p
-			}
-		}
-	}
-
-	return CompiledScripts{
-		compiled: compiled,
-	}
+	v.deviceCode[name.String()] = object.(*goja.Object)
 }
 
 // runAsThread runs the js function as a new thread, this could be dangerous/not thread safe
