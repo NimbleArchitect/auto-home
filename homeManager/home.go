@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"net/rpc"
 	"os"
 	"sync"
 	"time"
@@ -22,6 +23,7 @@ type Manager struct {
 	actionChannel map[string]actionsChannel
 	groups        map[string]group
 	actions       map[string]Action
+	plugins       map[string]rpc.Client
 }
 
 type eventHistory struct {
@@ -253,10 +255,17 @@ func (m *Manager) RunStartScript() {
 	vm, err := js.NewScript("server.js")
 	if err != nil {
 		log.Println(err)
+	} else {
+		vm.RunJS("server_onStart", goja.Undefined())
 	}
 
-	vm.RunJS("server_onStart", goja.Undefined())
+}
 
+func (m *Manager) StartPlugins() {
+	// go func() {
+	// 	m.startPluginManager()
+	// 	m.startAllPlugins()
+	// }()
 }
 
 func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {

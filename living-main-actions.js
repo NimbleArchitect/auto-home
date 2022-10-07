@@ -8,8 +8,8 @@ function flash() {
 // module for camera in the bar
 function record_onchange(props) {
     // call the sendMsg function in a seperate thread, this is non-blocking
-    thread(home.getGroupByPath("users/home").sendUserMsg,"door opened")
-    
+    // thread(home.getGroupByPath("users/home").sendUserMsg,"door opened")
+    thread(sendUserMsg,"door opened")
     
     // dosent cover when one adult is home and the other is out?
     // dosent cover notification to users not at home
@@ -45,22 +45,8 @@ function doorbell_onchange() {
 //
 // in group module users/adults
 //
-function sendUserMsg(msg) {
-    sendmessage(alert,msg)
-}
 
-function sendmessage(msg) {
-
-    let users = home.getGroupByPath("users/adults").getUsers()
-    
-    for (let i = 0; i < users.length; i++) {
-        if (users[i].presence == true) {
-            home.plugin("telegram").sendMessage(info, msg)
-        } else {
-            home.plugin("telegram").sendMessage(alert, msg)
-        }
-    } 
-}
+////////////////////////////////////////////////////////////////////////////////////////
 
 //
 // alarm group module

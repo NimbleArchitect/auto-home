@@ -32,6 +32,17 @@ type JavascriptVM struct {
 	Updater     DeviceUpdator
 }
 
+var globalConsole *jsConsole
+var globalPlugins *jsPlugin
+
+func init() {
+	var ptrConsole jsConsole
+	var prtPlugins jsPlugin
+
+	globalConsole = &ptrConsole
+	globalPlugins = &prtPlugins
+}
+
 func NewScript(actionFile string) (*JavascriptVM, error) {
 	var js JavascriptVM
 
@@ -39,6 +50,7 @@ func NewScript(actionFile string) (*JavascriptVM, error) {
 	// vm.SetFieldNameMapper(goja.TagFieldNameMapper("json", true))
 	vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
+	//TODO: move console to a global area, so we dont have a new copy for every JS VM
 	var console jsConsole
 	err := vm.Set("console", console)
 	if err != nil {
@@ -52,6 +64,22 @@ func NewScript(actionFile string) (*JavascriptVM, error) {
 
 	// vm.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
+	cfile, err := os.ReadFile("common.js")
+	if err != nil {
+		log.Println("unable to read file:", err)
+	}
+
+	commonScript, err := goja.Compile("common.js", string(cfile), true)
+	if err != nil {
+		log.Println("unable to compile script", err)
+	}
+
+	_, err = vm.RunProgram(commonScript)
+	if err != nil {
+		log.Println("unable to run script", commonScript, "error reported was", err)
+	}
+
+	// run the devices assocated script
 	file, err := os.ReadFile(actionFile)
 	if err != nil {
 		log.Println("unable to read file:", err)
@@ -66,8 +94,9 @@ func NewScript(actionFile string) (*JavascriptVM, error) {
 	if err != nil {
 		log.Println("unable to run script", actionScript, "error reported was", err)
 	}
+	fmt.Println(">>>", vm.GlobalObject())
 
-	js.runtime = vm
+	// js.runtime = vm.
 	return &js, nil
 
 }

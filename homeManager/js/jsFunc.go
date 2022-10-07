@@ -3,6 +3,7 @@ package js
 import (
 	"errors"
 	"log"
+	"net/rpc"
 
 	booltype "server/booltype"
 
@@ -12,7 +13,11 @@ import (
 func (r *JavascriptVM) RunJS(fName string, props goja.Value) (goja.Value, error) {
 	var jsHome jsHome
 
+	if r.runtime == nil {
+		return nil, nil
+	}
 	jsFunction := r.runtime.Get(fName)
+
 	call, ok := goja.AssertFunction(jsFunction)
 	if !ok {
 		// slient ignore as the function dosent exist in javascript
@@ -33,6 +38,22 @@ func (r *JavascriptVM) RunJS(fName string, props goja.Value) (goja.Value, error)
 	}
 
 	return result, err
+}
+
+func (r *JavascriptVM) NewPlugin(client *rpc.Client, data map[string]interface{}) {
+	// projectName := ""
+
+	// for name, v := range data {
+	// 	switch name {
+	// 	case "name":
+	// 		projectName = v.(string)
+	// 	}
+	// 	fmt.Println("name", name, v)
+	// }
+
+	// if len(projectName) > 0 {
+	// 	globalPlugins[projectName] = *client
+	// }
 }
 
 func mapToJsSwitch(prop map[string]interface{}) (jsSwitch, error) {

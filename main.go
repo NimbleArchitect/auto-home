@@ -55,6 +55,7 @@ func main() {
 
 	www.LoadSystem()
 
+	homeMgr.StartPlugins()
 	homeMgr.RunStartScript()
 
 	// for _, v := range homeMgr.GetDevices() {
