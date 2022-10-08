@@ -1,6 +1,8 @@
 package js
 
 import (
+	"fmt"
+	"net/rpc"
 	"strings"
 	"time"
 )
@@ -14,9 +16,26 @@ const (
 type jsHome struct {
 	devices            map[string]jsDevice
 	groups             map[string]jsGroup
+	pluginList         map[string]*rpc.Client
 	StopProcessing     int
 	GroupProcessing    int
 	ContinueProcessing int
+}
+
+func (d *jsHome) Plugin(name string) jsPlugin {
+
+	for val, rpc := range d.pluginList {
+		// fmt.Println(">> plugin", val)
+		if val == name {
+			fmt.Println(">> setting plugin", val)
+			return jsPlugin{
+				client: rpc,
+				name:   name,
+			}
+		}
+	}
+
+	return jsPlugin{}
 }
 
 func (d *jsHome) GetDeviceByName(name string) jsDevice {

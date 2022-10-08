@@ -29,7 +29,7 @@ type Manager struct {
 	chActiveVM chan int
 
 	compiledScripts js.CompiledScripts
-	plugins         map[string]rpc.Client
+	plugins         map[string]*rpc.Client
 
 	scriptPath string
 }
@@ -52,6 +52,7 @@ func NewManager(recordHistory bool, maxHistory int, preAllocateVMs int, scriptPa
 		MaxVMCount:    preAllocateVMs,
 		chActiveVM:    make(chan int, preAllocateVMs),
 		scriptPath:    scriptPath,
+		plugins:       make(map[string]*rpc.Client),
 	}
 
 	return &m
@@ -140,6 +141,7 @@ func (m *Manager) initVMs() {
 			for _, v := range m.groups {
 				js.SetGroup(v.Id, v.Name, v.Groups, v.Devices)
 			}
+
 			m.activeVMs = append(m.activeVMs, js)
 			m.chActiveVM <- i
 		}
@@ -148,6 +150,33 @@ func (m *Manager) initVMs() {
 	if len(m.activeVMs) != m.MaxVMCount {
 		log.Println("error unable to start enough javascript instances")
 	}
+
+}
+
+func (m *Manager) ReloadVMs() {
+
+	log.Println("reloading javascript VMs, please wait")
+	for {
+		count := 0
+		for _, v := range m.activeVMs {
+			if v != nil {
+				count++
+				break
+			}
+		}
+		if count == 0 {
+			break
+		}
+
+		_, id := m.GetNextVM()
+		m.activeVMs[id] = nil
+	}
+
+	m.activeVMs = nil
+
+	m.initVMs()
+
+	log.Println("reload complete")
 
 }
 
@@ -193,6 +222,13 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 		// save the current state of all devices
 		err := m.SaveState(vm)
 		_ = err
+
+		// register plugins
+		// fmt.Println("10>>", m.plugins)
+		for n, v := range m.plugins {
+			vm.NewPlugin(n, v)
+		}
+
 		// lookup changes, trigger change notifications, what am I supposed
 		//  to trigger and how am I supposed to trigger it???
 
@@ -297,10 +333,10 @@ func (m *Manager) runStartScript() {
 }
 
 func (m *Manager) StartPlugins() {
-	// go func() {
-	// 	m.startPluginManager()
-	// 	m.startAllPlugins()
-	// }()
+	go func() {
+		m.startPluginManager()
+		// m.startAllPlugins()
+	}()
 }
 
 // func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {

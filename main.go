@@ -45,7 +45,9 @@ func main() {
 	evtMgr := event.NewManager(200, 50)
 
 	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath)
+
 	homeMgr.LoadSystem()
+	homeMgr.StartPlugins()
 
 	www := webHandle.Handler{
 		EventManager: evtMgr,
@@ -56,7 +58,6 @@ func main() {
 
 	www.LoadSystem()
 
-	homeMgr.StartPlugins()
 	// homeMgr.runStartScript()
 
 	// for _, v := range homeMgr.GetDevices() {
@@ -77,9 +78,16 @@ func main() {
 	// start plugins??
 	//
 
-	time.Sleep(30 * time.Second)
+	// temporary, used for testing
+	if true == false {
+		time.Sleep(30 * time.Second)
 
-	homeMgr.SaveSystem()
+		homeMgr.ReloadVMs()
+		time.Sleep(30 * time.Second)
+
+		homeMgr.SaveSystem()
+	}
+
 	// TEMPORARY: force close the program after timeout
 	time.Sleep(3000 * time.Second)
 

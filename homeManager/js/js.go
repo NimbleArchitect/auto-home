@@ -2,6 +2,7 @@ package js
 
 import (
 	"log"
+	"net/rpc"
 	"time"
 
 	"github.com/dop251/goja"
@@ -14,6 +15,7 @@ type JavascriptVM struct {
 	groupCode   map[string]*goja.Object
 	groups      map[string]jsGroup
 	userCode    map[string]*goja.Object
+	pluginList  map[string]*rpc.Client
 	// users      map[string]jsUser
 	Updater DeviceUpdator
 }

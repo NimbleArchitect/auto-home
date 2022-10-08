@@ -2,6 +2,7 @@ package js
 
 import (
 	"log"
+	"net/rpc"
 	"os"
 	"strings"
 
@@ -13,12 +14,19 @@ type CompiledScripts struct {
 }
 
 func loadScript(filename string) *goja.Program {
+	var prog *goja.Program
+	var err error
+
 	cfile, err := os.ReadFile(filename)
 	if err != nil {
 		log.Println("unable to read file:", err)
 	}
 
-	prog, err := goja.Compile(filename, ";(function () {"+string(cfile)+"\n})", true)
+	if strings.HasSuffix(filename, "/common.js") {
+		prog, err = goja.Compile(filename, string(cfile), true)
+	} else {
+		prog, err = goja.Compile(filename, ";(function () {"+string(cfile)+"\n})", true)
+	}
 
 	// prog, err := goja.Compile(filename, string(cfile), true)
 	if err != nil {
@@ -40,6 +48,7 @@ func (c *CompiledScripts) NewVM() (*JavascriptVM, error) {
 		deviceState: make(map[string]jsDevice),
 		groupCode:   make(map[string]*goja.Object),
 		groups:      make(map[string]jsGroup),
+		pluginList:  make(map[string]*rpc.Client),
 	}
 
 	err := runtime.Set("console", console)
@@ -73,7 +82,8 @@ func (c *CompiledScripts) NewVM() (*JavascriptVM, error) {
 					log.Println("script error", err)
 				}
 			} else {
-				log.Println("internal: not a function")
+				// TODO: should this be enabled?
+				// log.Println("internal: not a function")
 			}
 		}
 	}
