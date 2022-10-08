@@ -124,9 +124,9 @@ func (c *AhClient) Connect(token string) {
 		log.Println(err)
 		return
 	}
-	fmt.Println(r.StatusCode)
+	fmt.Println(">>", r.StatusCode)
 	c.sessionId = r.Header.Get("session")
-	fmt.Println("session:", c.sessionId)
+	fmt.Println(">> session:", c.sessionId)
 }
 
 func (c *AhClient) RegisterDevice(device *Device) {
@@ -178,7 +178,7 @@ func (c *AhClient) RegisterHub(hub *Hub) {
 	}
 
 	if r.StatusCode == 500 {
-		fmt.Println("httpStatus:", r.Status)
+		fmt.Println(">> httpStatus:", r.Status)
 		os.Exit(1)
 	}
 
@@ -241,11 +241,11 @@ func (c *AhClient) startListener(ready *chan bool, eventAction chan int, callbac
 	go func() {
 		log.Println("starting scanner")
 		for {
-			fmt.Println(c.address + "/actions/" + c.uuid)
+			fmt.Println("connecting to", c.address+"/actions/"+c.uuid)
 			out, err := c.makeRequest(c.address+"/actions/"+c.uuid, http.MethodGet, "")
 
 			if err != nil {
-				fmt.Println("!>", err)
+				fmt.Println("unable to connect", err)
 			}
 
 			scanner := bufio.NewScanner(out.Body)
@@ -309,7 +309,7 @@ func (c *AhClient) startListener(ready *chan bool, eventAction chan int, callbac
 	}()
 
 	<-c.done
-	fmt.Println("listen finished")
+	fmt.Println(">> listen finished")
 }
 
 func (c *AhClient) SendEvent(deviceid string, evt event) error {

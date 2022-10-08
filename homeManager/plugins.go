@@ -1,8 +1,6 @@
 package home
 
-import (
-	"fmt"
-)
+import "log"
 
 const SockAddr = "/tmp/rpc.sock"
 
@@ -40,20 +38,6 @@ func (m *Manager) startPluginManager() {
 }
 
 func (m *Manager) startAllPlugins() {
-	fmt.Println("starting plungins")
-
-}
-
-func buildObject() {
-
-	// Animal := vm.ToValue(func(call goja.ConstructorCall) *goja.Object {
-	// 	this := call.This
-	// 	this.Set(`name`, call.Argument(0))
-	// 	this.Set(`eat`, func(call goja.FunctionCall) goja.Value {
-	// 		this := call.This.(*goja.Object)
-	// 		return vm.ToValue(this.Get(`name`).String() + ` eats`)
-	// 	})
-	// 	return nil
-	// }).(*goja.Object)
+	log.Println("starting plungins")
 
 }

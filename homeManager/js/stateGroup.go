@@ -1,6 +1,6 @@
 package js
 
-// NewDevice initilises a new StateDevice object
+// SetGroup initilises a new jsGroup object
 func (r *JavascriptVM) SetGroup(id string, name string, groups []string, devices []string) {
 
 	r.groups[id] = jsGroup{

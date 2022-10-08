@@ -68,7 +68,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// h.addDeviceActionList(newUuid)
-	fmt.Println("success")
+	log.Println("registration successful")
 	w.Write([]byte((`{"result": {"status":"ok","msg":""}}\n`)))
 
 }
@@ -132,7 +132,7 @@ func (h *Handler) callV1api(w http.ResponseWriter, r *http.Request, elements []s
 		if !ok {
 			return
 		}
-		fmt.Println("session id:", newSession)
+		fmt.Println(">> session id:", newSession)
 		w.Header().Set("session", newSession)
 		w.Write([]byte(``))
 		// TODO: load js script and call onConnection function
@@ -144,7 +144,7 @@ func (h *Handler) callV1api(w http.ResponseWriter, r *http.Request, elements []s
 	sessionid := r.Header.Get("session")
 	clientInfo, ok := h.lookupSessionClient(sessionid)
 	if !ok {
-		fmt.Println("bad session", clientInfo)
+		log.Println("bad session", clientInfo)
 		return
 	}
 

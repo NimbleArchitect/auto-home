@@ -1,5 +1,5 @@
 
-function server_onStart() {
+function server_onstart() {
     // home.sendMessage("server started")
 }
 

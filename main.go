@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -23,7 +22,8 @@ type settings struct {
 	PublicPath    string
 	RecordHistory bool
 	MaxHistory    int
-	Maxvms        int
+	AllocateVMs   int
+	ScriptPath    string
 }
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 
 	jsonFile, err := os.Open("config.json")
 	if err != nil {
-		fmt.Println(err)
+		log.Println("unable to open config.json", err)
 	}
 	defer jsonFile.Close()
 
@@ -44,7 +44,7 @@ func main() {
 
 	evtMgr := event.NewManager(200, 50)
 
-	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.Maxvms)
+	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath)
 	homeMgr.LoadSystem()
 
 	www := webHandle.Handler{
@@ -57,7 +57,7 @@ func main() {
 	www.LoadSystem()
 
 	homeMgr.StartPlugins()
-	// homeMgr.RunStartScript()
+	// homeMgr.runStartScript()
 
 	// for _, v := range homeMgr.GetDevices() {
 	// 	www.AddDeviceActionList(v.ActionId)

@@ -25,7 +25,7 @@ func (h *Handler) regHubList(d jsonHub, clientId string) error {
 		}
 	}
 
-	fmt.Println("current-devices:", h.HomeManager.GetDevices())
+	fmt.Println(">> current-devices:", h.HomeManager.GetDevices())
 	return h.HomeManager.AddHub(n)
 }
 

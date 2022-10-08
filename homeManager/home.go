@@ -30,6 +30,8 @@ type Manager struct {
 
 	compiledScripts js.CompiledScripts
 	plugins         map[string]rpc.Client
+
+	scriptPath string
 }
 
 type eventHistory struct {
@@ -38,7 +40,7 @@ type eventHistory struct {
 	Properties []map[string]interface{}
 }
 
-func NewManager(recordHistory bool, maxHistory int, maxVMs int) *Manager {
+func NewManager(recordHistory bool, maxHistory int, preAllocateVMs int, scriptPath string) *Manager {
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
 		max:  maxHistory,
@@ -47,8 +49,9 @@ func NewManager(recordHistory bool, maxHistory int, maxVMs int) *Manager {
 	m := Manager{
 		RecordHistory: recordHistory,
 		eventHistory:  &eventProc,
-		MaxVMCount:    maxVMs,
-		chActiveVM:    make(chan int, maxVMs),
+		MaxVMCount:    preAllocateVMs,
+		chActiveVM:    make(chan int, preAllocateVMs),
+		scriptPath:    scriptPath,
 	}
 
 	return &m
@@ -121,51 +124,19 @@ func (m *Manager) LoadSystem() {
 		}
 	}
 
-	// file, err = os.ReadFile("actions.json")
-	// if !errors.Is(err, os.ErrNotExist) {
-	// 	if err != nil {
-	// 		log.Panic("unable to read actions.json ", err)
-	// 	}
-	// 	err = json.Unmarshal(file, &m.actions)
-	// 	if err != nil {
-	// 		log.Panic("unable to read previous system state ", err)
-	// 	}
-	// }
-
 	m.initVMs()
 }
-
-// func (m *Manager) initActions() {
-// 	if len(m.actions) == 0 {
-// 		m.actions = make(map[string]Action)
-// 		return
-// 	}
-
-// 	for deviceid, v := range m.actions {
-// 		actionFile := v.Location
-// 		log.Println("loading script", actionFile, "for device", deviceid)
-// 		vm, err := js.NewScript(actionFile)
-// 		if err != nil {
-// 			log.Println(err)
-// 		}
-
-// 		newAction := Action{
-// 			jsvm: vm,
-// 		}
-
-// 		m.actions[deviceid] = newAction
-// 	}
-// }
 
 func (m *Manager) initVMs() {
 	// fmt.Println("1>>", count)
 
-	m.compiledScripts = js.LoadAllScripts("./scripts/")
+	m.compiledScripts = js.LoadAllScripts(m.scriptPath)
 
 	for i := 0; i < m.MaxVMCount; i++ {
+		// start the preallocated javascrip VMs
 		js, err := m.compiledScripts.NewVM()
 		if err == nil {
-			// Set the group properties, this is not expected to change very oftern so we run it during vm creation
+			// Set the group properties, this is not expected to change very often so we run it during vm creation
 			for _, v := range m.groups {
 				js.SetGroup(v.Id, v.Name, v.Groups, v.Devices)
 			}
@@ -313,13 +284,14 @@ func (m *Manager) runStartScript() {
 
 	log.Println("loading script server.js")
 	// vm, err := js.NewScript("server.js")
-	code := js.LoadAllScripts("scripts/")
+	code := js.LoadAllScripts(m.scriptPath)
 	vm, err := code.NewVM()
 
 	if err != nil {
 		log.Println(err)
 	} else {
-		vm.RunJS("server", "server_onStart", goja.Undefined())
+		svr := "server"
+		vm.RunJS(svr, js.BuildOnAction(svr, js.StrOnStart), goja.Undefined())
 	}
 
 }

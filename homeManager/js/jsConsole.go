@@ -2,6 +2,7 @@ package js
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 )
@@ -11,7 +12,7 @@ type jsConsole struct {
 }
 
 func (d *jsConsole) Log(s ...string) {
-	fmt.Println(strings.Join(s, " "))
+	log.Println(strings.Join(s, " "))
 }
 
 func (d *jsConsole) StartTimer() {
@@ -20,5 +21,5 @@ func (d *jsConsole) StartTimer() {
 
 func (d *jsConsole) StopTimer() {
 	elapsed := time.Since(d.start)
-	fmt.Printf("\n\ntime taken %s\n\n", elapsed)
+	fmt.Printf("\ntime taken %s\n", elapsed)
 }
