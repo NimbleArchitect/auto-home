@@ -28,23 +28,24 @@ func (m *Manager) startPluginManager() {
 
 	for {
 		incoming, _ := l.Accept()
-		// fmt.Println(">> recieved plugin connection")
-		client := rpc.NewClient(incoming)
+		go func() {
+			// fmt.Println(">> recieved plugin connection")
+			client := rpc.NewClient(incoming)
 
-		args := make(map[string]interface{})
-		// args["msg"] = "heelo world"
+			args := make(map[string]interface{})
 
-		//this will store returned result
-		var result Result
+			//this will store returned result
+			var result Result
 
-		client.Call("Client.RoleCall", args, &result)
+			client.Call("Client.RoleCall", args, &result)
 
-		if result.Ok {
-			name := result.Data["name"].(string)
-			log.Println("allowing plugin", name)
-			m.plugins[name] = client
+			if result.Ok {
+				name := result.Data["name"].(string)
+				log.Println("allowing plugin", name)
+				m.plugins[name] = client
 
-		}
+			}
+		}()
 	}
 }
 

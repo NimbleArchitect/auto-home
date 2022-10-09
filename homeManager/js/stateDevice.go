@@ -53,8 +53,8 @@ func (r *StateDevice) AddDial(id string, name string, value int, min int, max in
 func (r *StateDevice) AddSwitch(id string, name string, value bool, label string) {
 	r.propSwitch[id] = jsSwitch{
 		Name:     name,
-		Value:    value,
-		label:    label,
+		state:    value,
+		Value:    label,
 		previous: label,
 	}
 }

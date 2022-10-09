@@ -43,7 +43,11 @@ func BuildOnAction(values ...string) string {
 func runAsThread(obj goja.Value, val goja.Value) {
 	call, ok := goja.AssertFunction(obj)
 	if ok {
-		go call(goja.Undefined(), val)
+		if val == nil {
+			go call(goja.Undefined())
+		} else {
+			go call(goja.Undefined(), val)
+		}
 	} else {
 		log.Println("thread call not a function")
 	}
@@ -61,8 +65,8 @@ func mapToJsSwitch(prop map[string]interface{}) (jsSwitch, error) {
 
 	if b, ok := prop["value"]; ok {
 		tmpBool.Set(b.(string))
-		swi.label = tmpBool.String()
-		swi.Value = tmpBool.GetBool()
+		swi.Value = tmpBool.String()
+		swi.state = tmpBool.GetBool()
 	} else {
 		return jsSwitch{}, errors.New("missing value")
 	}

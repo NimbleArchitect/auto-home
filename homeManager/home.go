@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/rpc"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -100,6 +101,27 @@ func (m *Manager) LoadSystem() {
 		err = json.Unmarshal(file, &m.devices)
 		if err != nil {
 			log.Panic("unable to read previous system state ", err)
+		}
+	}
+
+	file, err = os.ReadFile("virtual.json")
+	if !errors.Is(err, os.ErrNotExist) {
+		if err != nil {
+			log.Panic("unable to read virtual.json ", err)
+		}
+		var virt map[string]Device
+		err = json.Unmarshal(file, &virt)
+		if err != nil {
+			log.Panic("unable to read previous system state ", err)
+		}
+		for n, v := range virt {
+			if !strings.HasPrefix(n, "virtual-") {
+				log.Println("non virtual device found in virtual devices")
+				continue
+			}
+			if _, ok := m.devices[n]; !ok {
+				m.devices[n] = v
+			}
 		}
 	}
 

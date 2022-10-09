@@ -44,18 +44,18 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 			log.Printf("processing %s property: %s", val.(string), name)
 			switch val.(string) {
 			case "switch":
-				oldValue := r.deviceState[deviceid].propSwitch[name].Value
+				oldValue := r.deviceState[deviceid].propSwitch[name].state
 
 				swi, err := mapToJsSwitch(prop)
 				if err != nil {
 					log.Println(err)
 				} else {
-					_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(swi.label))
+					_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(swi.Value))
 					if err != nil {
 						log.Println(err)
 					}
 
-					if oldValue != swi.Value {
+					if oldValue != swi.state {
 						dev.propSwitch[name] = swi
 					}
 					r.deviceState[deviceid].propSwitch[name] = swi
@@ -136,13 +136,13 @@ func (r *JavascriptVM) processOnChange(deviceid string, timestamp time.Time, pro
 
 	for name, swi := range dev.propSwitch {
 		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(swi.label))
+		_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(swi.Value))
 		if err != nil {
 			log.Println(err)
 		}
 		// now everything has finished we can update the device props
 		// save value to device state
-		err = r.Updater.UpdateSwitch(deviceid, name, swi.label)
+		err = r.Updater.UpdateSwitch(deviceid, name, swi.Value)
 		if err != nil {
 			log.Println("unable to update device state:", err)
 		}
@@ -202,6 +202,10 @@ func (r *JavascriptVM) processGroupChange(deviceid string, timestamp time.Time, 
 					log.Println(err)
 				} else {
 					// r.runtime.ToValue(val).ToInteger()
+					if val == nil {
+						continue
+					}
+
 					continueFlag := r.runtime.ToValue(val).ToInteger()
 					if continueFlag == FLAG_STOPPROCESSING {
 						return int(continueFlag)

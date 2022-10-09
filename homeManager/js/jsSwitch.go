@@ -4,8 +4,8 @@ import "log"
 
 type jsSwitch struct {
 	Name     string
-	Value    bool
-	label    string
+	Value    string //new .state, old .label
+	state    bool   //old .Value
 	previous string
 }
 
@@ -27,7 +27,7 @@ func (d *jsSwitch) Type() string {
 }
 
 func (d *jsSwitch) AsBool(name string) bool {
-	return d.Value
+	return d.state
 }
 
 func (d *jsSwitch) Last(x int) interface{} {

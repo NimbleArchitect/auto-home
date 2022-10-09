@@ -1,7 +1,7 @@
 {
     "virtual-randomid": {
         "Id": "virtual-randomid",
-        "Name": "Alarm",
+        "Name": "alarm",
         "Description": "",
         "ClientId": "virtual.alarm",
         "Help": "notset",
@@ -9,7 +9,7 @@
             "state": {
                 "Name": "state",
                 "Description": "alarm state, on or off",
-                "Value": "off",
+                "Value": "on",
                 "Previous": "off",
                 "Mode": 5
             }
