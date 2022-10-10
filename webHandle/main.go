@@ -28,6 +28,17 @@ type Handler struct {
 	Address      string
 }
 
+func (h *Handler) Shutdown() {
+	h.lockActionList.Lock()
+	for _, v := range h.deviceActionList {
+		if v.inuse {
+			v.done <- true
+		}
+	}
+
+	h.lockActionList.Unlock()
+}
+
 func (h *Handler) unRegisterClientAction(id string) {
 
 	if val, ok := h.readActionID(id); ok {

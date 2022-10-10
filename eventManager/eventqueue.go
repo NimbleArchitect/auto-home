@@ -42,6 +42,11 @@ func NewManager(eventQueueLen int, bufferLen int) *Manager {
 	return &m
 }
 
+func (e *Manager) Shutdown() {
+	e.closeEventManager <- true
+	e.closeEventLoop <- true
+}
+
 func (e *Manager) EventManager() {
 	var eventCount, headPos int
 
@@ -69,12 +74,15 @@ func (e *Manager) EventManager() {
 			eventCount -= 1
 
 		case <-e.closeEventManager:
+			log.Println("stopping EventManager")
 			return
 		}
 	}
 }
 
 func (e *Manager) AddEvent(event EventMsg) {
+	// we reset the timestamp to the point it enters the queue
+	event.Timestamp = time.Now()
 	e.chAdd <- event
 }
 
@@ -111,6 +119,7 @@ func (e *Manager) EventLoop(looper EventLoop) {
 				e.chRemove <- evtid
 			}()
 		case <-e.closeEventLoop:
+			log.Println("stopping EventLoop")
 			return
 		}
 	}

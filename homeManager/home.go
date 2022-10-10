@@ -3,6 +3,7 @@ package home
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/rpc"
 	"os"
@@ -57,6 +58,17 @@ func NewManager(recordHistory bool, maxHistory int, preAllocateVMs int, scriptPa
 	}
 
 	return &m
+}
+
+func (m *Manager) Start() {
+	m.LoadSystem()
+	m.initVMs()
+	m.StartPlugins()
+
+	// TODO: need a channel to signal when the plugins have finished loading
+	// time.Sleep(4 * time.Second)
+	// m.runStartScript()
+
 }
 
 func (m *Manager) SaveSystem() {
@@ -147,7 +159,6 @@ func (m *Manager) LoadSystem() {
 		}
 	}
 
-	m.initVMs()
 }
 
 func (m *Manager) initVMs() {
@@ -334,31 +345,38 @@ func (m *Manager) Shutdown() {
 		v.Write(`{"Method": "shutdown"}`)
 	}
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(1 * time.Second)
 }
 
 func (m *Manager) runStartScript() {
-	// TODO: needs to be called during startup and needs to run the server onsart function
+	// called during startup to run the server onstart function
 
-	log.Println("loading script server.js")
-	// vm, err := js.NewScript("server.js")
-	code := js.LoadAllScripts(m.scriptPath)
-	vm, err := code.NewVM()
+	vm, id := m.GetNextVM()
+	defer func() { m.chActiveVM <- id }()
 
+	svr := "home"
+	v, err := vm.RunJS(svr, js.StrOnStart, goja.Undefined())
 	if err != nil {
-		log.Println(err)
-	} else {
-		svr := "server"
-		vm.RunJS(svr, js.BuildOnAction(svr, js.StrOnStart), goja.Undefined())
+		fmt.Println(">>", err)
 	}
-
+	fmt.Println("!>", v)
 }
 
 func (m *Manager) StartPlugins() {
-	go func() {
-		m.startPluginManager()
-		// m.startAllPlugins()
-	}()
+
+	done := make(chan bool)
+	// TODO: this needs to wait for the manager to start before starting the plugins, as im hitting some
+	//  kind of race which prevents the plugin from connecting before I call it
+	go m.startPluginManager(done)
+
+	<-done
+
+	// go func() {
+	// 	time.Sleep(2 * time.Second)
+	// go m.startAllPlugins(done)
+	// // }()
+	// <-done
+	fmt.Println("plugins started")
 }
 
 // func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {

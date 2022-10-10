@@ -12,6 +12,10 @@ func (h *Handler) showPage(w http.ResponseWriter, r *http.Request, elements []st
 		h.FsHandle.ServeHTTP(w, r)
 		// fmt.Println(".>>")
 		// h.streamFile(w, r, elements)
+	case "reload":
+		// TODO: this needs moving/fixing
+		h.HomeManager.ReloadVMs()
+
 	default:
 		w.Write([]byte("index page"))
 	}

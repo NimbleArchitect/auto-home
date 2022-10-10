@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/rpc"
 	"os"
+	"os/exec"
+	"time"
 )
 
 const SockAddr = "/tmp/rpc.sock"
@@ -15,8 +17,8 @@ type Result struct {
 	Data map[string]interface{}
 }
 
-func (m *Manager) startPluginManager() {
-	fmt.Println("starting plungin manager")
+func (m *Manager) startPluginManager(done chan bool) {
+	fmt.Println("starting plugin manager")
 	if err := os.RemoveAll(SockAddr); err != nil {
 		log.Fatal(err)
 	}
@@ -25,6 +27,8 @@ func (m *Manager) startPluginManager() {
 	if e != nil {
 		log.Fatal("listen error:", e)
 	}
+
+	done <- true
 
 	for {
 		incoming, _ := l.Accept()
@@ -49,9 +53,19 @@ func (m *Manager) startPluginManager() {
 	}
 }
 
-func (m *Manager) startAllPlugins() {
+func (m *Manager) startAllPlugins(done chan bool) {
 	log.Println("starting plungins")
 
+	cmd := exec.Command("plugins/telegram/telegram")
+	cmd.Stdout = os.Stdout
+	err := cmd.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+	time.Sleep(1 * time.Second)
+	done <- true
+	cmd.Wait()
+	log.Printf("Just ran subprocess %d, exiting\n", cmd.Process.Pid)
 }
 
 // function (m *Manager) CallPlugin(pluginname string, args string) {

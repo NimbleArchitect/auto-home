@@ -29,13 +29,13 @@ type serverWriter struct {
 func (s *serverWriter) WriteFlush(text string) (int, error) {
 	bytesOut, err := s.Write(text)
 
-	log.Println("HTTP response flush")
+	log.Println("http response flush")
 	s.flusher.Flush()
 	return bytesOut, err
 }
 
 func (s *serverWriter) Write(text string) (int, error) {
-	log.Println("HTTP response Write:", text)
+	log.Println("http response Write:", text)
 	bytesOut, err := s.responseWriter.Write([]byte(text))
 
 	return bytesOut, err

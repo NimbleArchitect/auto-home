@@ -196,7 +196,7 @@ func (r *JavascriptVM) processGroupChange(deviceid string, timestamp time.Time, 
 		for _, v := range group.devices {
 			// fmt.Println("6>>", v, deviceid)
 			if v == deviceid {
-				// TODO: how to I run the group scrip functions??
+				// run the group script function
 				val, err := r.RunJSGroupAction(group.Id, "onchange", props)
 				if err != nil {
 					log.Println(err)

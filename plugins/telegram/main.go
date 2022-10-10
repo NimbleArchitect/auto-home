@@ -123,7 +123,7 @@ func main() {
 	svr := rpc.NewServer()
 	svr.Register(arith)
 	svr.Register(reg)
-
+	fmt.Println("telegram connected")
 	svr.ServeConn(conn)
 
 	time.Sleep(5 * time.Second)

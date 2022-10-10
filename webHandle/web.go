@@ -25,7 +25,7 @@ type clientItem struct {
 
 func (h *Handler) getSessionWithToken(token string) (string, bool) {
 	// check if token exists
-	// log.Println("recieved token:", token)
+	log.Println("recieved token:", token)
 	if len(h.sessionTable) == 0 {
 		h.sessionTable = make(map[string]sessionItem)
 		h.lockSessionTable = sync.RWMutex{}

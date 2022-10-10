@@ -2,15 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"runtime"
 	event "server/eventManager"
 	home "server/homeManager"
 	webHandle "server/webHandle"
+	"syscall"
 	"time"
 
 	"github.com/lucas-clemente/quic-go"
@@ -46,15 +49,35 @@ func main() {
 
 	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath)
 
-	homeMgr.LoadSystem()
-	homeMgr.StartPlugins()
-
 	www := webHandle.Handler{
 		EventManager: evtMgr,
 		HomeManager:  homeMgr,
 		FsHandle:     http.FileServer(http.Dir(conf.PublicPath)),
 		Address:      conf.HostAddress,
 	}
+
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		// syscall.SIGQUIT,
+	)
+
+	go func() {
+		s := <-sigc
+		fmt.Println(" caught signal", s.String(), "closing connections, please wait")
+
+		www.SaveSystem()
+		www.Shutdown()
+		evtMgr.Shutdown()
+		homeMgr.SaveSystem()
+		homeMgr.Shutdown()
+
+		done <- true
+	}()
+
+	homeMgr.Start()
 
 	www.LoadSystem()
 
@@ -89,11 +112,11 @@ func main() {
 	}
 
 	// TEMPORARY: force close the program after timeout
-	time.Sleep(3000 * time.Second)
+	// time.Sleep(3000 * time.Second)
 
-	homeMgr.Shutdown()
+	// homeMgr.Shutdown()
 
-	done <- true
+	// done <- true
 
 	<-done
 
