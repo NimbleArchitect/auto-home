@@ -17,6 +17,12 @@ type Result struct {
 	Data map[string]interface{}
 }
 
+func (r *JavascriptVM) NewPlugin(name string, vals *rpc.Client) {
+	fmt.Println(">> add plugin", name, vals)
+	r.pluginList[name] = vals
+
+}
+
 func (d *jsPlugin) Call(funcName string, vars goja.Value) {
 	var result Result
 
