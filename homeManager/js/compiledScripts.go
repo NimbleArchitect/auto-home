@@ -56,7 +56,7 @@ func (c *CompiledScripts) NewVM() (*JavascriptVM, error) {
 		return nil, err
 	}
 
-	err = runtime.Set("thread", runAsThread)
+	err = runtime.Set("thread", vm.runAsThread)
 	if err != nil {
 		return nil, err
 	}

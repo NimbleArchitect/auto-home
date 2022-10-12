@@ -27,6 +27,8 @@ type settings struct {
 	MaxHistory    int
 	AllocateVMs   int
 	ScriptPath    string
+	QueueLen      int
+	BufferLen     int
 }
 
 func main() {
@@ -45,7 +47,7 @@ func main() {
 	var conf settings
 	json.Unmarshal(byteValue, &conf)
 
-	evtMgr := event.NewManager(200, 50)
+	evtMgr := event.NewManager(conf.QueueLen, conf.BufferLen)
 
 	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath)
 

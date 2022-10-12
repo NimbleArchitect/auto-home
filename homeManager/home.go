@@ -213,6 +213,10 @@ func (m *Manager) ReloadVMs() {
 
 }
 
+func (m *Manager) PushVMID(id int) {
+	m.chActiveVM <- id
+}
+
 func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 	tryagain := true
 
@@ -245,7 +249,7 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 	//get next avaliable vm
 	vm, id := m.GetNextVM()
 	// once we have finished we make sure to add the vm id back to the channel list ready for next use
-	defer func() { m.chActiveVM <- id }()
+	defer m.PushVMID(id)
 
 	if vm == nil {
 		log.Println("invalid javascript vm")
@@ -352,7 +356,7 @@ func (m *Manager) runStartScript() {
 	// called during startup to run the server onstart function
 
 	vm, id := m.GetNextVM()
-	defer func() { m.chActiveVM <- id }()
+	defer m.PushVMID(id)
 
 	svr := "home"
 	v, err := vm.RunJS(svr, js.StrOnStart, goja.Undefined())
