@@ -1,19 +1,8 @@
 package home
 
 import (
-	"server/booltype"
 	js "server/homeManager/js"
-)
-
-const (
-	BUTTON = iota
-	DIAL
-	SWITCH
-	TEXT
-
-	RO
-	RW
-	WO
+	"time"
 )
 
 type Hub struct {
@@ -25,20 +14,6 @@ type Hub struct {
 	Devices     []string
 }
 
-type Device struct {
-	Id             string
-	Name           string
-	Description    string
-	ClientId       string
-	Help           string
-	Groups         []group
-	PropertySwitch map[string]SwitchProperty
-	PropertyDial   map[string]DialProperty
-	PropertyButton map[string]ButtonProperty
-	PropertyText   map[string]TextProperty
-	Uploads        []Upload
-}
-
 type group struct {
 	Id          string
 	Name        string
@@ -48,9 +23,15 @@ type group struct {
 	Users       []string
 }
 
-type Upload struct {
+// type Upload struct {
+// 	Name  string
+// 	Alias []string
+// }
+
+type timeoutWindow struct {
 	Name  string
-	Alias []string
+	Prop  string
+	Value int64
 }
 
 type Action struct {
@@ -59,36 +40,13 @@ type Action struct {
 	jsvm     *js.JavascriptVM
 }
 
-type DialProperty struct {
-	Name        string
-	Description string
-	Min         int
-	Max         int
-	Value       int
-	Previous    int
-	Mode        uint
-}
-
-type SwitchProperty struct {
-	Name        string
-	Description string
-	Value       booltype.BoolType
-	Previous    booltype.BoolType
-	Mode        uint
-}
-
-type ButtonProperty struct {
-	Name        string
-	Description string
-	Value       booltype.BoolType
-	Previous    bool
-	Mode        uint
-}
-
-type TextProperty struct {
-	Name        string
-	Description string
-	Value       string
-	Previous    string
-	Mode        uint
+// notInTimeWindow - checks the suppilied time against the properties update window,
+//
+//	returns true if we are outside of the update window
+//	        false all other times
+func notInTimeWindow(time time.Time, propTimeStamp time.Time) bool {
+	if time.Before(propTimeStamp) {
+		return true
+	}
+	return false
 }

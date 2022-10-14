@@ -5,7 +5,7 @@
         "Description": "",
         "ClientId": "virtual.alarm",
         "Help": "notset",
-        "PropertySwitch": {
+        "Switch": {
             "state": {
                 "Name": "state",
                 "Description": "alarm state, on or off",
@@ -14,7 +14,7 @@
                 "Mode": 5
             }
         },
-        "PropertyDial": {
+        "Dial": {
             "brightness": {
                 "Name": "brightness",
                 "Description": "How bright the light is 0-100, anything above 0 turns on the light",

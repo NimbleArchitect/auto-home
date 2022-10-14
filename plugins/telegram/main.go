@@ -50,15 +50,16 @@ func (t *Telegram) SendMessage(args map[string]interface{}, result *Result) erro
 
 	result.Data = make(map[string]interface{})
 
-	fmt.Println("SendMessage called")
+	// fmt.Println("SendMessage called")
 	msg := args["message"].(string)
 
-	fmt.Println(msg)
+	// fmt.Println(msg)
 
 	// Global variables
 	var err error
 	var response *http.Response
 
+	// time.Sleep(5 * time.Second)
 	// Send the message
 	url := "https://api.telegram.org/" + t.conf.BotID + ":" + t.conf.Key + "/sendMessage"
 	body, _ := json.Marshal(map[string]string{
@@ -71,7 +72,7 @@ func (t *Telegram) SendMessage(args map[string]interface{}, result *Result) erro
 		bytes.NewBuffer(body),
 	)
 	if err != nil {
-		fmt.Println(err)
+		// fmt.Println(err)
 		result.Data["error"] = err.Error()
 		return nil
 	}
@@ -82,7 +83,7 @@ func (t *Telegram) SendMessage(args map[string]interface{}, result *Result) erro
 	// Body
 	body, err = ioutil.ReadAll(response.Body)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("err<<", err)
 		result.Data["error"] = err.Error()
 		return nil
 	}

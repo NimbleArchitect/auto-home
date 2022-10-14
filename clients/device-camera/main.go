@@ -60,7 +60,7 @@ func main() {
 
 	err = syscall.Mkfifo(conf.FifoFile, 0666)
 	if err != nil {
-		fmt.Println("unable to create fifo", conf.FifoFile)
+		log.Println("unable to create fifo", conf.FifoFile)
 	}
 	// to open pipe to write
 	// file, err1 := os.OpenFile("tmpPipe", os.O_RDWR, os.ModeNamedPipe)
@@ -69,7 +69,7 @@ func main() {
 	for {
 		file, err := os.OpenFile(conf.FifoFile, os.O_RDONLY, os.ModeNamedPipe)
 		if err != nil {
-			fmt.Println("unable to open file", err)
+			log.Println("unable to open file", err)
 		}
 
 		scanner := bufio.NewScanner(file)
@@ -114,7 +114,7 @@ func main() {
 		}
 	}
 
-	log.Println("!>> got here")
+	fmt.Println("!>> got here")
 	// evt := homeClient.NewEvent()
 
 	// evt.AddDial("hue", 50)

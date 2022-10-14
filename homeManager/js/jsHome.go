@@ -25,7 +25,6 @@ type jsHome struct {
 func (d *jsHome) Plugin(name string) jsPlugin {
 
 	for val, rpc := range d.pluginList {
-		// fmt.Println(">> plugin", val)
 		if val == name {
 			fmt.Println(">> setting plugin", val)
 			return jsPlugin{

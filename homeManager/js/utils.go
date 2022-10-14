@@ -10,15 +10,18 @@ import (
 )
 
 type DeviceUpdator interface {
-	UpdateDial(string, string, int) error
-	UpdateSwitch(string, string, string) error
-	UpdateButton(string, string, string) error
-	UpdateText(string, string, string) error
+	GetNextVM() (*JavascriptVM, int)
+	PushVMID(int)
 
-	GetDialValue(string, string) (int, bool)
-	GetSwitchValue(string, string) (string, bool)
-	GetButtonValue(string, string) (string, bool)
-	GetTextValue(string, string) (string, bool)
+	// UpdateDial(string, string, int) error
+	// UpdateSwitch(string, string, string) error
+	// UpdateButton(string, string, string) error
+	// UpdateText(string, string, string) error
+
+	// GetDialValue(string, string) (int, bool)
+	// GetSwitchValue(string, string) (string, bool)
+	// GetButtonValue(string, string) (string, bool)
+	// GetTextValue(string, string) (string, bool)
 
 	// GetDialHistory()
 
@@ -40,20 +43,38 @@ func BuildOnAction(values ...string) string {
 }
 
 // runAsThread runs the js function as a new thread, this could be dangerous/not thread safe
-func runAsThread(obj goja.Value, val goja.Value) {
-	call, ok := goja.AssertFunction(obj)
-	if ok {
-		if val == nil {
-			go call(goja.Undefined())
+func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
+	go func() {
+		var jsHome jsHome
+		var ok bool
+
+		vm, id := r.Updater.GetNextVM()
+		defer r.Updater.PushVMID(id)
+
+		jsHome.StopProcessing = FLAG_STOPPROCESSING
+		jsHome.ContinueProcessing = FLAG_CONTINUEPROCESSING
+		jsHome.GroupProcessing = FLAG_GROUPPROCESSING
+
+		jsHome.devices = r.deviceState
+		jsHome.pluginList = r.pluginList
+
+		vm.runtime.Set("home", jsHome)
+
+		obj := vm.runtime.Get(function.String())
+		call, ok := goja.AssertFunction(obj)
+		if ok {
+			if value == nil {
+				call(goja.Undefined())
+			} else {
+				call(goja.Undefined(), value)
+			}
 		} else {
-			go call(goja.Undefined(), val)
+			log.Println("thread call not a function")
 		}
-	} else {
-		log.Println("thread call not a function")
-	}
+	}()
 }
 
-func mapToJsSwitch(prop map[string]interface{}) (jsSwitch, error) {
+func MapToJsSwitch(prop map[string]interface{}) (jsSwitch, error) {
 	var swi jsSwitch
 	var tmpBool booltype.BoolType
 
@@ -74,7 +95,7 @@ func mapToJsSwitch(prop map[string]interface{}) (jsSwitch, error) {
 	return swi, nil
 }
 
-func mapToJsDial(prop map[string]interface{}) (jsDial, error) {
+func MapToJsDial(prop map[string]interface{}) (jsDial, error) {
 	var dial jsDial
 
 	if n, ok := prop["name"]; ok {
@@ -97,7 +118,7 @@ func mapToJsDial(prop map[string]interface{}) (jsDial, error) {
 }
 
 // TODO: add button and text props
-func mapToJsButton(prop map[string]interface{}) (jsButton, error) {
+func MapToJsButton(prop map[string]interface{}) (jsButton, error) {
 	var button jsButton
 
 	if n, ok := prop["name"]; ok {
@@ -119,7 +140,7 @@ func mapToJsButton(prop map[string]interface{}) (jsButton, error) {
 	return button, nil
 }
 
-func mapToJsText(prop map[string]interface{}) (jsText, error) {
+func MapToJsText(prop map[string]interface{}) (jsText, error) {
 	var text jsText
 
 	if n, ok := prop["name"]; ok {

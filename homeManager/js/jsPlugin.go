@@ -1,6 +1,7 @@
 package js
 
 import (
+	"fmt"
 	"log"
 	"net/rpc"
 
@@ -25,7 +26,6 @@ func (r *JavascriptVM) NewPlugin(name string, vals *rpc.Client) {
 
 func (d *jsPlugin) Call(funcName string, vars goja.Value) {
 	var result Result
-
 	if d.client != nil {
 		args := make(map[string]interface{})
 		log.Println("calling", d.name+"."+funcName)

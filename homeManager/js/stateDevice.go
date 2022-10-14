@@ -1,5 +1,9 @@
 package js
 
+import (
+	"server/deviceManager"
+)
+
 type StateDevice struct {
 	id         string
 	name       string
@@ -25,8 +29,7 @@ func (r *JavascriptVM) NewDevice(id string, name string) StateDevice {
 
 // SaveDevice adds the StateDevice to the VMs deviceState list
 // making it avaliable to the JS VM
-func (r *JavascriptVM) SaveDevice(dev StateDevice) {
-
+func (r *JavascriptVM) SaveDevice(dev StateDevice, live *deviceManager.Device) {
 	r.deviceState[dev.id] = jsDevice{
 		js:         r,
 		Id:         dev.id,
@@ -35,6 +38,7 @@ func (r *JavascriptVM) SaveDevice(dev StateDevice) {
 		propSwitch: dev.propSwitch,
 		propButton: dev.propButton,
 		propText:   dev.propText,
+		liveDevice: live,
 	}
 }
 

@@ -55,7 +55,7 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	}
 
 	call, ok := goja.AssertFunction(jsFunction)
-	if !ok {
+	if !ok || call == nil {
 		// slient ignore as the function dosent exist in javascript
 		log.Printf("function %s doesn't exist for %s, skipping", fName, deviceid)
 		return nil, nil
@@ -66,7 +66,6 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	jsHome.GroupProcessing = FLAG_GROUPPROCESSING
 
 	jsHome.devices = r.deviceState
-	// fmt.Println("9>>", r.deviceState)
 
 	jsHome.pluginList = r.pluginList
 
@@ -86,29 +85,8 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	return result, err
 }
 
-func (r *JavascriptVM) RunJSGroupAction(groupId string, fnName string, props []map[string]interface{}) (goja.Value, error) {
-	// var dev jsDevice
-
-	log.Println("group action triggered:", groupId, fnName)
-
-	// dev.propSwitch = make(map[string]jsSwitch)
-	// dev.propDial = make(map[string]jsDial)
-	// dev.propButton = make(map[string]jsButton)
-	// dev.propText = make(map[string]jsText)
-
-	// log.Println("state:", m.devices)
-
-	// lookup changes and trigger change notifications
-	out, err := r.RunJS("group/"+groupId, fnName, r.runtime.ToValue(props))
-	if err != nil {
-		log.Println(err)
-	}
-
-	return out, nil
-}
-
 // Process main entry point after a trigger, this allows processin gthe event data
-func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map[string]interface{}) {
+func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList) {
 	var dev jsDevice
 
 	log.Println("event triggered")
@@ -124,9 +102,8 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props []map
 	r.processOnTrigger(deviceid, timestamp, props, &dev)
 
 	// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
-	continueFlag := r.processGroupChange(deviceid, timestamp, props, &dev)
+	continueFlag := r.processGroupChange(deviceid, props)
 	if continueFlag != FLAG_STOPPROCESSING {
-		r.processOnChange(deviceid, timestamp, props, &dev)
+		r.processOnChange(deviceid, &dev)
 	}
-
 }

@@ -1,6 +1,9 @@
 package home
 
-import "log"
+import (
+	"log"
+	deviceManager "server/deviceManager"
+)
 
 type actionsChannel interface {
 	IsOpen() bool
@@ -10,7 +13,10 @@ type actionsChannel interface {
 func (m *Manager) RegisterActionChannel(id string, ch actionsChannel) error {
 	log.Println("registerActionChannel id", id)
 
-	for _, v := range m.FindDeviceWithClientID(id) {
+	// TODO: this might not work
+
+	// for _, v := range m.FindDeviceWithClientID(id) {
+	if len(m.devices.FindDeviceWithClientID(id)) > 0 {
 		// v.Id
 		log.Println("device ID found")
 		if len(m.actionChannel) == 0 {
@@ -18,7 +24,7 @@ func (m *Manager) RegisterActionChannel(id string, ch actionsChannel) error {
 			m.actionChannel = make(map[string]actionsChannel)
 		}
 
-		log.Println("setting channel for device", v.Id)
+		log.Println("setting channel for device")
 		m.actionChannel[id] = ch
 	}
 	return nil
@@ -30,17 +36,17 @@ func (m *Manager) MakeAction(deviceid string, propName string, propType int, val
 	var kind string
 
 	switch propType {
-	case DIAL:
+	case deviceManager.DIAL:
 		kind = "dial"
 		val = value
-	case SWITCH:
+	case deviceManager.SWITCH:
 		kind = "switch"
 		val = "\"" + value + "\""
 		//TODO: add button and text props
-	case BUTTON:
+	case deviceManager.BUTTON:
 		kind = "button"
 		val = "\"" + value + "\""
-	case TEXT:
+	case deviceManager.TEXT:
 		kind = "text"
 		val = "\"" + value + "\""
 

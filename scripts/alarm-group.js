@@ -13,7 +13,7 @@ set("group/alarm", {
         console.log("4>>" + (home.getDeviceByName("alarm").get("state").asBool() == true))
         console.log("5>>")
 
-        thread(sendmessage,"++++++++++TESTY MESSAGE++++++++++")
+        thread("sendmessage","++++++++++TESTY MESSAGE++++++++++")
         // home.sleep(5)
         if (home.getDeviceByName("alarm").get("state").asBool() == true) {
             // fire alarm

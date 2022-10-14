@@ -7,10 +7,10 @@ import (
 	"log"
 	"net/rpc"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
+	deviceManager "server/deviceManager"
 	js "server/homeManager/js"
 
 	"github.com/dop251/goja"
@@ -19,12 +19,17 @@ import (
 type Manager struct {
 	RecordHistory bool
 	eventHistory  *historyProcessor //TODO: finish history capture
-	devices       map[string]Device
-	hubs          map[string]Hub
+	// devices       map[string]Device
+	devices *deviceManager.Manager
+	hubs    map[string]Hub
 	// events  event.Manager
 	actionChannel map[string]actionsChannel
 	groups        map[string]group
+	window        []timeoutWindow
 	// actions       map[string]Action
+
+	hubClient    map[string]*lockClient
+	deviceClient map[string]*lockClient
 
 	MaxVMCount int
 	activeVMs  []*js.JavascriptVM
@@ -34,6 +39,11 @@ type Manager struct {
 	plugins         map[string]*rpc.Client
 
 	scriptPath string
+}
+
+type lockClient struct {
+	lock sync.RWMutex
+	id   string
 }
 
 type eventHistory struct {
@@ -55,6 +65,7 @@ func NewManager(recordHistory bool, maxHistory int, preAllocateVMs int, scriptPa
 		chActiveVM:    make(chan int, preAllocateVMs),
 		scriptPath:    scriptPath,
 		plugins:       make(map[string]*rpc.Client),
+		devices:       deviceManager.New(),
 	}
 
 	return &m
@@ -72,72 +83,54 @@ func (m *Manager) Start() {
 }
 
 func (m *Manager) SaveSystem() {
-	log.Println("saving system configuration")
+	// log.Println("saving system configuration")
 
-	file, err := json.Marshal(m.devices)
-	if err != nil {
-		log.Println("unable to serialize devices", err)
-	}
-	err = os.WriteFile("devices.json", file, 0640)
-	if err != nil {
-		log.Println("unable to write devices.json", err)
-	}
+	// file, err := json.Marshal(m.devices)
+	// if err != nil {
+	// 	log.Println("unable to serialize devices", err)
+	// }
+	// err = os.WriteFile("devices.json", file, 0640)
+	// if err != nil {
+	// 	log.Println("unable to write devices.json", err)
+	// }
 
-	file, err = json.Marshal(m.hubs)
-	if err != nil {
-		log.Println("unable to serialize hubs", err)
-	}
-	err = os.WriteFile("hubs.json", file, 0640)
-	if err != nil {
-		log.Println("unable to write jubs.json", err)
-	}
+	// file, err = json.Marshal(m.hubs)
+	// if err != nil {
+	// 	log.Println("unable to serialize hubs", err)
+	// }
+	// err = os.WriteFile("hubs.json", file, 0640)
+	// if err != nil {
+	// 	log.Println("unable to write jubs.json", err)
+	// }
 
-	file, err = json.Marshal(m.groups)
-	if err != nil {
-		log.Println("unable to serialize groups", err)
-	}
-	err = os.WriteFile("groups.json", file, 0640)
-	if err != nil {
-		log.Println("unable to write groups.json", err)
-	}
+	// file, err = json.Marshal(m.groups)
+	// if err != nil {
+	// 	log.Println("unable to serialize groups", err)
+	// }
+	// err = os.WriteFile("groups.json", file, 0640)
+	// if err != nil {
+	// 	log.Println("unable to write groups.json", err)
+	// }
+
+	// m.window = append(m.window, timeoutWindow{Name: "n", Prop: "p", Value: 1})
+	// m.window = append(m.window, timeoutWindow{Name: "a", Prop: "r", Value: 2})
+	// file, err = json.Marshal(m.window)
+	// if err != nil {
+	// 	log.Println("unable to serialize timeout windows", err)
+	// }
+	// err = os.WriteFile("window.json", file, 0640)
+	// if err != nil {
+	// 	log.Println("unable to write window.json", err)
+	// }
+
 }
 
 func (m *Manager) LoadSystem() {
 	log.Println("loading system configuration")
 
-	file, err := os.ReadFile("devices.json")
-	if !errors.Is(err, os.ErrNotExist) {
-		if err != nil {
-			log.Panic("unable to read devices.json ", err)
-		}
-		err = json.Unmarshal(file, &m.devices)
-		if err != nil {
-			log.Panic("unable to read previous system state ", err)
-		}
-	}
+	m.devices.Load()
 
-	file, err = os.ReadFile("virtual.json")
-	if !errors.Is(err, os.ErrNotExist) {
-		if err != nil {
-			log.Panic("unable to read virtual.json ", err)
-		}
-		var virt map[string]Device
-		err = json.Unmarshal(file, &virt)
-		if err != nil {
-			log.Panic("unable to read previous system state ", err)
-		}
-		for n, v := range virt {
-			if !strings.HasPrefix(n, "virtual-") {
-				log.Println("non virtual device found in virtual devices")
-				continue
-			}
-			if _, ok := m.devices[n]; !ok {
-				m.devices[n] = v
-			}
-		}
-	}
-
-	file, err = os.ReadFile("hubs.json")
+	file, err := os.ReadFile("hubs.json")
 	if !errors.Is(err, os.ErrNotExist) {
 		if err != nil {
 			log.Panic("unable to read hubs.json ", err)
@@ -159,11 +152,31 @@ func (m *Manager) LoadSystem() {
 		}
 	}
 
+	// file, err = os.ReadFile("window.json")
+	// if !errors.Is(err, os.ErrNotExist) {
+	// 	if err != nil {
+	// 		log.Panic("unable to read window.json ", err)
+	// 	}
+	// 	err = json.Unmarshal(file, &m.window)
+	// 	if err != nil {
+	// 		log.Panic("unable to read previous system state ", err)
+	// 	}
+	// 	for _, v := range m.window {
+
+	// 		if dev, ok := m.devices.Device(v.Name); ok {
+	// 			v.
+	// 			for name, v := range dev.DialNames() {
+	// 				dev.SetDialWindow()
+	// 			}
+
+	// 			dev.SetDialWindow(v.Prop, v.Value)
+	// 		}
+
+	// 	}
+	// }
 }
 
 func (m *Manager) initVMs() {
-	// fmt.Println("1>>", count)
-
 	m.compiledScripts = js.LoadAllScripts(m.scriptPath)
 
 	for i := 0; i < m.MaxVMCount; i++ {
@@ -239,7 +252,7 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 	return nil, 0
 }
 
-// Trigger is called once at a time, with the deviceid
+// Trigger is called one at a time with the deviceid
 func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[string]interface{}) error {
 	log.Println("event triggered")
 	//TODO: call client on trigger, need to work out the client script to run
@@ -261,7 +274,6 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 		_ = err
 
 		// register plugins
-		// fmt.Println("10>>", m.plugins)
 		for n, v := range m.plugins {
 			vm.NewPlugin(n, v)
 		}
@@ -277,11 +289,11 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 
 		// lookup device, trigger device scripts
 		// dev := m.devices[deviceid]
-		// fmt.Println(">>", deviceid)
 
 		// process the event
+		devList := m.verifyMap2jsDevice(deviceid, timestamp, props)
 		vm.Updater = m
-		vm.Process(deviceid, timestamp, props)
+		vm.Process(deviceid, timestamp, devList)
 
 		//now we have finished processing save the event to out history list
 		m.eventHistory.Add(msg)
@@ -313,32 +325,116 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 	return nil
 }
 
+func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props []map[string]interface{}) js.JSPropsList {
+	newdev := js.NewJSDevice()
+
+	dev, ok := m.devices.Device(deviceid)
+	if !ok {
+		return newdev
+	}
+
+	for _, prop := range props {
+		rawName, ok := prop["name"]
+		if !ok {
+			log.Println("recieved property without a name")
+			continue
+		}
+		name := rawName.(string)
+		if val, ok := prop["type"]; ok {
+			log.Printf("processing %s property: %s", val.(string), name)
+			switch val.(string) {
+			case "switch":
+				swi, err := js.MapToJsSwitch(prop)
+				if err != nil {
+					log.Println("map error", err)
+					continue
+				}
+				newdev.AddSwitch(name, swi)
+
+			case "dial":
+				dial, err := js.MapToJsDial(prop)
+				if err != nil {
+					log.Println("map error", err)
+					continue
+				}
+
+				p := dev.Dial(name)
+				// check min and max are within range
+				if dial.Value > p.Max {
+					dial.Value = p.Max
+				}
+				if dial.Value < p.Min {
+					dial.Value = p.Min
+				}
+
+				newdev.AddDial(name, dial)
+
+				// check we are outside of our repeat window
+				//FIXME: this dosent work :(
+				if dev.DialWindow(name, timestamp) {
+					fmt.Println("**>> update allowed")
+				} else {
+					fmt.Println("**>> update blocked")
+				}
+
+			case "button":
+				button, err := js.MapToJsButton(prop)
+				if err != nil {
+					log.Println("map error", err)
+					continue
+				}
+				newdev.AddButton(name, button)
+
+			case "text":
+				text, err := js.MapToJsText(prop)
+				if err != nil {
+					log.Println("map error", err)
+					continue
+				}
+				newdev.AddText(name, text)
+
+			default:
+				log.Println("unknown property type")
+			}
+		}
+	}
+
+	return newdev
+}
+
 // SaveState copies the current device state into the javascript vm
 func (m *Manager) SaveState(js *js.JavascriptVM) error {
 	if js == nil {
 		return nil
 	}
 
-	for k, v := range m.devices {
-		dev := js.NewDevice(k, v.Name)
+	// for k, v := range m.devices {
+	for _, deviceid := range m.devices.Keys() {
+		dev, ok := m.devices.Device(deviceid)
+		if ok {
+			jsdev := js.NewDevice(deviceid, dev.Name)
 
-		for dKey, dial := range v.PropertyDial {
-			dev.AddDial(dKey, dial.Name, dial.Value, dial.Min, dial.Max)
+			for dKey, dial := range dev.DialAsMap() {
+				jsdev.AddDial(dKey, dial.Name, dial.Value, dial.Min, dial.Max)
+			}
+
+			// for sKey, swi := range dev.PropertySwitch {
+			for key, swi := range dev.SwitchAsMap() {
+				jsdev.AddSwitch(key, swi.Name, swi.Value.GetBool(), swi.Value.String())
+			}
+
+			// for key, but := range dev.PropertyButton {
+			for key, but := range dev.ButtonAsMap() {
+				jsdev.AddButton(key, but.Name, but.Value.GetBool(), but.Value.String())
+			}
+
+			// for key, txt := range dev.PropertyText {
+			for key, txt := range dev.TextAsMap() {
+				jsdev.AddText(key, txt.Name, txt.Value)
+			}
+
+			js.SaveDevice(jsdev, dev)
 		}
-
-		for sKey, swi := range v.PropertySwitch {
-			dev.AddSwitch(sKey, swi.Name, swi.Value.GetBool(), swi.Value.String())
-		}
-
-		for sKey, but := range v.PropertyButton {
-			dev.AddButton(sKey, but.Name, but.Value.GetBool(), but.Value.String())
-		}
-
-		for sKey, txt := range v.PropertyText {
-			dev.AddText(sKey, txt.Name, txt.Value)
-		}
-
-		js.SaveDevice(dev)
 	}
 
 	return nil
@@ -361,7 +457,7 @@ func (m *Manager) runStartScript() {
 	svr := "home"
 	v, err := vm.RunJS(svr, js.StrOnStart, goja.Undefined())
 	if err != nil {
-		fmt.Println(">>", err)
+		fmt.Println("21>>", err)
 	}
 	fmt.Println("!>", v)
 }
