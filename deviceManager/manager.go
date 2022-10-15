@@ -24,8 +24,12 @@ type Manager struct {
 	lock    sync.RWMutex
 	devices map[string]*Device
 
+	// window map[string]*duration
+
 	deviceKeys []string
 }
+
+// type duration map[string]int64
 
 type onDiskDevice struct {
 	Id          string
@@ -38,6 +42,10 @@ type onDiskDevice struct {
 	Button      map[string]ButtonProperty
 	Text        map[string]TextProperty
 }
+
+// type onDiskWindow struct {
+// 	Prop map[string]int64
+// }
 
 func New() *Manager {
 	return &Manager{
@@ -84,7 +92,87 @@ func (m *Manager) FindDeviceWithClientID(clientId string) []string {
 	return deviceList
 }
 
-func (d *Manager) Save(filename string) {
+func (m *Manager) Save() {
+	log.Println("saving devices")
+
+	deviceList := make(map[string]onDiskDevice)
+
+	for key, device := range m.devices {
+		dial := make(map[string]DialProperty)
+		for key, property := range device.PropertyDial {
+			property.lock.RLock()
+			dial[key] = DialProperty{
+				Id:          property.data.Id,
+				Name:        property.data.Name,
+				Description: property.data.Description,
+				Min:         property.data.Min,
+				Max:         property.data.Max,
+				Value:       property.data.Value,
+				Mode:        property.data.Mode,
+			}
+			property.lock.RUnlock()
+		}
+
+		swi := make(map[string]SwitchProperty)
+		for key, property := range device.PropertySwitch {
+			property.lock.RLock()
+			swi[key] = SwitchProperty{
+				Id:          property.data.Id,
+				Name:        property.data.Name,
+				Description: property.data.Description,
+				Value:       property.data.Value,
+				Mode:        property.data.Mode,
+			}
+			property.lock.RUnlock()
+		}
+
+		button := make(map[string]ButtonProperty)
+		for key, property := range device.PropertyButton {
+			property.lock.RLock()
+			button[key] = ButtonProperty{
+				Id:          property.data.Id,
+				Name:        property.data.Name,
+				Description: property.data.Description,
+				Value:       property.data.Value,
+				Mode:        property.data.Mode,
+			}
+			property.lock.RUnlock()
+		}
+
+		text := make(map[string]TextProperty)
+		for key, property := range device.PropertyText {
+			property.lock.RLock()
+			text[key] = TextProperty{
+				Id:          property.data.Id,
+				Name:        property.data.Name,
+				Description: property.data.Description,
+				Value:       property.data.Value,
+				Mode:        property.data.Mode,
+			}
+			property.lock.RUnlock()
+		}
+
+		deviceList[key] = onDiskDevice{
+			Id:          device.Id,
+			Name:        device.Name,
+			Description: device.Description,
+			Help:        device.Help,
+			ClientId:    device.ClientId,
+			Dial:        dial,
+			Switch:      swi,
+			Button:      button,
+			Text:        text,
+		}
+
+	}
+	file, err := json.Marshal(deviceList)
+	if err != nil {
+		log.Println("unable to serialize devices", err)
+	}
+	err = os.WriteFile("devices.json", file, 0640)
+	if err != nil {
+		log.Println("unable to write devices.json", err)
+	}
 
 }
 
@@ -134,11 +222,9 @@ func (m *Manager) Load() {
 		for name, property := range device.Dial {
 			dev.SetDial(name, &property)
 		}
-
 		for name, property := range device.Switch {
 			dev.SetSwitch(name, &property)
 		}
-
 		for name, property := range device.Button {
 			dev.SetButton(name, &property)
 		}

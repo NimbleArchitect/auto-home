@@ -6,7 +6,7 @@ type Device struct {
 	Description string
 	Help        string
 	ClientId    string
-	Groups      []*group
+	// Groups      []*group
 
 	PropertySwitch map[string]*Switch
 	PropertyDial   map[string]*Dial
@@ -18,7 +18,8 @@ type Device struct {
 	ButtonNames []string
 	TextNames   []string
 
-	Uploads []*Upload
+	repeatWindow map[string]int64
+	// Uploads []*Upload
 }
 
 func NewDevice() *Device {
@@ -49,12 +50,12 @@ func (d *Manager) HasDevice(deviceId string) bool {
 	return ok
 }
 
-func (d *Manager) SetDevice(deviceId string, dev *Device) {
-	d.lock.Lock()
-	if _, ok := d.devices[deviceId]; !ok {
-		d.deviceKeys = append(d.deviceKeys, deviceId)
+func (m *Manager) SetDevice(deviceId string, dev *Device) {
+	m.lock.Lock()
+	if _, ok := m.devices[deviceId]; !ok {
+		m.deviceKeys = append(m.deviceKeys, deviceId)
 	}
-	d.devices[deviceId] = dev
 
-	d.lock.Unlock()
+	m.devices[deviceId] = dev
+	m.lock.Unlock()
 }

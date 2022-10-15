@@ -25,11 +25,9 @@ type Manager struct {
 	// events  event.Manager
 	actionChannel map[string]actionsChannel
 	groups        map[string]group
-	window        []timeoutWindow
 	// actions       map[string]Action
 
-	hubClient    map[string]*lockClient
-	deviceClient map[string]*lockClient
+	timeoutWindow map[string]map[string]int64
 
 	MaxVMCount int
 	activeVMs  []*js.JavascriptVM
@@ -41,10 +39,10 @@ type Manager struct {
 	scriptPath string
 }
 
-type lockClient struct {
-	lock sync.RWMutex
-	id   string
-}
+// type lockClient struct {
+// 	lock sync.RWMutex
+// 	id   string
+// }
 
 type eventHistory struct {
 	Deviceid   string
@@ -82,35 +80,36 @@ func (m *Manager) Start() {
 
 }
 
+func (m *Manager) DeviceWindow(deviceId string) map[string]int64 {
+	if timeout, ok := m.timeoutWindow[deviceId]; ok {
+		return timeout
+	}
+
+	return make(map[string]int64)
+}
+
 func (m *Manager) SaveSystem() {
 	// log.Println("saving system configuration")
 
-	// file, err := json.Marshal(m.devices)
-	// if err != nil {
-	// 	log.Println("unable to serialize devices", err)
-	// }
-	// err = os.WriteFile("devices.json", file, 0640)
-	// if err != nil {
-	// 	log.Println("unable to write devices.json", err)
-	// }
+	m.devices.Save()
 
-	// file, err = json.Marshal(m.hubs)
-	// if err != nil {
-	// 	log.Println("unable to serialize hubs", err)
-	// }
-	// err = os.WriteFile("hubs.json", file, 0640)
-	// if err != nil {
-	// 	log.Println("unable to write jubs.json", err)
-	// }
+	file, err := json.Marshal(m.hubs)
+	if err != nil {
+		log.Println("unable to serialize hubs", err)
+	}
+	err = os.WriteFile("hubs.json", file, 0640)
+	if err != nil {
+		log.Println("unable to write jubs.json", err)
+	}
 
-	// file, err = json.Marshal(m.groups)
-	// if err != nil {
-	// 	log.Println("unable to serialize groups", err)
-	// }
-	// err = os.WriteFile("groups.json", file, 0640)
-	// if err != nil {
-	// 	log.Println("unable to write groups.json", err)
-	// }
+	file, err = json.Marshal(m.groups)
+	if err != nil {
+		log.Println("unable to serialize groups", err)
+	}
+	err = os.WriteFile("groups.json", file, 0640)
+	if err != nil {
+		log.Println("unable to write groups.json", err)
+	}
 
 	// m.window = append(m.window, timeoutWindow{Name: "n", Prop: "p", Value: 1})
 	// m.window = append(m.window, timeoutWindow{Name: "a", Prop: "r", Value: 2})
@@ -126,6 +125,8 @@ func (m *Manager) SaveSystem() {
 }
 
 func (m *Manager) LoadSystem() {
+	// var window map[string]map[string]int64
+
 	log.Println("loading system configuration")
 
 	m.devices.Load()
@@ -152,28 +153,16 @@ func (m *Manager) LoadSystem() {
 		}
 	}
 
-	// file, err = os.ReadFile("window.json")
-	// if !errors.Is(err, os.ErrNotExist) {
-	// 	if err != nil {
-	// 		log.Panic("unable to read window.json ", err)
-	// 	}
-	// 	err = json.Unmarshal(file, &m.window)
-	// 	if err != nil {
-	// 		log.Panic("unable to read previous system state ", err)
-	// 	}
-	// 	for _, v := range m.window {
-
-	// 		if dev, ok := m.devices.Device(v.Name); ok {
-	// 			v.
-	// 			for name, v := range dev.DialNames() {
-	// 				dev.SetDialWindow()
-	// 			}
-
-	// 			dev.SetDialWindow(v.Prop, v.Value)
-	// 		}
-
-	// 	}
-	// }
+	file, err = os.ReadFile("window.json")
+	if !errors.Is(err, os.ErrNotExist) {
+		if err != nil {
+			log.Panic("unable to read window.json ", err)
+		}
+		err = json.Unmarshal(file, &m.timeoutWindow)
+		if err != nil {
+			log.Panic("unable to read previous system state ", err)
+		}
+	}
 }
 
 func (m *Manager) initVMs() {
@@ -367,12 +356,10 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 					dial.Value = p.Min
 				}
 
-				newdev.AddDial(name, dial)
-
-				// check we are outside of our repeat window
-				//FIXME: this dosent work :(
 				if dev.DialWindow(name, timestamp) {
+					// check we are outside of our repeat window
 					fmt.Println("**>> update allowed")
+					newdev.AddDial(name, dial)
 				} else {
 					fmt.Println("**>> update blocked")
 				}

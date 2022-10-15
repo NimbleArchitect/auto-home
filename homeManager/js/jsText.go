@@ -5,7 +5,6 @@ import "log"
 type jsText struct {
 	Name     string
 	Value    string
-	label    string
 	previous string
 }
 

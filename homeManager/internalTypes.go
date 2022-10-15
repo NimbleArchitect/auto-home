@@ -28,12 +28,6 @@ type group struct {
 // 	Alias []string
 // }
 
-type timeoutWindow struct {
-	Name  string
-	Prop  string
-	Value int64
-}
-
 type Action struct {
 	Name     string
 	Location string

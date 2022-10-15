@@ -8,18 +8,18 @@ import (
 )
 
 type Button struct {
-	lock sync.RWMutex
-	data ButtonProperty
-}
-type ButtonProperty struct {
-	Id                    string
-	Name                  string
-	Description           string
-	Value                 booltype.BoolType
-	Previous              bool
-	Mode                  uint
+	lock                  sync.RWMutex
+	data                  ButtonProperty
 	repeatWindowTimeStamp time.Time
 	repeatWindowDuration  time.Duration
+}
+type ButtonProperty struct {
+	Id          string
+	Name        string
+	Description string
+	Value       booltype.BoolType
+	// Previous              bool
+	Mode uint
 }
 
 func (d *Device) NewButton() *Button {
@@ -65,6 +65,7 @@ func (d *Device) SetButton(name string, property *ButtonProperty) {
 			lock: sync.RWMutex{},
 			data: *property,
 		}
+		d.ButtonNames = append(d.ButtonNames, name)
 	} else {
 		prop.lock.Lock()
 		prop.data = *property
@@ -98,20 +99,13 @@ func (d *Device) SetButtonValue(name string, value string) {
 func (d *Device) ButtonWindow(name string, timestamp time.Time) bool {
 	property, ok := d.PropertyButton[name]
 	if ok {
-		data := property.data
-
-		if data.repeatWindowTimeStamp.Before(timestamp) {
-			// fmt.Println("d>>", data.repeatWindowDuration.Milliseconds())
-			newExpire := timestamp.Add(data.repeatWindowDuration)
-
+		if property.repeatWindowTimeStamp.Before(timestamp) {
+			newExpire := timestamp.Add(time.Duration(property.repeatWindowDuration) * time.Millisecond)
 			property.lock.Lock()
-			property.data.repeatWindowTimeStamp = newExpire
+			property.repeatWindowTimeStamp = newExpire
 			property.lock.Unlock()
-
-			// fmt.Println("**>> update allowed")
 			return true
 		} else {
-			// fmt.Println("**>> update blocked")
 			return false
 		}
 	}
@@ -122,8 +116,9 @@ func (d *Device) ButtonWindow(name string, timestamp time.Time) bool {
 func (d *Device) SetButtonWindow(name string, duration int64) {
 	property, ok := d.PropertyButton[name]
 	if ok {
+		timelimit := time.Duration(duration) * time.Millisecond
 		property.lock.Lock()
-		property.data.repeatWindowDuration = time.Duration(duration) * time.Millisecond
+		property.repeatWindowDuration = timelimit
 		property.lock.Unlock()
 	}
 }

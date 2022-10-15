@@ -1,27 +1,26 @@
 package deviceManager
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
 )
 
 type Dial struct {
-	lock sync.RWMutex
-	data DialProperty
-}
-type DialProperty struct {
-	Id                    string
-	Name                  string
-	Description           string
-	Min                   int
-	Max                   int
-	Value                 int
-	Previous              int
-	Mode                  uint
+	lock                  sync.RWMutex
+	data                  DialProperty
 	repeatWindowTimeStamp time.Time
 	repeatWindowDuration  time.Duration
+}
+type DialProperty struct {
+	Id          string
+	Name        string
+	Description string
+	Min         int
+	Max         int
+	Value       int
+	// Previous              int
+	Mode uint
 }
 
 func (d *Device) NewDial() *Dial {
@@ -63,11 +62,17 @@ func (d *Device) DialAsMap() map[string]DialProperty {
 func (d *Device) SetDial(name string, property *DialProperty) {
 	prop, ok := d.PropertyDial[name]
 	if !ok {
+		duration := d.repeatWindow[name]
+		log.Println("new dial", name, duration)
+
 		d.PropertyDial[name] = &Dial{
-			lock: sync.RWMutex{},
-			data: *property,
+			lock:                 sync.RWMutex{},
+			data:                 *property,
+			repeatWindowDuration: time.Duration(duration) * time.Millisecond,
 		}
+		d.DialNames = append(d.DialNames, name)
 	} else {
+		log.Println("overwriting dial", name)
 		prop.lock.Lock()
 		prop.data = *property
 		prop.lock.Unlock()
@@ -100,20 +105,13 @@ func (d *Device) SetDialValue(name string, value int) {
 func (d *Device) DialWindow(name string, timestamp time.Time) bool {
 	property, ok := d.PropertyDial[name]
 	if ok {
-		data := property.data
-
-		if data.repeatWindowTimeStamp.Before(timestamp) {
-			fmt.Println("d>>", data.repeatWindowDuration.Milliseconds())
-			newExpire := timestamp.Add(data.repeatWindowDuration)
-
+		if property.repeatWindowTimeStamp.Before(timestamp) {
+			newExpire := timestamp.Add(property.repeatWindowDuration)
 			property.lock.Lock()
-			property.data.repeatWindowTimeStamp = newExpire
+			property.repeatWindowTimeStamp = newExpire
 			property.lock.Unlock()
-
-			// fmt.Println("**>> update allowed")
 			return true
 		} else {
-			// fmt.Println("**>> update blocked")
 			return false
 		}
 	}
@@ -124,8 +122,9 @@ func (d *Device) DialWindow(name string, timestamp time.Time) bool {
 func (d *Device) SetDialWindow(name string, duration int64) {
 	property, ok := d.PropertyDial[name]
 	if ok {
+		timelimit := time.Duration(duration) * time.Millisecond
 		property.lock.Lock()
-		property.data.repeatWindowDuration = time.Duration(duration) * time.Millisecond
+		property.repeatWindowDuration = timelimit
 		property.lock.Unlock()
 	}
 }

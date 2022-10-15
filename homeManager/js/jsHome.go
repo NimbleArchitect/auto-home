@@ -14,8 +14,8 @@ const (
 )
 
 type jsHome struct {
-	devices            map[string]jsDevice
-	groups             map[string]jsGroup
+	devices map[string]jsDevice
+	// groups             map[string]jsGroup
 	pluginList         map[string]*rpc.Client
 	StopProcessing     int
 	GroupProcessing    int
