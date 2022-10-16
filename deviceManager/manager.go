@@ -21,7 +21,8 @@ import (
 )
 
 type Manager struct {
-	lock    sync.RWMutex
+	lock *sync.RWMutex
+	// lock    *lock
 	devices map[string]*Device
 
 	// window map[string]*duration
@@ -50,7 +51,7 @@ type onDiskDevice struct {
 
 func New(maxPropertyHistory int) *Manager {
 	return &Manager{
-		lock:               sync.RWMutex{},
+		lock:               &sync.RWMutex{},
 		devices:            make(map[string]*Device),
 		maxPropertyHistory: maxPropertyHistory,
 	}
@@ -89,7 +90,7 @@ func (m *Manager) FindDeviceWithClientID(clientId string) []string {
 			deviceList = append(deviceList, deviceid)
 		}
 	}
-	m.lock.RLock()
+	m.lock.RUnlock()
 
 	return deviceList
 }

@@ -57,6 +57,8 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scr
 		max:  maxEventHistory,
 	}
 
+	deviceMgr := deviceManager.New(maxPropertyHistory)
+
 	m := Manager{
 		RecordHistory:      recordHistory,
 		eventHistory:       &eventProc,
@@ -64,7 +66,7 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scr
 		chActiveVM:         make(chan int, preAllocateVMs),
 		scriptPath:         scriptPath,
 		plugins:            make(map[string]*rpc.Client),
-		devices:            deviceManager.New(maxPropertyHistory),
+		devices:            deviceMgr,
 		MaxPropertyHistory: maxPropertyHistory,
 	}
 
