@@ -30,6 +30,10 @@ type EventMsg struct {
 	Timestamp  time.Time
 }
 
+// NewManager
+//
+//	eventQueueLen length of the events array
+//	bufferLen number of events that can be spawned for concurrent processing
 func NewManager(eventQueueLen int, bufferLen int) *Manager {
 	m := Manager{
 		events:            make([]EventMsg, eventQueueLen),
@@ -102,12 +106,7 @@ func (e *Manager) EventLoop(looper EventLoop) {
 			log.Println("processing event", msg.Id)
 
 			// this is where we actually do something with the event
-			//first we save the system state
-			// state, err := looper.SaveState()
-			// if err != nil {
-			// 	log.Println("unable to save state:", err)
-			// } else {
-			// then if everything went ok we call the event trigger function and
+			//  we call the event trigger function and
 			//  pass in message properties and the saved state
 			go func() { //go call so we can run the trigger concurrently
 				err := looper.Trigger(msg.Id, msg.Timestamp, msg.Properties)

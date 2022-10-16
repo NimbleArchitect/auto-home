@@ -21,14 +21,15 @@ import (
 )
 
 type settings struct {
-	HostAddress   string
-	PublicPath    string
-	RecordHistory bool
-	MaxHistory    int
-	AllocateVMs   int
-	ScriptPath    string
-	QueueLen      int
-	BufferLen     int
+	HostAddress        string // servers address
+	PublicPath         string
+	RecordHistory      bool // wether to save the events to a history file
+	MaxHistory         int  // maximum number of events to store
+	AllocateVMs        int  // number of javascript virtual machines to pre allocate
+	ScriptPath         string
+	QueueLen           int // total number of events that can be held ready for processing
+	BufferLen          int // number of events that can be sent for concurrent processing should be less than QueueLen
+	MaxPropertyHistory int // maximum number of previous values to be saved per property
 }
 
 func main() {
@@ -49,7 +50,7 @@ func main() {
 
 	evtMgr := event.NewManager(conf.QueueLen, conf.BufferLen)
 
-	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath)
+	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath, conf.MaxPropertyHistory)
 
 	www := webHandle.Handler{
 		EventManager: evtMgr,

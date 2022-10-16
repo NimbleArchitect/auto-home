@@ -18,17 +18,24 @@ type Device struct {
 	ButtonNames []string
 	TextNames   []string
 
-	repeatWindow map[string]int64
+	repeatWindow       map[string]int64
+	maxPropertyHistory int
 	// Uploads []*Upload
 }
 
-func NewDevice() *Device {
+func NewDevice(maxPropertyHistory int) *Device {
 	return &Device{
 		PropertyDial:   make(map[string]*Dial),
 		PropertySwitch: make(map[string]*Switch),
 		PropertyButton: make(map[string]*Button),
 		PropertyText:   make(map[string]*Text),
+
+		maxPropertyHistory: maxPropertyHistory,
 	}
+}
+
+func (d *Device) MaxHistory() int {
+	return d.maxPropertyHistory
 }
 
 func (d *Manager) Device(deviceId string) (*Device, bool) {

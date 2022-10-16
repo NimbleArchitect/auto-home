@@ -2,6 +2,7 @@ package js
 
 import (
 	"log"
+	"server/deviceManager"
 	"strings"
 	"time"
 
@@ -113,18 +114,27 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 // processOnChange call loops through all the properties and call the *_onchange for each property
 //
 // once _onchange has been called the changed value is sent to Updater.Update*
-func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice) {
+func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int) {
+	var liveDevice *deviceManager.Device
+	tmp, ok := r.deviceState[deviceid]
+	if ok {
+		liveDevice = tmp.liveDevice
+	}
 
 	for name, swi := range dev.propSwitch {
-		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(swi.Value))
-		if err != nil {
-			log.Println(err)
+		if FLAG != FLAG_STOPPROCESSING {
+			// all state props have been updated for the device so we call onchange with the property that was changed
+			_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(swi.Value))
+			if err != nil {
+				log.Println(err)
+			}
 		}
+
 		// now everything has finished we can update the device props
 		// save value to device state
-		if dev.liveDevice != nil {
-			dev.liveDevice.SetSwitchValue(name, swi.Value)
+
+		if liveDevice != nil {
+			liveDevice.SetSwitchValue(name, swi.Value)
 		}
 		// if err != nil {
 		// 	log.Println("unable to update device state:", err)
@@ -132,13 +142,15 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice) {
 	}
 
 	for name, dial := range dev.propDial {
-		_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(dial.Value))
-		if err != nil {
-			log.Println(err)
+		if FLAG != FLAG_STOPPROCESSING {
+			_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(dial.Value))
+			if err != nil {
+				log.Println(err)
+			}
 		}
 		// save value to live device
-		if dev.liveDevice != nil {
-			dev.liveDevice.SetDialValue(name, dial.Value)
+		if liveDevice != nil {
+			liveDevice.SetDialValue(name, dial.Value)
 		}
 		// err = r.Updater.UpdateDial(deviceid, name, dial.Value)
 		// if err != nil {
@@ -147,15 +159,17 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice) {
 	}
 
 	for name, but := range dev.propButton {
-		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(but.label))
-		if err != nil {
-			log.Println(err)
+		if FLAG != FLAG_STOPPROCESSING {
+			// all state props have been updated for the device so we call onchange with the property that was changed
+			_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(but.label))
+			if err != nil {
+				log.Println(err)
+			}
 		}
 		// now everything has finished we can update the device props
 		// save value to device state
-		if dev.liveDevice != nil {
-			dev.liveDevice.SetButtonValue(name, but.label)
+		if liveDevice != nil {
+			liveDevice.SetButtonValue(name, but.label)
 		}
 		// if err != nil {
 		// 	log.Println("unable to update device state:", err)
@@ -163,15 +177,17 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice) {
 	}
 
 	for name, txt := range dev.propText {
-		// all state props have been updated for the device so we call onchange with the property that was changed
-		_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(txt.Value))
-		if err != nil {
-			log.Println(err)
+		if FLAG != FLAG_STOPPROCESSING {
+			// all state props have been updated for the device so we call onchange with the property that was changed
+			_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(txt.Value))
+			if err != nil {
+				log.Println(err)
+			}
 		}
 		// now everything has finished we can update the device props
 		// save value to device state
-		if dev.liveDevice != nil {
-			dev.liveDevice.SetTextValue(name, txt.Value)
+		if liveDevice != nil {
+			liveDevice.SetTextValue(name, txt.Value)
 		}
 		// if err != nil {
 		// 	log.Println("unable to update device state:", err)

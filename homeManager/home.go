@@ -29,9 +29,10 @@ type Manager struct {
 
 	timeoutWindow map[string]map[string]int64
 
-	MaxVMCount int
-	activeVMs  []*js.JavascriptVM
-	chActiveVM chan int
+	MaxPropertyHistory int
+	MaxVMCount         int
+	activeVMs          []*js.JavascriptVM
+	chActiveVM         chan int
 
 	compiledScripts js.CompiledScripts
 	plugins         map[string]*rpc.Client
@@ -50,20 +51,21 @@ type eventHistory struct {
 	Properties []map[string]interface{}
 }
 
-func NewManager(recordHistory bool, maxHistory int, preAllocateVMs int, scriptPath string) *Manager {
+func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scriptPath string, maxPropertyHistory int) *Manager {
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
-		max:  maxHistory,
+		max:  maxEventHistory,
 	}
 
 	m := Manager{
-		RecordHistory: recordHistory,
-		eventHistory:  &eventProc,
-		MaxVMCount:    preAllocateVMs,
-		chActiveVM:    make(chan int, preAllocateVMs),
-		scriptPath:    scriptPath,
-		plugins:       make(map[string]*rpc.Client),
-		devices:       deviceManager.New(),
+		RecordHistory:      recordHistory,
+		eventHistory:       &eventProc,
+		MaxVMCount:         preAllocateVMs,
+		chActiveVM:         make(chan int, preAllocateVMs),
+		scriptPath:         scriptPath,
+		plugins:            make(map[string]*rpc.Client),
+		devices:            deviceManager.New(maxPropertyHistory),
+		MaxPropertyHistory: maxPropertyHistory,
 	}
 
 	return &m
@@ -259,8 +261,7 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 		// TODO: somewhere I need to validate the properties so I only save valid states
 		log.Println("state:", m.devices)
 		// save the current state of all devices
-		err := m.SaveState(vm)
-		_ = err
+		vm.SaveState(m.devices)
 
 		// register plugins
 		for n, v := range m.plugins {
@@ -358,10 +359,10 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 
 				if dev.DialWindow(name, timestamp) {
 					// check we are outside of our repeat window
-					fmt.Println("**>> update allowed")
 					newdev.AddDial(name, dial)
-				} else {
-					fmt.Println("**>> update blocked")
+					// 	fmt.Println("**>> update allowed")
+					// } else {
+					// 	fmt.Println("**>> update blocked")
 				}
 
 			case "button":
@@ -387,44 +388,6 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 	}
 
 	return newdev
-}
-
-// SaveState copies the current device state into the javascript vm
-func (m *Manager) SaveState(js *js.JavascriptVM) error {
-	if js == nil {
-		return nil
-	}
-
-	// for k, v := range m.devices {
-	for _, deviceid := range m.devices.Keys() {
-		dev, ok := m.devices.Device(deviceid)
-		if ok {
-			jsdev := js.NewDevice(deviceid, dev.Name)
-
-			for dKey, dial := range dev.DialAsMap() {
-				jsdev.AddDial(dKey, dial.Name, dial.Value, dial.Min, dial.Max)
-			}
-
-			// for sKey, swi := range dev.PropertySwitch {
-			for key, swi := range dev.SwitchAsMap() {
-				jsdev.AddSwitch(key, swi.Name, swi.Value.GetBool(), swi.Value.String())
-			}
-
-			// for key, but := range dev.PropertyButton {
-			for key, but := range dev.ButtonAsMap() {
-				jsdev.AddButton(key, but.Name, but.Value.GetBool(), but.Value.String())
-			}
-
-			// for key, txt := range dev.PropertyText {
-			for key, txt := range dev.TextAsMap() {
-				jsdev.AddText(key, txt.Name, txt.Value)
-			}
-
-			js.SaveDevice(jsdev, dev)
-		}
-	}
-
-	return nil
 }
 
 func (m *Manager) Shutdown() {

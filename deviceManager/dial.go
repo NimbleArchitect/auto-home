@@ -7,8 +7,13 @@ import (
 )
 
 type Dial struct {
-	lock                  sync.RWMutex
-	data                  DialProperty
+	lock    sync.RWMutex
+	data    DialProperty
+	history struct {
+		max    int
+		index  int
+		values []int
+	}
 	repeatWindowTimeStamp time.Time
 	repeatWindowDuration  time.Duration
 }
@@ -23,12 +28,12 @@ type DialProperty struct {
 	Mode uint
 }
 
-func (d *Device) NewDial() *Dial {
-	return &Dial{
-		lock: sync.RWMutex{},
-		data: DialProperty{},
-	}
-}
+// func (d *Device) NewDial(maxHistory int) *Dial {
+// 	return &Dial{
+// 		lock: sync.RWMutex{},
+// 		data: DialProperty{},
+// 	}
+// }
 
 func (d *Device) DialKeys() []string {
 
@@ -65,11 +70,15 @@ func (d *Device) SetDial(name string, property *DialProperty) {
 		duration := d.repeatWindow[name]
 		log.Println("new dial", name, duration)
 
-		d.PropertyDial[name] = &Dial{
+		dial := Dial{
 			lock:                 sync.RWMutex{},
 			data:                 *property,
 			repeatWindowDuration: time.Duration(duration) * time.Millisecond,
 		}
+
+		dial.history.max = d.maxPropertyHistory
+
+		d.PropertyDial[name] = &dial
 		d.DialNames = append(d.DialNames, name)
 	} else {
 		log.Println("overwriting dial", name)
@@ -96,6 +105,17 @@ func (d *Device) SetDialValue(name string, value int) {
 	property, ok := d.PropertyDial[name]
 	if ok {
 		property.lock.Lock()
+		if property.history.index >= property.history.max {
+			property.history.index = 0
+		}
+
+		if property.history.max-1 >= len(property.history.values) {
+			property.history.values = append(property.history.values, property.data.Value)
+		} else {
+			property.history.values[property.history.index] = property.data.Value
+		}
+		property.history.index++
+
 		property.data.Value = value
 		property.lock.Unlock()
 	}

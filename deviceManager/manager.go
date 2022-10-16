@@ -26,7 +26,8 @@ type Manager struct {
 
 	// window map[string]*duration
 
-	deviceKeys []string
+	maxPropertyHistory int
+	deviceKeys         []string
 }
 
 // type duration map[string]int64
@@ -47,10 +48,11 @@ type onDiskDevice struct {
 // 	Prop map[string]int64
 // }
 
-func New() *Manager {
+func New(maxPropertyHistory int) *Manager {
 	return &Manager{
-		lock:    sync.RWMutex{},
-		devices: make(map[string]*Device),
+		lock:               sync.RWMutex{},
+		devices:            make(map[string]*Device),
+		maxPropertyHistory: maxPropertyHistory,
 	}
 }
 
@@ -212,7 +214,7 @@ func (m *Manager) Load() {
 	}
 
 	for id, device := range deviceList {
-		dev := NewDevice()
+		dev := NewDevice(m.maxPropertyHistory)
 		dev.Id = device.Id
 		dev.Description = device.Description
 		dev.ClientId = device.ClientId

@@ -3,6 +3,7 @@ package js
 import (
 	"log"
 	"net/rpc"
+	"server/deviceManager"
 	"strings"
 	"time"
 
@@ -103,7 +104,61 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPro
 
 	// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
 	continueFlag := r.processGroupChange(deviceid, props)
-	if continueFlag != FLAG_STOPPROCESSING {
-		r.processOnChange(deviceid, &dev)
+	r.processOnChange(deviceid, &dev, continueFlag)
+}
+
+func (r *JavascriptVM) SaveState(devices *deviceManager.Manager) {
+
+	for _, deviceid := range devices.Keys() {
+		dev, ok := devices.Device(deviceid)
+		if ok {
+			newDev := jsDevice{
+				js:         r,
+				Id:         dev.Id,
+				Name:       dev.Name,
+				propSwitch: make(map[string]jsSwitch),
+				propDial:   make(map[string]jsDial),
+				propButton: make(map[string]jsButton),
+				propText:   make(map[string]jsText),
+				liveDevice: dev,
+			}
+			for key, property := range dev.DialAsMap() {
+				newDev.propDial[key] = jsDial{
+					Name:     property.Name,
+					Value:    property.Value,
+					min:      property.Min,
+					max:      property.Max,
+					previous: property.Value,
+				}
+			}
+
+			for key, property := range dev.SwitchAsMap() {
+				newDev.propSwitch[key] = jsSwitch{
+					Name:     property.Name,
+					Value:    property.Value.String(),
+					state:    property.Value.GetBool(),
+					previous: property.Value.String(),
+				}
+			}
+
+			for key, property := range dev.ButtonAsMap() {
+				newDev.propButton[key] = jsButton{
+					Name:     property.Name,
+					Value:    property.Value.GetBool(),
+					label:    property.Value.String(),
+					previous: property.Value.String(),
+				}
+			}
+
+			for key, property := range dev.TextAsMap() {
+				newDev.propText[key] = jsText{
+					Name:     property.Name,
+					Value:    property.Value,
+					previous: property.Value,
+				}
+			}
+			r.deviceState[deviceid] = newDev
+		}
 	}
+
 }
