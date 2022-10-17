@@ -7,17 +7,21 @@ type jsButton struct {
 	Value    bool
 	label    string
 	previous string
+	flag     jsFlag
 }
 
 func (d *jsButton) IsSwitch() bool {
 	return false
 }
+
 func (d *jsButton) IsDial() bool {
 	return false
 }
+
 func (d *jsButton) IsButton() bool {
 	return true
 }
+
 func (d *jsButton) IsText() bool {
 	return false
 }

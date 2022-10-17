@@ -90,6 +90,14 @@ func (d *jsDevice) GetButton(name string) interface{} {
 				return nil
 			}),
 				nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
+
+			// jsObj.DefineAccessorProperty("last", d.js.runtime.ToValue(func(value int) interface{} {
+			// 	if val, ok := d.liveDevice.ButtonHistory(name, value); ok {
+			// 		return val
+			// 	}
+			// 	return nil
+			// }),
+			// 	nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
 		}
 
 		// also add previous as a readonly property
@@ -152,7 +160,6 @@ func (d *jsDevice) Get(name string) interface{} {
 }
 
 func (d *jsDevice) Set(name string, value string) {
-
 	for _, v := range d.propDial {
 		if v.Name == name {
 			i, err := strconv.Atoi(value)

@@ -1,6 +1,7 @@
 package webHandle
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -24,7 +25,7 @@ func (w *waitActions) IsOpen() bool {
 }
 
 func (w *waitActions) Write(s string) (int, error) {
-	// fmt.Println("write waitAction:", s)
+	fmt.Println("write waitAction:", s)
 	if w.inuse {
 		if w.resp != nil {
 			return w.write(s + "\n")

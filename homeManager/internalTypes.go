@@ -22,11 +22,6 @@ type group struct {
 	Users       []string
 }
 
-// type Upload struct {
-// 	Name  string
-// 	Alias []string
-// }
-
 type Action struct {
 	Name     string
 	Location string

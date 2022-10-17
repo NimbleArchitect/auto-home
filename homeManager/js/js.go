@@ -65,6 +65,7 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	jsHome.StopProcessing = FLAG_STOPPROCESSING
 	jsHome.ContinueProcessing = FLAG_CONTINUEPROCESSING
 	jsHome.GroupProcessing = FLAG_GROUPPROCESSING
+	jsHome.PreventUpdate = FLAG_PREVENTUPDATE
 
 	jsHome.devices = r.deviceState
 

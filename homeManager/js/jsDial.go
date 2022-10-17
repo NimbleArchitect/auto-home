@@ -8,6 +8,7 @@ type jsDial struct {
 	previous int
 	min      int
 	max      int
+	flag     jsFlag
 }
 
 func (d *jsDial) IsSwitch() bool {

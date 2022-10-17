@@ -12,8 +12,6 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	var tmp Generic
 	var hub jsonHub
 	var device jsonDevice
-	// var connector jsonConnector
-	// var plugin jsonPlugin
 
 	err := json.NewDecoder(r.Body).Decode(&tmp)
 	if err != nil {
@@ -177,13 +175,12 @@ func (h *Handler) callV1api(w http.ResponseWriter, r *http.Request, elements []s
 			}
 
 			log.Println("client id", clientInfo.ClientId)
-			val = waitActions{
-				inuse: true,
-				done:  make(chan bool),
-				write: getWriter(w),
-				resp:  &w,
-				req:   r,
-			}
+
+			val.inuse = true
+			val.done = make(chan bool)
+			val.req = r
+			val.resp = &w
+			val.write = getWriter(w)
 
 			h.HomeManager.RegisterActionChannel(clientInfo.ClientId, &val)
 			h.writeActionID(id, val)

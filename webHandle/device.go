@@ -99,13 +99,6 @@ func (h *Handler) regDeviceList(d jsonDevice, clientId string) error {
 		}
 	}
 
-	// for _, v := range d.Uploads {
-	// 	n.Uploads = append(n.Uploads, home.Upload{
-	// 		Name:  v.Name,
-	// 		Alias: v.Alias,
-	// 	})
-	// }
-
 	err := h.HomeManager.AddDevice(n, clientId)
 	return err
 }

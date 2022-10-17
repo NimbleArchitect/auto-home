@@ -7,17 +7,21 @@ type jsSwitch struct {
 	Value    string //new .state, old .label
 	state    bool   //old .Value
 	previous string
+	flag     jsFlag
 }
 
 func (d *jsSwitch) IsSwitch() bool {
 	return true
 }
+
 func (d *jsSwitch) IsDial() bool {
 	return false
 }
+
 func (d *jsSwitch) IsButton() bool {
 	return false
 }
+
 func (d *jsSwitch) IsText() bool {
 	return false
 }

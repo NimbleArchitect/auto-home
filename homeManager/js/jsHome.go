@@ -7,12 +7,6 @@ import (
 	"time"
 )
 
-const (
-	FLAG_CONTINUEPROCESSING = iota
-	FLAG_GROUPPROCESSING
-	FLAG_STOPPROCESSING
-)
-
 type jsHome struct {
 	devices map[string]jsDevice
 	// groups             map[string]jsGroup
@@ -20,6 +14,7 @@ type jsHome struct {
 	StopProcessing     int
 	GroupProcessing    int
 	ContinueProcessing int
+	PreventUpdate      int
 }
 
 func (d *jsHome) Plugin(name string) jsPlugin {
@@ -38,7 +33,6 @@ func (d *jsHome) Plugin(name string) jsPlugin {
 }
 
 func (d *jsHome) GetDeviceByName(name string) jsDevice {
-	// fmt.Println("hello")
 	for _, v := range d.devices {
 		if v.Name == name {
 			return v
@@ -48,9 +42,18 @@ func (d *jsHome) GetDeviceByName(name string) jsDevice {
 	return jsDevice{}
 }
 
+func (d *jsHome) GetDeviceById(deviceId string) jsDevice {
+	for _, v := range d.devices {
+		if v.Id == deviceId {
+			return v
+		}
+	}
+
+	return jsDevice{}
+}
+
 func (d *jsHome) GetDevices() []jsDevice {
 	var out []jsDevice
-	// fmt.Println("hello")
 	for _, v := range d.devices {
 		out = append(out, v)
 	}

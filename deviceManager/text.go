@@ -1,14 +1,20 @@
 package deviceManager
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
 )
 
 type Text struct {
-	lock                  sync.RWMutex
-	data                  TextProperty
+	lock    sync.RWMutex
+	data    TextProperty
+	history struct {
+		max    int
+		index  int
+		values []string
+	}
 	repeatWindowTimeStamp time.Time
 	repeatWindowDuration  time.Duration
 }
@@ -21,12 +27,12 @@ type TextProperty struct {
 	Mode uint
 }
 
-func (d *Device) NewText() *Text {
-	return &Text{
-		lock: sync.RWMutex{},
-		data: TextProperty{},
-	}
-}
+// func (d *Device) NewText() *Text {
+// 	return &Text{
+// 		lock: sync.RWMutex{},
+// 		data: TextProperty{},
+// 	}
+// }
 
 func (d *Device) TextKeys() []string {
 
@@ -60,12 +66,20 @@ func (d *Device) TextAsMap() map[string]TextProperty {
 func (d *Device) SetText(name string, property *TextProperty) {
 	prop, ok := d.PropertyText[name]
 	if !ok {
-		d.PropertyText[name] = &Text{
-			lock: sync.RWMutex{},
-			data: *property,
+		duration := d.repeatWindow[name]
+		log.Println("new text", name, duration)
+
+		text := Text{
+			lock:                 sync.RWMutex{},
+			data:                 *property,
+			repeatWindowDuration: time.Duration(duration) * time.Millisecond,
 		}
+		text.history.max = d.maxPropertyHistory
+
+		d.PropertyText[name] = &text
 		d.TextNames = append(d.TextNames, name)
 	} else {
+		log.Println("overwriting text", name)
 		prop.lock.Lock()
 		prop.data = *property
 		prop.lock.Unlock()
@@ -86,11 +100,31 @@ func (d *Device) TextValue(name string) (string, bool) {
 
 // Was UpdateText
 func (d *Device) SetTextValue(name string, value string) {
+	fmt.Println("set text", name, value)
 	property, ok := d.PropertyText[name]
 	if ok {
 		property.lock.Lock()
+		if property.history.index >= property.history.max {
+			property.history.index = 0
+		}
+
+		if property.history.max-1 >= len(property.history.values) {
+			property.history.values = append(property.history.values, property.data.Value)
+		} else {
+			property.history.values[property.history.index] = property.data.Value
+		}
+		property.history.index++
+
 		property.data.Value = value
+		// copy the Id so we can unlock before we start the call back action, this means we dont have to
+		//  keep the lock open until the client has rwsponded
+		id := property.data.Id
 		property.lock.Unlock()
+
+		if d.actionWriter != nil {
+			jsonOut := d.MakeAction(id, name, DIAL, fmt.Sprint(value))
+			d.actionWriter.Write(jsonOut)
+		}
 	}
 
 }
@@ -99,7 +133,7 @@ func (d *Device) TextWindow(name string, timestamp time.Time) bool {
 	property, ok := d.PropertyText[name]
 	if ok {
 		if property.repeatWindowTimeStamp.Before(timestamp) {
-			newExpire := timestamp.Add(time.Duration(property.repeatWindowDuration) * time.Millisecond)
+			newExpire := timestamp.Add(property.repeatWindowDuration)
 			property.lock.Lock()
 			property.repeatWindowTimeStamp = newExpire
 			property.lock.Unlock()

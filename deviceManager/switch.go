@@ -1,6 +1,7 @@
 package deviceManager
 
 import (
+	"fmt"
 	"log"
 	"server/booltype"
 	"sync"
@@ -8,8 +9,13 @@ import (
 )
 
 type Switch struct {
-	lock                  sync.RWMutex
-	data                  SwitchProperty
+	lock    sync.RWMutex
+	data    SwitchProperty
+	history struct {
+		max    int
+		index  int
+		values []booltype.BoolType
+	}
 	repeatWindowTimeStamp time.Time
 	repeatWindowDuration  time.Duration
 }
@@ -22,12 +28,12 @@ type SwitchProperty struct {
 	Mode uint
 }
 
-func (d *Device) NewSwitch() *Switch {
-	return &Switch{
-		lock: sync.RWMutex{},
-		data: SwitchProperty{},
-	}
-}
+// func (d *Device) NewSwitch() *Switch {
+// 	return &Switch{
+// 		lock: sync.RWMutex{},
+// 		data: SwitchProperty{},
+// 	}
+// }
 
 func (d *Device) SwitchKeys() []string {
 
@@ -61,12 +67,20 @@ func (d *Device) SwitchAsMap() map[string]SwitchProperty {
 func (d *Device) SetSwitch(name string, property *SwitchProperty) {
 	prop, ok := d.PropertySwitch[name]
 	if !ok {
-		d.PropertySwitch[name] = &Switch{
-			lock: sync.RWMutex{},
-			data: *property,
+		duration := d.repeatWindow[name]
+		log.Println("new switch", name, duration)
+
+		swi := Switch{
+			lock:                 sync.RWMutex{},
+			data:                 *property,
+			repeatWindowDuration: time.Duration(duration) * time.Millisecond,
 		}
+		swi.history.max = d.maxPropertyHistory
+
+		d.PropertySwitch[name] = &swi
 		d.SwitchNames = append(d.SwitchNames, name)
 	} else {
+		log.Println("overwriting switch", name)
 		prop.lock.Lock()
 		prop.data = *property
 		prop.lock.Unlock()
@@ -87,15 +101,32 @@ func (d *Device) SwitchValue(name string) (string, bool) {
 
 // Was UpdateSwitch
 func (d *Device) SetSwitchValue(name string, value string) {
-	if d.PropertySwitch == nil {
-		return
-	}
+	fmt.Println("set switch", name, value)
 
 	property, ok := d.PropertySwitch[name]
 	if ok {
 		property.lock.Lock()
+		if property.history.index >= property.history.max {
+			property.history.index = 0
+		}
+
+		if property.history.max-1 >= len(property.history.values) {
+			property.history.values = append(property.history.values, property.data.Value)
+		} else {
+			property.history.values[property.history.index] = property.data.Value
+		}
+		property.history.index++
+
 		property.data.Value.Set(value)
+		// copy the Id so we can unlock before we start the call back action, this means we dont have to
+		//  keep the lock open until the client has rwsponded
+		id := property.data.Id
 		property.lock.Unlock()
+
+		if d.actionWriter != nil {
+			jsonOut := d.MakeAction(id, name, DIAL, fmt.Sprint(value))
+			d.actionWriter.Write(jsonOut)
+		}
 	}
 
 }
@@ -104,7 +135,7 @@ func (d *Device) SwitchWindow(name string, timestamp time.Time) bool {
 	property, ok := d.PropertySwitch[name]
 	if ok {
 		if property.repeatWindowTimeStamp.Before(timestamp) {
-			newExpire := timestamp.Add(time.Duration(property.repeatWindowDuration) * time.Millisecond)
+			newExpire := timestamp.Add(property.repeatWindowDuration)
 			property.lock.Lock()
 			property.repeatWindowTimeStamp = newExpire
 			property.lock.Unlock()

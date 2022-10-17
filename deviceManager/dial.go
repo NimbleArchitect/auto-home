@@ -1,6 +1,7 @@
 package deviceManager
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -75,7 +76,6 @@ func (d *Device) SetDial(name string, property *DialProperty) {
 			data:                 *property,
 			repeatWindowDuration: time.Duration(duration) * time.Millisecond,
 		}
-
 		dial.history.max = d.maxPropertyHistory
 
 		d.PropertyDial[name] = &dial
@@ -92,9 +92,9 @@ func (d *Device) DialValue(name string) (int, bool) {
 	property, ok := d.PropertyDial[name]
 	if ok {
 		property.lock.RLock()
-		data := property.data
+		value := property.data.Value
 		property.lock.RUnlock()
-		return data.Value, ok
+		return value, ok
 	}
 
 	return 0, false
@@ -102,6 +102,8 @@ func (d *Device) DialValue(name string) (int, bool) {
 
 // Was UpdateDial
 func (d *Device) SetDialValue(name string, value int) {
+	fmt.Println("set dial", name, value)
+
 	property, ok := d.PropertyDial[name]
 	if ok {
 		property.lock.Lock()
@@ -117,7 +119,15 @@ func (d *Device) SetDialValue(name string, value int) {
 		property.history.index++
 
 		property.data.Value = value
+		// copy the Id so we can unlock before we start the call back action, this means we dont have to
+		//  keep the lock open until the client has rwsponded
+		id := property.data.Id
 		property.lock.Unlock()
+
+		if d.actionWriter != nil {
+			jsonOut := d.MakeAction(id, name, DIAL, fmt.Sprint(value))
+			d.actionWriter.Write(jsonOut)
+		}
 	}
 
 }
