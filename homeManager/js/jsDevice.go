@@ -9,10 +9,9 @@ import (
 )
 
 type jsDevice struct {
-	js   *JavascriptVM
-	Id   string
-	Name string
-	// groups     map[string]jsGroup
+	js         *JavascriptVM
+	Id         string
+	Name       string
 	propDial   map[string]jsDial
 	propSwitch map[string]jsSwitch
 	propButton map[string]jsButton

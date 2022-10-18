@@ -1,10 +1,13 @@
 package js
 
+import "server/groupManager"
+
 type jsGroup struct {
-	Id      string
-	Name    string
-	groups  []string
-	devices []string
+	Id        string
+	Name      string
+	groups    []string
+	devices   []string
+	liveGroup *groupManager.Group
 }
 
 func (g *jsGroup) HasDevice(name string) interface{} {

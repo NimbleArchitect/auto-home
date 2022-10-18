@@ -10,7 +10,8 @@ import (
 	"sync"
 	"time"
 
-	deviceManager "server/deviceManager"
+	"server/deviceManager"
+	"server/groupManager"
 	js "server/homeManager/js"
 
 	"github.com/dop251/goja"
@@ -24,7 +25,7 @@ type Manager struct {
 	hubs    map[string]Hub
 	// events  event.Manager
 	actionChannel map[string]actionsChannel
-	groups        map[string]group
+	groups        *groupManager.Manager
 	// actions       map[string]Action
 
 	timeoutWindow map[string]map[string]int64
@@ -37,7 +38,9 @@ type Manager struct {
 	compiledScripts js.CompiledScripts
 	plugins         map[string]*rpc.Client
 
-	scriptPath string
+	pluginPath        string
+	chStartupComplete chan bool
+	scriptPath        string
 }
 
 // type lockClient struct {
@@ -51,7 +54,7 @@ type eventHistory struct {
 	Properties []map[string]interface{}
 }
 
-func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scriptPath string, maxPropertyHistory int) *Manager {
+func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scriptPath string, maxPropertyHistory int, pluginPath string) *Manager {
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
 		max:  maxEventHistory,
@@ -67,7 +70,10 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scr
 		scriptPath:         scriptPath,
 		plugins:            make(map[string]*rpc.Client),
 		devices:            deviceMgr,
+		groups:             groupManager.New(),
 		MaxPropertyHistory: maxPropertyHistory,
+		chStartupComplete:  make(chan bool, 1),
+		pluginPath:         pluginPath,
 	}
 
 	return &m
@@ -79,9 +85,15 @@ func (m *Manager) Start() {
 	m.StartPlugins()
 
 	// TODO: need a channel to signal when the plugins have finished loading
-	// time.Sleep(4 * time.Second)
-	// m.runStartScript()
 
+	go func() {
+		// wait for the startup complete signal
+		ok := <-m.chStartupComplete
+		// then run the start script
+		if ok {
+			m.runStartScript()
+		}
+	}()
 }
 
 func (m *Manager) DeviceWindow(deviceId string) map[string]int64 {
@@ -106,14 +118,16 @@ func (m *Manager) SaveSystem() {
 		log.Println("unable to write jubs.json", err)
 	}
 
-	file, err = json.Marshal(m.groups)
-	if err != nil {
-		log.Println("unable to serialize groups", err)
-	}
-	err = os.WriteFile("groups.json", file, 0640)
-	if err != nil {
-		log.Println("unable to write groups.json", err)
-	}
+	m.groups.Save()
+
+	// file, err = json.Marshal(m.groups)
+	// if err != nil {
+	// 	log.Println("unable to serialize groups", err)
+	// }
+	// err = os.WriteFile("groups.json", file, 0640)
+	// if err != nil {
+	// 	log.Println("unable to write groups.json", err)
+	// }
 
 	// m.window = append(m.window, timeoutWindow{Name: "n", Prop: "p", Value: 1})
 	// m.window = append(m.window, timeoutWindow{Name: "a", Prop: "r", Value: 2})
@@ -146,16 +160,18 @@ func (m *Manager) LoadSystem() {
 		}
 	}
 
-	file, err = os.ReadFile("groups.json")
-	if !errors.Is(err, os.ErrNotExist) {
-		if err != nil {
-			log.Panic("unable to read groups.json ", err)
-		}
-		err = json.Unmarshal(file, &m.groups)
-		if err != nil {
-			log.Panic("unable to read previous system state ", err)
-		}
-	}
+	m.groups.Load()
+
+	// file, err = os.ReadFile("groups.json")
+	// if !errors.Is(err, os.ErrNotExist) {
+	// 	if err != nil {
+	// 		log.Panic("unable to read groups.json ", err)
+	// 	}
+	// 	err = json.Unmarshal(file, &m.groups)
+	// 	if err != nil {
+	// 		log.Panic("unable to read previous system state ", err)
+	// 	}
+	// }
 
 	file, err = os.ReadFile("window.json")
 	if !errors.Is(err, os.ErrNotExist) {
@@ -177,8 +193,10 @@ func (m *Manager) initVMs() {
 		js, err := m.compiledScripts.NewVM()
 		if err == nil {
 			// Set the group properties, this is not expected to change very often so we run it during vm creation
-			for _, v := range m.groups {
-				js.SetGroup(v.Id, v.Name, v.Groups, v.Devices)
+			iterator := m.groups.Iterate()
+			for iterator.Next() {
+				v := iterator.Get()
+				js.SetGroup(v.Id, v.Name, v.Groups, v.Devices, v)
 			}
 
 			m.activeVMs = append(m.activeVMs, js)
@@ -262,8 +280,10 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 	} else {
 		// TODO: somewhere I need to validate the properties so I only save valid states
 		log.Println("state:", m.devices)
+
 		// save the current state of all devices
-		vm.SaveState(m.devices)
+		vm.SaveDeviceState(m.devices)
+		// groups are set during vm init
 
 		// register plugins
 		for n, v := range m.plugins {
@@ -406,29 +426,40 @@ func (m *Manager) runStartScript() {
 	vm, id := m.GetNextVM()
 	defer m.PushVMID(id)
 
-	svr := "home"
-	v, err := vm.RunJS(svr, js.StrOnStart, goja.Undefined())
+	for n, v := range m.plugins {
+		vm.NewPlugin(n, v)
+	}
+
+	svr := "homeserver"
+	_, err := vm.RunJS(svr, js.StrOnStart, goja.Undefined())
 	if err != nil {
 		fmt.Println("21>>", err)
 	}
-	fmt.Println("!>", v)
+	// fmt.Println("!>", v)
 }
 
 func (m *Manager) StartPlugins() {
+	var pluginList []string
+	pluginList = append(pluginList, "telegram")
 
-	done := make(chan bool)
+	var val int
+
+	connected := make(chan int)
 	// TODO: this needs to wait for the manager to start before starting the plugins, as im hitting some
 	//  kind of race which prevents the plugin from connecting before I call it
-	go m.startPluginManager(done)
+	go m.startPluginManager(connected)
 
-	<-done
+	<-connected
 
-	// go func() {
-	// 	time.Sleep(2 * time.Second)
-	// go m.startAllPlugins(done)
-	// // }()
-	// <-done
+	for i := 0; i < len(pluginList); i++ {
+		go m.startPlugin(pluginList[i])
+		val = <-connected
+		fmt.Println("$$>>", val)
+	}
+
+	fmt.Println("££>>", val)
 	fmt.Println("plugins started")
+	m.chStartupComplete <- true
 }
 
 // func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {

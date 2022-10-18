@@ -215,6 +215,9 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 			// fmt.Println("6>>", v, deviceid)
 			if v == deviceid {
 				// run the group script function
+				if group.liveGroup.Window(time.Now()) {
+					continue
+				}
 				val, err := r.RunJS("group/"+group.Id, "onchange", r.runtime.ToValue(props))
 				if err != nil {
 					log.Println(err)
@@ -231,6 +234,7 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 					if continueFlag == FLAG_GROUPPROCESSING {
 						finisheAfterGroups = true
 					}
+
 				}
 			}
 		}

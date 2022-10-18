@@ -17,6 +17,7 @@ clients/device-camera/device-camera
 clients/device-hue/device-hue
 
 info
-homeManager/js/dont-include.go
 havlak1.prof
 *.justin
+
+tests/*/test-run

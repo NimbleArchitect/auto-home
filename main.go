@@ -30,6 +30,7 @@ type settings struct {
 	QueueLen           int // total number of events that can be held ready for processing
 	BufferLen          int // number of events that can be sent for concurrent processing should be less than QueueLen
 	MaxPropertyHistory int // maximum number of previous values to be saved per property
+	PluginPath         string
 }
 
 func main() {
@@ -50,7 +51,7 @@ func main() {
 
 	evtMgr := event.NewManager(conf.QueueLen, conf.BufferLen)
 
-	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath, conf.MaxPropertyHistory)
+	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath, conf.MaxPropertyHistory, conf.PluginPath)
 
 	www := webHandle.Handler{
 		EventManager: evtMgr,

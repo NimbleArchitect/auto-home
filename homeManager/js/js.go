@@ -22,6 +22,7 @@ type JavascriptVM struct {
 	Updater DeviceUpdator
 }
 
+// RunJS loads the js object attached to the specified deviceId and runs the function fName passing in props as an argument
 func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (goja.Value, error) {
 	var jsHome jsHome
 	var jsFunction goja.Value
@@ -108,58 +109,59 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPro
 	r.processOnChange(deviceid, &dev, continueFlag)
 }
 
-func (r *JavascriptVM) SaveState(devices *deviceManager.Manager) {
+// SaveDeviceState copies the current device sate and properties to the vm ready for processing/usage
+func (r *JavascriptVM) SaveDeviceState(devices *deviceManager.Manager) {
 
-	for _, deviceid := range devices.Keys() {
-		dev, ok := devices.Device(deviceid)
-		if ok {
-			newDev := jsDevice{
-				js:         r,
-				Id:         dev.Id,
-				Name:       dev.Name,
-				propSwitch: make(map[string]jsSwitch),
-				propDial:   make(map[string]jsDial),
-				propButton: make(map[string]jsButton),
-				propText:   make(map[string]jsText),
-				liveDevice: dev,
-			}
-			for key, property := range dev.DialAsMap() {
-				newDev.propDial[key] = jsDial{
-					Name:     property.Name,
-					Value:    property.Value,
-					min:      property.Min,
-					max:      property.Max,
-					previous: property.Value,
-				}
-			}
+	iterator := devices.Iterate()
 
-			for key, property := range dev.SwitchAsMap() {
-				newDev.propSwitch[key] = jsSwitch{
-					Name:     property.Name,
-					Value:    property.Value.String(),
-					state:    property.Value.GetBool(),
-					previous: property.Value.String(),
-				}
-			}
-
-			for key, property := range dev.ButtonAsMap() {
-				newDev.propButton[key] = jsButton{
-					Name:     property.Name,
-					Value:    property.Value.GetBool(),
-					label:    property.Value.String(),
-					previous: property.Value.String(),
-				}
-			}
-
-			for key, property := range dev.TextAsMap() {
-				newDev.propText[key] = jsText{
-					Name:     property.Name,
-					Value:    property.Value,
-					previous: property.Value,
-				}
-			}
-			r.deviceState[deviceid] = newDev
+	for iterator.Next() {
+		deviceId, dev := iterator.Get()
+		newDev := jsDevice{
+			js:         r,
+			Id:         dev.Id,
+			Name:       dev.Name,
+			propSwitch: make(map[string]jsSwitch),
+			propDial:   make(map[string]jsDial),
+			propButton: make(map[string]jsButton),
+			propText:   make(map[string]jsText),
+			liveDevice: dev,
 		}
+		for key, property := range dev.DialAsMap() {
+			newDev.propDial[key] = jsDial{
+				Name:     property.Name,
+				Value:    property.Value,
+				min:      property.Min,
+				max:      property.Max,
+				previous: property.Value,
+			}
+		}
+
+		for key, property := range dev.SwitchAsMap() {
+			newDev.propSwitch[key] = jsSwitch{
+				Name:     property.Name,
+				Value:    property.Value.String(),
+				state:    property.Value.GetBool(),
+				previous: property.Value.String(),
+			}
+		}
+
+		for key, property := range dev.ButtonAsMap() {
+			newDev.propButton[key] = jsButton{
+				Name:     property.Name,
+				Value:    property.Value.GetBool(),
+				label:    property.Value.String(),
+				previous: property.Value.String(),
+			}
+		}
+
+		for key, property := range dev.TextAsMap() {
+			newDev.propText[key] = jsText{
+				Name:     property.Name,
+				Value:    property.Value,
+				previous: property.Value,
+			}
+		}
+		r.deviceState[deviceId] = newDev
 	}
 
 }

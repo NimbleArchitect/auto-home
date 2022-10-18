@@ -18,3 +18,16 @@ set("123-echo-321", {
     },
 
 })
+
+set("group/echo", {
+    onchange(val) {
+        
+        console.log("********************")
+        console.log("********************")
+        console.log("**   group/echo   **")
+        console.log("********************")
+        console.log("********************")
+
+        return home.stopProcessing
+    }
+})
