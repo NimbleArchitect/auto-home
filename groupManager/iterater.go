@@ -12,6 +12,7 @@ func (m *Manager) Iterate() *iterator {
 		groups: m.groups,
 		keys:   m.groupKeys,
 		max:    len(m.groupKeys) - 1,
+		index:  -1,
 	}
 }
 

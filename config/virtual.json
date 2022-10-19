@@ -1,0 +1,30 @@
+{
+    "virtual-randomid": {
+        "Id": "virtual-randomid",
+        "Name": "alarm",
+        "Description": "",
+        "ClientId": "virtual.alarm",
+        "Help": "notset",
+        "Switch": {
+            "state": {
+                "Name": "state",
+                "Description": "alarm state, on or off",
+                "Value": "on",
+                "Previous": "off",
+                "Mode": 5
+            }
+        },
+        "Dial": {
+            "brightness": {
+                "Name": "brightness",
+                "Description": "How bright the light is 0-100, anything above 0 turns on the light",
+                "Min": 0,
+                "Max": 100,
+                "Value": 100,
+                "Previous": 0,
+                "Mode": 5
+            }
+        },
+        "Uploads": null
+    }
+}

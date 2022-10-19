@@ -1,7 +1,6 @@
 package js
 
 import (
-	"fmt"
 	"net/rpc"
 	"strings"
 	"time"
@@ -21,7 +20,7 @@ func (d *jsHome) Plugin(name string) jsPlugin {
 
 	for val, rpc := range d.pluginList {
 		if val == name {
-			fmt.Println(">> setting plugin", val)
+			// fmt.Println(">> setting plugin", val)
 			return jsPlugin{
 				client: rpc,
 				name:   name,

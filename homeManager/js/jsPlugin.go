@@ -1,7 +1,6 @@
 package js
 
 import (
-	"fmt"
 	"log"
 	"net/rpc"
 
@@ -19,7 +18,6 @@ type Result struct {
 }
 
 func (r *JavascriptVM) NewPlugin(name string, vals *rpc.Client) {
-	fmt.Println(">> add plugin", name, vals)
 	r.pluginList[name] = vals
 
 }

@@ -12,6 +12,7 @@ func (m *Manager) Iterate() *iterator {
 		devices: m.devices,
 		keys:    m.deviceKeys,
 		max:     len(m.deviceKeys) - 1,
+		index:   -1,
 	}
 }
 

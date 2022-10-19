@@ -81,8 +81,8 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scr
 
 func (m *Manager) Start() {
 	m.LoadSystem()
-	m.initVMs()
 	m.StartPlugins()
+	m.initVMs()
 
 	// TODO: need a channel to signal when the plugins have finished loading
 
@@ -442,22 +442,17 @@ func (m *Manager) StartPlugins() {
 	var pluginList []string
 	pluginList = append(pluginList, "telegram")
 
-	var val int
-
 	connected := make(chan int)
-	// TODO: this needs to wait for the manager to start before starting the plugins, as im hitting some
-	//  kind of race which prevents the plugin from connecting before I call it
+	// TODO: plugins/manager need a rewrite
 	go m.startPluginManager(connected)
 
 	<-connected
 
 	for i := 0; i < len(pluginList); i++ {
 		go m.startPlugin(pluginList[i])
-		val = <-connected
-		fmt.Println("$$>>", val)
+		<-connected
 	}
 
-	fmt.Println("££>>", val)
 	fmt.Println("plugins started")
 	m.chStartupComplete <- true
 }

@@ -1,7 +1,6 @@
 package groupManager
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -63,19 +62,13 @@ func (m *Manager) SetGroup(groupId string, dev *Group) {
 }
 
 func (g *Group) Window(timestamp time.Time) bool {
-	fmt.Println("1>>", g.RepeatWindow)
-	fmt.Println("2>>", g.repeatWindowTimeStamp)
-	fmt.Println("3>>", g.repeatWindowTimeStamp.Before(timestamp))
-	fmt.Println("4>>", timestamp.Add(g.repeatWindowDuration))
-
 	if g.RepeatWindow == 0 {
-		return true
+		return false
 	}
 	if g.repeatWindowTimeStamp.Before(timestamp) {
 		g.repeatWindowTimeStamp = timestamp.Add(g.repeatWindowDuration)
 		return true
 	}
-	// return true
 	return false
 }
 

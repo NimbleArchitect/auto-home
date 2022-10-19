@@ -1,6 +1,7 @@
 package js
 
 import (
+	"fmt"
 	"log"
 	"server/deviceManager"
 	"strings"
@@ -24,13 +25,17 @@ func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
 	default:
 		r.deviceCode[n] = object.(*goja.Object)
 	}
-
 }
 
 // processOnTrigger call processes the properties and call the *_ontrigger for each property
 //
 // dev is then updated with the new properties and values
 func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props JSPropsList, dev *jsDevice) {
+	_, ok := r.deviceState[deviceid]
+	if !ok {
+		log.Println("processTrigger device not found", deviceid)
+		return
+	}
 
 	for name, swi := range props.propSwitch {
 		oldValue := r.deviceState[deviceid].propSwitch[name].state
@@ -208,41 +213,86 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 }
 
 func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) int {
-	var finisheAfterGroups bool
+	var finishAfterGroups bool
+	var searchList []jsGroup
 
 	for _, group := range r.groups {
 		for _, v := range group.devices {
-			// fmt.Println("6>>", v, deviceid)
 			if v == deviceid {
-				// run the group script function
-				if group.liveGroup.Window(time.Now()) {
-					continue
-				}
-				val, err := r.RunJS("group/"+group.Id, "onchange", r.runtime.ToValue(props))
-				if err != nil {
-					log.Println(err)
-				} else {
-					// r.runtime.ToValue(val).ToInteger()
-					if val == nil {
-						continue
-					}
-
-					continueFlag := r.runtime.ToValue(val).ToInteger()
-					if continueFlag == FLAG_STOPPROCESSING {
-						return int(continueFlag)
-					}
-					if continueFlag == FLAG_GROUPPROCESSING {
-						finisheAfterGroups = true
-					}
-
-				}
+				searchList = append(searchList, group)
 			}
 		}
 	}
 
-	if finisheAfterGroups {
+	jsRunList := make(map[string]jsGroup)
+
+	for i := 0; i < 60; i++ {
+		var newList []jsGroup
+		var carryOn bool
+
+		// build a list of unique parent groups so we can run any attached scripts later
+		for _, group := range searchList {
+			parents := r.ParentsOf(group.Id)
+			if len(parents) <= 0 {
+				parents[group.Id] = group
+			}
+			for _, v := range parents {
+				if _, ok := jsRunList[v.Id]; !ok {
+					newList = append(newList, v)
+					carryOn = true
+				}
+				jsRunList[v.Id] = v
+			}
+
+		}
+
+		if carryOn {
+			searchList = newList
+		} else {
+			break
+		}
+	}
+
+	// TODO: need to call jsRun for every group from closest to device to furthest
+	for _, group := range jsRunList {
+		if group.liveGroup != nil {
+			if group.liveGroup.Window(time.Now()) {
+				continue
+			}
+		}
+
+		continueFlag, err := r.RunJSGroup(group.Id, props)
+		if err != nil {
+			fmt.Println("group error", err)
+			continue
+		}
+
+		if continueFlag == FLAG_STOPPROCESSING {
+			return int(continueFlag)
+		}
+		if continueFlag == FLAG_GROUPPROCESSING {
+			finishAfterGroups = true
+		}
+	}
+
+	if finishAfterGroups {
 		return FLAG_STOPPROCESSING
 	}
 
 	return FLAG_CONTINUEPROCESSING
+}
+
+func (r *JavascriptVM) ParentsOf(name string) map[string]jsGroup {
+	foundMap := make(map[string]jsGroup)
+
+	// TODO: this needs to be recursive
+	for _, group := range r.groups {
+		for _, child := range group.groups {
+			if child == name {
+				foundMap[group.Id] = group
+			}
+		}
+	}
+
+	return foundMap
 }

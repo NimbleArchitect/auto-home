@@ -101,6 +101,9 @@ func (m *Manager) Save() {
 	deviceList := make(map[string]onDiskDevice)
 
 	for key, device := range m.devices {
+		if strings.HasPrefix(key, "virtual-") {
+			continue
+		}
 		dial := make(map[string]DialProperty)
 		for key, property := range device.PropertyDial {
 			property.lock.RLock()

@@ -88,6 +88,19 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	return result, err
 }
 
+func (r *JavascriptVM) RunJSGroup(groupId string, props JSPropsList) (int64, error) {
+	val, err := r.RunJS("group/"+groupId, "onchange", r.runtime.ToValue(props))
+	if err != nil {
+		return 0, err
+	} else {
+		if val == nil {
+			return 0, nil
+		}
+		return r.runtime.ToValue(val).ToInteger(), nil
+	}
+
+}
+
 // Process main entry point after a trigger, this allows processin gthe event data
 func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList) {
 	var dev jsDevice
