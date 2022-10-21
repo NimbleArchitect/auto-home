@@ -16,7 +16,7 @@ type jsDevice struct {
 	propSwitch map[string]jsSwitch
 	propButton map[string]jsButton
 	propText   map[string]jsText
-	liveDevice *deviceManager.Device
+	liveDevice *deviceManager.Device // points back to the device stored within the deviceManager
 }
 
 func (d *jsDevice) GetDial(name string) interface{} {
