@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/rpc"
 	"os"
+	"path"
 	"sync"
 	"time"
 
@@ -54,7 +55,7 @@ type eventHistory struct {
 	Properties []map[string]interface{}
 }
 
-func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scriptPath string, maxPropertyHistory int, pluginPath string) *Manager {
+func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, maxPropertyHistory int, configPath string) *Manager {
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
 		max:  maxEventHistory,
@@ -67,13 +68,13 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, scr
 		eventHistory:       &eventProc,
 		MaxVMCount:         preAllocateVMs,
 		chActiveVM:         make(chan int, preAllocateVMs),
-		scriptPath:         scriptPath,
+		scriptPath:         path.Join(configPath, "scripts"),
 		plugins:            make(map[string]*rpc.Client),
 		devices:            deviceMgr,
 		groups:             groupManager.New(),
 		MaxPropertyHistory: maxPropertyHistory,
 		chStartupComplete:  make(chan bool, 1),
-		pluginPath:         pluginPath,
+		pluginPath:         path.Join(configPath, "plugins"),
 	}
 
 	return &m

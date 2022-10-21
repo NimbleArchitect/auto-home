@@ -9,6 +9,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"path"
 	"runtime"
 	event "server/eventManager"
 	home "server/homeManager"
@@ -22,15 +23,15 @@ import (
 
 type settings struct {
 	HostAddress        string // servers address
-	PublicPath         string
-	RecordHistory      bool // wether to save the events to a history file
-	MaxHistory         int  // maximum number of events to store
-	AllocateVMs        int  // number of javascript virtual machines to pre allocate
-	ScriptPath         string
-	QueueLen           int // total number of events that can be held ready for processing
-	BufferLen          int // number of events that can be sent for concurrent processing should be less than QueueLen
-	MaxPropertyHistory int // maximum number of previous values to be saved per property
-	PluginPath         string
+	RecordHistory      bool   // wether to save the events to a history file
+	MaxHistory         int    // maximum number of events to store
+	AllocateVMs        int    // number of javascript virtual machines to pre allocate
+	QueueLen           int    // total number of events that can be held ready for processing
+	BufferLen          int    // number of events that can be sent for concurrent processing should be less than QueueLen
+	MaxPropertyHistory int    // maximum number of previous values to be saved per property
+	// ScriptPath         string
+	// PluginPath         string
+	// PublicPath         string
 }
 
 func main() {
@@ -49,14 +50,25 @@ func main() {
 	var conf settings
 	json.Unmarshal(byteValue, &conf)
 
+	// get users home folder
+	// "publicPath": "/home/rich/data/Projects/go/auto-home/public/",
+	// "pluginPath": "/home/rich/data/Projects/go/auto-home/plugins/",
+	// "scriptPath":"./scripts/",
+	profile, err := os.UserConfigDir()
+	if err != nil {
+		log.Panic("unable to get users home folder", err)
+	}
+	homeDir := path.Join(profile, "auto-home")
+	publicPath := path.Join(profile, "auto-home", "public")
+
 	evtMgr := event.NewManager(conf.QueueLen, conf.BufferLen)
 
-	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.ScriptPath, conf.MaxPropertyHistory, conf.PluginPath)
+	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.MaxPropertyHistory, homeDir)
 
 	www := webHandle.Handler{
 		EventManager: evtMgr,
 		HomeManager:  homeMgr,
-		FsHandle:     http.FileServer(http.Dir(conf.PublicPath)),
+		FsHandle:     http.FileServer(http.Dir(publicPath)),
 		Address:      conf.HostAddress,
 	}
 

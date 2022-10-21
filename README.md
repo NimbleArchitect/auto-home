@@ -10,16 +10,16 @@ The advanced group support allows devices to be part of multiple groups and grou
 
 ```
 ├── kitchen (group)
-│ ├── kitchen fan (device)
-│ ├── kitchen lights (group)
-│ │ ├── main kitchen light (device)
-│ │ ├── under cupboard light (device)
-│ │ └── island light (device)
-│ └── kitchen sockets (group)
-│ ├── socket 1 (device)
-│ ├── socket 2 (device)
-│ └── island socket (device)
-└── downstairs lights (group)
+│   ├── kitchen fan (device)
+│   ├── kitchen lights (group)
+│   │   ├── main kitchen light (device)
+│   │   ├── under cupboard light (device)
+│   │   └── island light (device)
+│   ├── kitchen sockets (group)
+│   ├── socket 1 (device)
+│   ├── socket 2 (device)
+│   └── island socket (device)
+├── downstairs lights (group)
 ├── kitchen lights (group)
 └── downstairs lights (group)
 ```
@@ -58,7 +58,22 @@ Its also completly possible to script the kitchen lights group to automatically 
 
 # Building and running
 
-to build change into the auto-home folder and go build and run with ./server
+```sh
+git clone https://github.com/NimbleArchitect/auto-home
+cd quto-home
+make all
+```
+once the build has finished copy the files from the config folder with
+
+```sh
+# for linux use
+cp -r ./config ~/.config/auto-home
+
+# for darwin use
+cp -r ./config $HOME/Library/Application\ Support/auto-home
+```
+
+you can start the server with ```./server``` once the log messages settle you can start the demo clients and run the tests from the ```./tests/``` folder
 
 # Further information
 I have a rough outline of how the system works in the [design](./docs/design.md) documentation
