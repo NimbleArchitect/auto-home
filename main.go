@@ -39,17 +39,6 @@ func main() {
 	log.Println("starting with", runtime.NumCPU(), "CPUs")
 	done := make(chan bool, 1)
 
-	jsonFile, err := os.Open("config.json")
-	if err != nil {
-		log.Println("unable to open config.json", err)
-	}
-	defer jsonFile.Close()
-
-	byteValue, _ := io.ReadAll(jsonFile)
-
-	var conf settings
-	json.Unmarshal(byteValue, &conf)
-
 	// get users home folder
 	// "publicPath": "/home/rich/data/Projects/go/auto-home/public/",
 	// "pluginPath": "/home/rich/data/Projects/go/auto-home/plugins/",
@@ -60,6 +49,18 @@ func main() {
 	}
 	homeDir := path.Join(profile, "auto-home")
 	publicPath := path.Join(profile, "auto-home", "public")
+	configPath := path.Join(profile, "auto-home", "config.json")
+
+	jsonFile, err := os.Open(configPath)
+	if err != nil {
+		log.Println("unable to open config.json", err)
+	}
+	defer jsonFile.Close()
+
+	byteValue, _ := io.ReadAll(jsonFile)
+
+	var conf settings
+	json.Unmarshal(byteValue, &conf)
 
 	evtMgr := event.NewManager(conf.QueueLen, conf.BufferLen)
 
@@ -106,7 +107,7 @@ func main() {
 	// pass the trigger function "TriggerEvent" to the event loop, this allow us to keep some seperation of responsibilities
 	go evtMgr.EventLoop(homeMgr)
 	go evtMgr.EventManager()
-	go StartServer(done, &www)
+	go StartServer(done, &www, homeDir)
 	go StartWebsite(&www)
 
 	// TODO: start event manager, i think???
@@ -142,7 +143,7 @@ func main() {
 // 	Size() int64
 // }
 
-func StartServer(done chan bool, handle *webHandle.Handler) {
+func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 	quicConf := &quic.Config{
 		KeepAlivePeriod: 60 * time.Second,
 		MaxIdleTimeout:  600 * time.Second,
@@ -156,7 +157,7 @@ func StartServer(done chan bool, handle *webHandle.Handler) {
 
 	log.Println("Starting server")
 
-	err := server.ListenAndServeTLS("cert.crt", "cert.key")
+	err := server.ListenAndServeTLS(path.Join(homeDir, "cert.crt"), path.Join(homeDir, "cert.key"))
 
 	if err != nil {
 		log.Println(err)

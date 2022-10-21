@@ -7,6 +7,7 @@ import (
 	"net/rpc"
 	"os"
 	"os/exec"
+	"path"
 )
 
 const SockAddr = "/tmp/rpc.sock"
@@ -61,8 +62,10 @@ func (m *Manager) startPlugin(pluginName string) {
 
 	log.Println("starting plungin", pluginName)
 
-	cmd := exec.Command(m.pluginPath + pluginName + "/" + pluginName)
-	cmd.Dir = m.pluginPath + pluginName + "/"
+	pluginExec := path.Join(m.pluginPath, pluginName, pluginName)
+
+	cmd := exec.Command(pluginExec)
+	cmd.Dir = path.Join(m.pluginPath, pluginName)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -68,6 +68,8 @@ once the build has finished copy the files from the config folder with
 ```sh
 # for linux use
 cp -r ./config ~/.config/auto-home
+cp -r ./bin/{clients,plugins} ~/.config/auto-home
+
 
 # for darwin use
 cp -r ./config $HOME/Library/Application\ Support/auto-home
