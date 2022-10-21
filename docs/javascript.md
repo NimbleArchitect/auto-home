@@ -1,5 +1,72 @@
 
-javascript is supported via the goja module as this allow me to expose the home object
+JavaScript is implemented via the goja module as this allow me to expose the home object
+
+# overview
+all scripts are loaded during server start from the scripts folder (pointed to via config.json), scripts are loaded as an encapsulated object to prevent rouge code polluting the runtime environment. 
+
+## set(id, obj)
+Currently the set command is exposed to allow registration of objects into the device scope, to use pass in the id and an object
+
+### Arguments
+| Parameter  | Type | Description |
+| - | - | - |
+| id  | String | the id of the device you want to attach the supplied object to the following are also acceptable "group/id", "device/id", "user/id" where id is replaced with the id you want to register against|
+| obj | Object | the object to attach, the objects methods are exposed |
+
+
+### Returns
+* none
+
+### Example
+to register a device use something like the following but remember to replace device-id with the id of you device and property with the name of the property you want to trigger against.
+
+```javascript
+// don’t forget to change device-id and property below
+set("device-id", {
+    // ontrigger is optional
+    property_ontrigger(value) {
+        // code goes here
+    },
+
+    // onchange is also optional
+    property_onchange(value) {
+        // code here
+    },
+})
+
+// or you can also use device/device-id
+// dont forget to replace device-id
+set("device/device-id", {
+    // ontrigger is optional 
+    property_ontrigger(value) {
+        // code goes here
+    },
+
+    // onchange is also optional
+    property_onchange(value) {
+        // code here
+    },
+})
+```
+lets say you have a device called "kitchen light" with an id of "123_kitchen-light" you would replace "device-id" with "123_kitchen-light" and if the light has a property called brightness and you want to run a script when the brightness changes you would replace "property_onchange(value)" with "brightness_onchange(value)" so you end up with the following
+
+```javascript
+set("123_kitchen-light", {
+    brightness_onchange(value) {
+        // code goes here, value holds the new value that
+        //  was received by the server
+    },
+})
+```
+you can also register onchange events with groups by prefixing "group/" in front of the group name, here we have a group called "kitchen" that holds a device called "kitchen light" and by using the below we can register for "onchange" events of the named group
+```javascript
+set("group/kitchen", {
+    onchange() {
+        // code goes here
+    },
+})
+```
+now using the above when any property of the kitchen light changes this group is also called with its attached onchange event the same works for any device or group that is a member of the kitchen group 
 
 # home object
 the home object supports the following methods
@@ -46,7 +113,7 @@ home.getDeviceByName("device name")
 
 | Parameter  | Type | Description |
 | - | - | - |
-| path  | String | path to the device in the form groupname/device |
+| path  | String | path to the device in the form groupid/device |
 
 ### Returns
 * device object
@@ -77,15 +144,40 @@ home.getDeviceInGroup("group name")
 
 
 # group object
+all group methods are called the same way as they are from the home object 
+
+| js properties | Type | Description |
+| - | - | - |
+| name  | string | the name of the selected group |
+| id | string | the current group id |
+
+
 ## obj.getDevice(id)
+> see home.getDevice()
+
 ## obj.hasDevice(id)
+> see home.hasDevice()
+
 ## obj.hasDeviceByName(id)
+> see home.hasDeviceByName()
+
 ## obj.getDeviceByName(name)
+> see home.getDeviceByName()
+
 ## obj.setAll(value)
+> see home.setAll()
+
 ## obj.getGroup(name)
+> see home.getGroup()
+
 ## obj.getGroupByPath(path/to/group)
+> see home.getGroupByPath()
+
 ## obj.getDeviceByPath(path/to/device)
+> see home.getDeviceByPath()
+
 ## obj.getDeviceInGroup(group, device)
+> see home.getDeviceInGroup()
 
 
 # device object
@@ -158,11 +250,11 @@ the property object supports various methods and js properties based on its inte
 | js properties | Type | Description |
 | - | - | - |
 | value  | any | value at the time the event was fired |
-| latest | any | the current "live" value, this is pulled at the time it is called not before so expect a delay on heavey systems |
+| latest | any | the current "live" value, this is pulled at the time it is called not before so expect a delay on heavy systems |
 | previous | any | the value before this event was triggered |
 
 ## obj.last(x)
-searches the current property history and returns the item number
+searches the current property history and returns item x from the internal array
 
 ### Arguments
 
@@ -183,46 +275,56 @@ echoDevice.get("dialout").last(2)
 ```
 
 ## obj.asPercent()
+returns the stored value as a percentage
 
 ### Returns
-* Integer
+* Integer - between 0 and 100
 
 ### Example
 ```javascript
+home.getDeviceByName("Kitchen Light").get("brightness").asPercent()
 ```
 
 ## obj.isSwitch()
+returns true if the property is an internal switch type, false otherwise
 
 ### Returns
 * Boolean
 
 ### Example
 ```javascript
+home.getDeviceByName("Kitchen Light").get("brightness").isSwitch()
 ```
 
 ## obj.isDial()
+returns true if the property is an internal dial type, false otherwise
 
 ### Returns
 * Boolean
 
 ### Example
 ```javascript
+home.getDeviceByName("Kitchen Light").get("brightness").isDial()
 ```
 
 ## obj.isButton()
+returns true if the property is an internal button type, false otherwise
 
 ### Returns
 * Boolean
 
 ### Example
 ```javascript
+home.getDeviceByName("Kitchen Light").get("brightness").isButton()
 ```
 
 ## obj.isText()
+returns true if the property is an internal text type, false otherwise
 
 ### Returns
 * Boolean
 
 ### Example
 ```javascript
+home.getDeviceByName("Kitchen Light").get("brightness").isText()
 ```
