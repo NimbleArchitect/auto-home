@@ -65,7 +65,7 @@ func (m *Manager) startPlugin(pluginName string) {
 	pluginExec := path.Join(m.pluginPath, pluginName, pluginName)
 
 	cmd := exec.Command(pluginExec)
-	cmd.Dir = path.Join(m.pluginPath, pluginName)
+	// cmd.Dir = path.Join(m.pluginPath, pluginName)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

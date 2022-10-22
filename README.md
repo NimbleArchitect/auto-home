@@ -60,7 +60,7 @@ Its also completly possible to script the kitchen lights group to automatically 
 
 ```sh
 git clone https://github.com/NimbleArchitect/auto-home
-cd quto-home
+cd auto-home
 make all
 ```
 once the build has finished copy the files from the config folder with
@@ -68,11 +68,7 @@ once the build has finished copy the files from the config folder with
 ```sh
 # for linux use
 cp -r ./config ~/.config/auto-home
-cp -r ./bin/{clients,plugins} ~/.config/auto-home
-
-
-# for darwin use
-cp -r ./config $HOME/Library/Application\ Support/auto-home
+cp -r ./bin/{clients,plugins} ~/.config/auto-home/
 ```
 
 you can start the server with ```./server``` once the log messages settle you can start the demo clients and run the tests from the ```./tests/``` folder

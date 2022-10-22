@@ -1,0 +1,4 @@
+{
+    "Fifofile": "/tmp/ah-client.fifo",
+    "serverURL": "https://localhost:4242/v1"
+}

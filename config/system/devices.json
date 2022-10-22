@@ -1,0 +1,60 @@
+{
+    "123-tv-light-321": {
+        "Id": "123-tv-light-321",
+        "Name": "TV light",
+        "Description": "",
+        "Help": "http://www.example.org",
+        "ClientId": "virtual.custom.light",
+        "Switch": {
+            "state": {
+                "Id": "",
+                "Name": "state",
+                "Description": "Light state, on or off",
+                "Value": "on",
+                "Mode": 5
+            }
+        },
+        "Dial": {
+            "brightness": {
+                "Id": "",
+                "Name": "brightness",
+                "Description": "How bright the light is 0-100, anything above 0 turns on the light",
+                "Min": 0,
+                "Max": 100,
+                "Value": 100,
+                "Mode": 5
+            },
+            "hue": {
+                "Id": "",
+                "Name": "hue",
+                "Description": "",
+                "Min": 0,
+                "Max": 359,
+                "Value": 2,
+                "Mode": 5
+            },
+            "sat": {
+                "Id": "",
+                "Name": "sat",
+                "Description": "",
+                "Min": 0,
+                "Max": 100,
+                "Value": 100,
+                "Mode": 5
+            }
+        },
+        "Button": {},
+        "Text": {}
+    },
+    "garden-cam": {
+        "Id": "garden-cam",
+        "Name": "Garden Camaer",
+        "Description": "",
+        "Help": "",
+        "ClientId": "virtual.custom.camera",
+        "Switch": {},
+        "Dial": {},
+        "Button": {},
+        "Text": {}
+    }
+}

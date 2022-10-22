@@ -5,14 +5,15 @@ import (
 	"errors"
 	"log"
 	"os"
+	"path"
 	"sync"
 )
 
 type Manager struct {
 	lock *sync.RWMutex
 	// lock    *lock
-	groups map[string]*Group
-
+	groups     map[string]*Group
+	configPath string
 	// window map[string]*duration
 
 	// maxPropertyHistory int
@@ -29,10 +30,11 @@ type onDiskGroup struct {
 	RepeatWindow int64
 }
 
-func New() *Manager {
+func New(configPath string) *Manager {
 	return &Manager{
-		lock:   &sync.RWMutex{},
-		groups: make(map[string]*Group),
+		configPath: configPath,
+		lock:       &sync.RWMutex{},
+		groups:     make(map[string]*Group),
 		// maxPropertyHistory: maxPropertyHistory,
 	}
 }
@@ -57,7 +59,7 @@ func (m *Manager) Save() {
 	if err != nil {
 		log.Println("unable to serialize groups", err)
 	}
-	err = os.WriteFile("groups.json", file, 0640)
+	err = os.WriteFile(path.Join(m.configPath, "groups.json"), file, 0640)
 	if err != nil {
 		log.Println("unable to write groups.json", err)
 	}
@@ -67,7 +69,7 @@ func (m *Manager) Save() {
 func (m *Manager) Load() {
 	var groupList map[string]onDiskGroup
 
-	file, err := os.ReadFile("groups.json")
+	file, err := os.ReadFile(path.Join(m.configPath, "groups.json"))
 	if !errors.Is(err, os.ErrNotExist) {
 		if err != nil {
 			log.Panic("unable to read groups.json ", err)

@@ -1,23 +1,6 @@
 .gitignore
 
-cert.crt
-cert.key
-
-actions.json
-config.json
-clients.json
-devices.json
-groups.json
-hubs.json
-public/
-
-server
+bin/
 clients/dummy/
-clients/device-camera/device-camera
-clients/device-hue/device-hue
-
-info
-havlak1.prof
-*.justin
 
 tests/*/test-run

@@ -1,0 +1,9 @@
+{
+    "hostAddress": "localhost:4242",
+    "recordHistory": true,
+    "maxHistory": 100,
+    "allocateVMs": 50,
+    "queueLen": 200,
+    "bufferLen": 50,
+    "maxPropertyHistory": 5
+}

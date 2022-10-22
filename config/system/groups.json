@@ -1,0 +1,74 @@
+{
+    "alarm": {
+        "Id": "alarm",
+        "Name": "alarm",
+        "Description": "",
+        "Devices": [
+            "virtual-randomid",
+            "123-tv-light-321"
+        ],
+        "Groups": [],
+        "Users": [],
+        "RepeatWindow": 0
+    },
+    "echo": {
+        "Id": "echo",
+        "Name": "echo",
+        "Description": "",
+        "Devices": [
+            "123-echo-321"
+        ],
+        "Groups": [],
+        "Users": [],
+        "RepeatWindow": 0
+    },
+    "kitchen": {
+        "Id": "kitchen",
+        "Name": "kitchen",
+        "Description": "",
+        "Devices": [],
+        "Groups": [
+            "",
+            ""
+        ],
+        "Users": [],
+        "RepeatWindow": 0
+    },
+    "kitchen-sockets": {
+        "Id": "kitchen-sockets",
+        "Name": "sockets",
+        "Description": "",
+        "Devices": [
+            "123-tv-123"
+        ],
+        "Groups": [
+            "echo"
+        ],
+        "Users": [],
+        "RepeatWindow": 0
+    },
+    "living-room": {
+        "Id": "living-room",
+        "Name": "living room",
+        "Description": "",
+        "Devices": [],
+        "Groups": [
+            "living-room-sockets"
+        ],
+        "Users": [],
+        "RepeatWindow": 0
+    },
+    "living-room-sockets": {
+        "Id": "living-room-sockets",
+        "Name": "sockets",
+        "Description": "",
+        "Devices": [
+            "123-tv-light-321"
+        ],
+        "Groups": [
+            "echo"
+        ],
+        "Users": [],
+        "RepeatWindow": 0
+    }
+}

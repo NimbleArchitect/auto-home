@@ -29,6 +29,7 @@ type Manager struct {
 	groups        *groupManager.Manager
 	// actions       map[string]Action
 
+	configPath    string
 	timeoutWindow map[string]map[string]int64
 
 	MaxPropertyHistory int
@@ -55,26 +56,28 @@ type eventHistory struct {
 	Properties []map[string]interface{}
 }
 
-func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, maxPropertyHistory int, configPath string) *Manager {
+func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, maxPropertyHistory int, homePath string) *Manager {
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
 		max:  maxEventHistory,
 	}
 
-	deviceMgr := deviceManager.New(maxPropertyHistory)
+	systemPath := path.Join(homePath, "system")
+	deviceMgr := deviceManager.New(maxPropertyHistory, systemPath)
 
 	m := Manager{
+		configPath:         path.Join(homePath, "system"),
 		RecordHistory:      recordHistory,
 		eventHistory:       &eventProc,
 		MaxVMCount:         preAllocateVMs,
 		chActiveVM:         make(chan int, preAllocateVMs),
-		scriptPath:         path.Join(configPath, "scripts"),
+		scriptPath:         path.Join(homePath, "scripts"),
 		plugins:            make(map[string]*rpc.Client),
 		devices:            deviceMgr,
-		groups:             groupManager.New(),
+		groups:             groupManager.New(systemPath),
 		MaxPropertyHistory: maxPropertyHistory,
 		chStartupComplete:  make(chan bool, 1),
-		pluginPath:         path.Join(configPath, "plugins"),
+		pluginPath:         path.Join(homePath, "plugins"),
 	}
 
 	return &m
@@ -114,32 +117,13 @@ func (m *Manager) SaveSystem() {
 	if err != nil {
 		log.Println("unable to serialize hubs", err)
 	}
-	err = os.WriteFile("hubs.json", file, 0640)
+
+	err = os.WriteFile(path.Join(m.configPath, "hubs.json"), file, 0640)
 	if err != nil {
 		log.Println("unable to write jubs.json", err)
 	}
 
 	m.groups.Save()
-
-	// file, err = json.Marshal(m.groups)
-	// if err != nil {
-	// 	log.Println("unable to serialize groups", err)
-	// }
-	// err = os.WriteFile("groups.json", file, 0640)
-	// if err != nil {
-	// 	log.Println("unable to write groups.json", err)
-	// }
-
-	// m.window = append(m.window, timeoutWindow{Name: "n", Prop: "p", Value: 1})
-	// m.window = append(m.window, timeoutWindow{Name: "a", Prop: "r", Value: 2})
-	// file, err = json.Marshal(m.window)
-	// if err != nil {
-	// 	log.Println("unable to serialize timeout windows", err)
-	// }
-	// err = os.WriteFile("window.json", file, 0640)
-	// if err != nil {
-	// 	log.Println("unable to write window.json", err)
-	// }
 
 }
 
@@ -150,7 +134,7 @@ func (m *Manager) LoadSystem() {
 
 	m.devices.Load()
 
-	file, err := os.ReadFile("hubs.json")
+	file, err := os.ReadFile(path.Join(m.configPath, "hubs.json"))
 	if !errors.Is(err, os.ErrNotExist) {
 		if err != nil {
 			log.Panic("unable to read hubs.json ", err)
@@ -174,7 +158,7 @@ func (m *Manager) LoadSystem() {
 	// 	}
 	// }
 
-	file, err = os.ReadFile("window.json")
+	file, err = os.ReadFile(path.Join(m.configPath, "window.json"))
 	if !errors.Is(err, os.ErrNotExist) {
 		if err != nil {
 			log.Panic("unable to read window.json ", err)
@@ -319,7 +303,7 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 			}
 			var f *os.File
 
-			if f, err = os.OpenFile("history.json", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
+			if f, err = os.OpenFile(path.Join(m.configPath, "history.json"), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
 				log.Println("unable to open file", err)
 			} else {
 				defer f.Close()
@@ -327,7 +311,7 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 
 			_, err = f.Write(append(fileData, []byte("\n")...))
 			if err != nil {
-				log.Println("unable to write groups.json", err)
+				log.Println("unable to write history.json", err)
 			}
 
 		}

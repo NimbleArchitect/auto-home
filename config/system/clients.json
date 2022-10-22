@@ -1,0 +1,14 @@
+{
+    "randomcameradeviceuuid": {
+        "ClientId": "virtual.custom.camera",
+        "AuthKey": ""
+    },
+    "randomhuehubuuid": {
+        "ClientId": "com.ah.huehubv2",
+        "AuthKey": ""
+    },
+    "secretclientid": {
+        "ClientId": "virtual.custom.light",
+        "AuthKey": ""
+    }
+}

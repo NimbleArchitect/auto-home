@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"syscall"
@@ -34,7 +35,13 @@ func echoServer(c net.Conn) {
 func main() {
 	const token = "randomcameradeviceuuid"
 
-	jsonFile, err := os.Open("config.json")
+	profile, err := os.UserConfigDir()
+	if err != nil {
+		log.Panic("unable to get users home folder", err)
+	}
+	configPath := path.Join(profile, "auto-home", "device.camera.json")
+
+	jsonFile, err := os.Open(configPath)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"path"
 	"time"
 )
 
@@ -100,9 +101,15 @@ func (t *Telegram) SendMessage(args map[string]interface{}, result *Result) erro
 
 func main() {
 
-	jsonFile, err := os.Open("config.json")
+	profile, err := os.UserConfigDir()
 	if err != nil {
-		log.Println("unable to open config.json", err)
+		log.Panic("unable to get users home folder", err)
+	}
+	configPath := path.Join(profile, "auto-home", "plugin.telegram.json")
+
+	jsonFile, err := os.Open(configPath)
+	if err != nil {
+		log.Println("unable to open plugin.telegram.json", err)
 	}
 	defer jsonFile.Close()
 

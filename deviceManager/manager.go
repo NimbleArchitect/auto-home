@@ -16,6 +16,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"path"
 	"strings"
 	"sync"
 )
@@ -25,6 +26,7 @@ type Manager struct {
 	// lock    *lock
 	devices map[string]*Device
 
+	configPath string
 	// window map[string]*duration
 
 	maxPropertyHistory int
@@ -49,8 +51,9 @@ type onDiskDevice struct {
 // 	Prop map[string]int64
 // }
 
-func New(maxPropertyHistory int) *Manager {
+func New(maxPropertyHistory int, configPath string) *Manager {
 	return &Manager{
+		configPath:         configPath,
 		lock:               &sync.RWMutex{},
 		devices:            make(map[string]*Device),
 		maxPropertyHistory: maxPropertyHistory,
@@ -175,7 +178,8 @@ func (m *Manager) Save() {
 	if err != nil {
 		log.Println("unable to serialize devices", err)
 	}
-	err = os.WriteFile("devices.json", file, 0640)
+
+	err = os.WriteFile(path.Join(m.configPath, "devices.json"), file, 0640)
 	if err != nil {
 		log.Println("unable to write devices.json", err)
 	}
@@ -186,7 +190,7 @@ func (m *Manager) Load() {
 	var deviceList map[string]onDiskDevice
 	var virtList map[string]onDiskDevice
 
-	file, err := os.ReadFile("devices.json")
+	file, err := os.ReadFile(path.Join(m.configPath, "devices.json"))
 	if !errors.Is(err, os.ErrNotExist) {
 		if err != nil {
 			log.Panic("unable to read devices.json ", err)
@@ -197,7 +201,7 @@ func (m *Manager) Load() {
 		}
 	}
 
-	file, err = os.ReadFile("virtual.json")
+	file, err = os.ReadFile(path.Join(m.configPath, "virtual.json"))
 	if !errors.Is(err, os.ErrNotExist) {
 		if err != nil {
 			log.Panic("unable to read virtual.json ", err)

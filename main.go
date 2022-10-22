@@ -47,13 +47,14 @@ func main() {
 	if err != nil {
 		log.Panic("unable to get users home folder", err)
 	}
+	// homeDir := path.Join(profile, "auto-home", "system")
 	homeDir := path.Join(profile, "auto-home")
 	publicPath := path.Join(profile, "auto-home", "public")
 	configPath := path.Join(profile, "auto-home", "config.json")
 
 	jsonFile, err := os.Open(configPath)
 	if err != nil {
-		log.Println("unable to open config.json", err)
+		log.Println(" unable to open", configPath, err)
 	}
 	defer jsonFile.Close()
 
@@ -67,6 +68,7 @@ func main() {
 	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.MaxPropertyHistory, homeDir)
 
 	www := webHandle.Handler{
+		ConfigPath:   path.Join(profile, "auto-home", "system"),
 		EventManager: evtMgr,
 		HomeManager:  homeMgr,
 		FsHandle:     http.FileServer(http.Dir(publicPath)),
@@ -108,7 +110,7 @@ func main() {
 	go evtMgr.EventLoop(homeMgr)
 	go evtMgr.EventManager()
 	go StartServer(done, &www, homeDir)
-	go StartWebsite(&www)
+	go StartWebsite(&www, homeDir)
 
 	// TODO: start event manager, i think???
 	//
@@ -167,7 +169,7 @@ func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 	done <- true // used to close the program
 }
 
-func StartWebsite(handle *webHandle.Handler) {
+func StartWebsite(handle *webHandle.Handler, homeDir string) {
 
 	server := &http.Server{
 		Handler: handle,
@@ -176,7 +178,7 @@ func StartWebsite(handle *webHandle.Handler) {
 
 	log.Println("Starting server")
 
-	err := server.ListenAndServeTLS("cert.crt", "cert.key")
+	err := server.ListenAndServeTLS(path.Join(homeDir, "cert.crt"), path.Join(homeDir, "cert.key"))
 
 	if err != nil {
 		log.Println(err)

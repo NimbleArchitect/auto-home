@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"time"
 
@@ -26,7 +27,13 @@ type settings struct {
 func main() {
 	const token = "randomhuehubuuid"
 
-	jsonFile, err := os.Open("config.json")
+	profile, err := os.UserConfigDir()
+	if err != nil {
+		log.Panic("unable to get users home folder", err)
+	}
+	configPath := path.Join(profile, "auto-home", "device.hue.json")
+
+	jsonFile, err := os.Open(configPath)
 	if err != nil {
 		fmt.Println(err)
 	}
