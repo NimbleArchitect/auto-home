@@ -229,7 +229,7 @@ func (m *Manager) ReloadVMs() {
 }
 
 func (m *Manager) PushVMID(id int) {
-	fmt.Println("==>> release id:", id)
+	log.Println("release VM id:", id)
 	m.chActiveVM <- id
 }
 
@@ -243,7 +243,6 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 		case id := <-m.chActiveVM:
 			if len(m.activeVMs) >= id {
 				log.Printf("selected javascript VM #%d", id)
-				fmt.Println("==>> got id:", id)
 				return m.activeVMs[id], id
 			}
 			tryagain = false
@@ -263,7 +262,7 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 
 // Trigger is called one at a time with the deviceid
 func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}) error {
-	fmt.Println("start Trigger:", id)
+	log.Println("start Trigger:", id)
 	//TODO: call client on trigger, need to work out the client script to run
 
 	// if vm := m.actions[deviceid].jsvm; vm == nil {
@@ -282,7 +281,6 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 		// save the current state of all devices
 		vm.SaveDeviceState(m.devices)
 		// groups are set during vm init
-
 		// register plugins
 		// for n, v := range m.plugins.All() {
 		// 	vm.NewPlugin(n, v)
@@ -302,36 +300,38 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 
 		// process the event
 		devList := m.verifyMap2jsDevice(deviceid, timestamp, props)
-		vm.Updater = m
-		vm.Process(deviceid, timestamp, devList)
+		// moved the go func from event loop to here as there isnt an easy way to copy an interface and it was causing a strange race bug
+		go func() {
+			vm.Updater = m
+			vm.Process(deviceid, timestamp, devList)
 
-		//now we have finished processing save the event to out history list
-		m.eventHistory.Add(msg)
+			//now we have finished processing save the event to out history list
+			m.eventHistory.Add(msg)
 
-		if m.RecordHistory {
-			// save history to file, we do this after processing the event so we have a quicker response to the event
-			fileData, err := json.Marshal(msg)
-			if err != nil {
-				log.Println("unable to serialize event", err)
+			if m.RecordHistory {
+				// save history to file, we do this after processing the event so we have a quicker response to the event
+				fileData, err := json.Marshal(msg)
+				if err != nil {
+					log.Println("unable to serialize event", err)
+				}
+				var f *os.File
+
+				if f, err = os.OpenFile(path.Join(m.configPath, "history.json"), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
+					log.Println("unable to open file", err)
+				} else {
+					defer f.Close()
+				}
+
+				_, err = f.Write(append(fileData, []byte("\n")...))
+				if err != nil {
+					log.Println("unable to write history.json", err)
+				}
+
 			}
-			var f *os.File
-
-			if f, err = os.OpenFile(path.Join(m.configPath, "history.json"), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
-				log.Println("unable to open file", err)
-			} else {
-				defer f.Close()
-			}
-
-			_, err = f.Write(append(fileData, []byte("\n")...))
-			if err != nil {
-				log.Println("unable to write history.json", err)
-			}
-
-		}
-
+			// fmt.Println("finish Trigger:", id)
+		}()
 	}
 
-	fmt.Println("finish Trigger:", id)
 	return nil
 }
 

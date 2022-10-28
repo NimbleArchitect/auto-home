@@ -6,6 +6,7 @@ import (
 	"server/homeManager/pluginManager"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/dop251/goja"
 )
@@ -102,7 +103,15 @@ func (r *JavascriptVM) RunJSGroup(groupId string, props JSPropsList) (int64, err
 
 }
 
-func (r *JavascriptVM) RunJSPlugin(pluginName string, fName string, obj *goja.Object) (int64, error) {
+func (r *JavascriptVM) RunJSPlugin(pluginName string, fName string, args map[string]interface{}) (int64, error) {
+	obj := r.runtime.NewObject()
+	for rawName, value := range args {
+		name := []rune(rawName)
+		name[0] = unicode.ToLower(name[0])
+
+		obj.Set(string(name), value)
+	}
+
 	val, err := r.RunJS("plugin/"+pluginName, fName, obj)
 	if err != nil {
 		return 0, err

@@ -99,11 +99,9 @@ func (e *Manager) EventLoop(looper EventLoop) {
 	log.Println("starting EventLoop")
 	loopId := 0
 
-	ready := make(chan bool, 1)
 	for {
 		select {
 		case evtid := <-e.chCurrentEvent:
-			// eventMsg := e.events[evtid]
 			msg := e.events[evtid]
 
 			log.Println("processing event", msg.Id)
@@ -111,26 +109,9 @@ func (e *Manager) EventLoop(looper EventLoop) {
 			// this is where we actually do something with the event
 			//  we call the event trigger function and
 			//  pass in message properties and the saved state
-			// go func() { //go call so we can run the trigger concurrently
+			//go call so we can run the trigger concurrently
 			id := loopId
 
-			// var newProps []map[string]interface{}
-			// for _, m := range eventMsg.Properties {
-			// 	newMap := make(map[string]interface{})
-			// 	for n, v := range m {
-			// 		newMap[n] = v
-			// 	}
-			// 	newProps = append(newProps, newMap)
-			// }
-
-			// msg := EventMsg{
-			// 	Id:         eventMsg.Id,
-			// 	EventId:    eventMsg.EventId,
-			// 	Properties: newProps,
-			// 	Timestamp:  eventMsg.Timestamp,
-			// }
-
-			// ready <- true
 			err := looper.Trigger(id, msg.Id, msg.Timestamp, msg.Properties)
 			if err != nil {
 				log.Println("event error", err)
@@ -138,8 +119,7 @@ func (e *Manager) EventLoop(looper EventLoop) {
 
 			// signal to the remove channel that we have finished processing the event
 			e.chRemove <- evtid
-			// }()
-			<-ready
+
 		case <-e.closeEventLoop:
 			log.Println("stopping EventLoop")
 			return

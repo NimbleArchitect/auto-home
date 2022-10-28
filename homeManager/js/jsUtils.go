@@ -15,6 +15,8 @@ func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
 
 	parts := strings.Split(n, "/")
 	switch parts[0] {
+	case "plugin":
+		r.pluginCode[n] = object.(*goja.Object)
 	case "group":
 		r.groupCode[n] = object.(*goja.Object)
 	case "user":

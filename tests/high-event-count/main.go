@@ -287,7 +287,7 @@ func main() {
 	r2 := rand.New(s2)
 	// fmt.Print(r2.Intn(100), ",")
 
-	for i := 1; i <= 202; i = i + 1 {
+	for i := 1; i <= 402; i = i + 1 {
 
 		wg.Add(1)
 

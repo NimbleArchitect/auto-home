@@ -50,6 +50,7 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM
 		groupCode:   make(map[string]*goja.Object),
 		groups:      make(map[string]jsGroup),
 		pluginList:  pluginList,
+		pluginCode:  make(map[string]*goja.Object),
 	}
 
 	plugins := runtime.NewObject()

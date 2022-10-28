@@ -7,8 +7,6 @@ import (
 	"path"
 	"server/homeManager/pluginManager"
 	"sync"
-
-	"github.com/dop251/goja"
 )
 
 const SockAddr = "/tmp/rpc.sock"
@@ -18,50 +16,10 @@ type Result struct {
 	Data map[string]interface{}
 }
 
-// func (m *Manager) startPluginManager(done chan int) {
-// 	// TODO: the whole plugin system is a bit crap... needs rewriting
-// 	var pluginsRegistered int
-
-// 	fmt.Println("starting plugin manager")
-// 	if err := os.RemoveAll(SockAddr); err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	l, e := net.Listen("unix", SockAddr)
-// 	if e != nil {
-// 		log.Fatal("listen error:", e)
-// 	}
-
-// 	done <- 0
-
-// 	for {
-// 		incoming, _ := l.Accept()
-// 		go func() {
-// 			// fmt.Println(">> recieved plugin connection")
-// 			client := rpc.NewClient(incoming)
-
-// 			args := make(map[string]interface{})
-
-// 			//this will store returned result
-// 			var result Result
-
-// 			client.Call("Client.RoleCall", args, &result)
-
-// 			if result.Ok {
-// 				name := result.Data["name"].(string)
-// 				log.Println("allowing plugin", name)
-// 				m.plugins[name] = client
-// 				pluginsRegistered++
-// 				done <- pluginsRegistered
-// 			}
-// 		}()
-// 	}
-// }
-
 func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 	// var pluginsStarted int
 
-	log.Println("starting plungin", pluginName)
+	log.Println("starting plugin", pluginName)
 
 	pluginExec := path.Join(m.pluginPath, pluginName, pluginName)
 
@@ -80,7 +38,7 @@ func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 	log.Printf("just finished %s (%d)\n", pluginName, cmd.Process.Pid)
 }
 
-// TODO:: plugins dont work needs work
+// StartPlugins starts the plugin manager and all the named plugins
 func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 	var pluginList []string
 	pluginList = append(pluginList, "telegram")
@@ -89,7 +47,7 @@ func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 
 	wg.Add(1)
 
-	// TODO: plugins/manager need a rewrite
+	// TODO: plugins/manager is better but still not happy with it
 	go pluginManager.Start("/tmp/rpc.sock", &wg, plug, m.callPluginObject)
 
 	for i := 0; i < len(pluginList); i++ {
@@ -107,8 +65,9 @@ func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 	log.Println("startup complete")
 }
 
-func (m *Manager) callPluginObject(pluginName string, call string, obj *goja.Object) {
-	log.Println("plugin triggered")
+// callPluginObject is the call back function for when a plugin wants to fire an event
+func (m *Manager) callPluginObject(pluginName string, call string, obj map[string]interface{}) {
+	log.Println("plugin triggered", pluginName, call)
 	//TODO: call client on trigger, need to work out the client script to run
 
 	// if vm := m.actions[deviceid].jsvm; vm == nil {

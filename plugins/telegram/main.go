@@ -85,6 +85,13 @@ func (t *Telegram) SendMessage(raw []byte) {
 
 }
 
+type event struct {
+	Label    string
+	Date     time.Time
+	Location string
+	Notes    string
+}
+
 func main() {
 
 	profile, err := os.UserConfigDir()
@@ -109,6 +116,18 @@ func main() {
 	cal := new(Telegram)
 	cal.conf = conf
 	p.Register("telegram", cal)
+
+	// go func() {
+	ev := event{
+		Label:    "car Mot",
+		Date:     time.Now(),
+		Location: "home",
+		Notes:    "",
+	}
+
+	time.Sleep(10 * time.Second)
+	p.Call("onEvent", ev)
+	// }()
 
 	err = p.Done()
 	if err != nil {

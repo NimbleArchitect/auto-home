@@ -6,8 +6,6 @@ import (
 	"net"
 	"os"
 	"sync"
-
-	"github.com/dop251/goja"
 )
 
 type response struct {
@@ -39,7 +37,7 @@ func (p *Plugin) All() map[string]*PluginConnector {
 	return out
 }
 
-func Start(sockAddr string, wg *sync.WaitGroup, plugins *Plugin, jsCallBack func(string, string, *goja.Object)) {
+func Start(sockAddr string, wg *sync.WaitGroup, plugins *Plugin, jsCallBack func(string, string, map[string]interface{})) {
 	if err := os.RemoveAll(sockAddr); err != nil {
 		log.Fatal(err)
 	}
