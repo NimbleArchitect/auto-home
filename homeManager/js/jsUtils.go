@@ -1,7 +1,6 @@
 package js
 
 import (
-	"fmt"
 	"log"
 	"server/deviceManager"
 	"strings"
@@ -263,7 +262,7 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 
 		continueFlag, err := r.RunJSGroup(group.Id, props)
 		if err != nil {
-			fmt.Println("group error", err)
+			log.Println("group error", err)
 			continue
 		}
 

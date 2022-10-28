@@ -91,16 +91,19 @@ func (e *Manager) AddEvent(event EventMsg) {
 }
 
 type EventLoop interface {
-	Trigger(string, time.Time, []map[string]interface{}) error
+	Trigger(int, string, time.Time, []map[string]interface{}) error
 	// SaveState() (interface{}, error)
 }
 
 func (e *Manager) EventLoop(looper EventLoop) {
 	log.Println("starting EventLoop")
+	loopId := 0
 
+	ready := make(chan bool, 1)
 	for {
 		select {
 		case evtid := <-e.chCurrentEvent:
+			// eventMsg := e.events[evtid]
 			msg := e.events[evtid]
 
 			log.Println("processing event", msg.Id)
@@ -108,18 +111,39 @@ func (e *Manager) EventLoop(looper EventLoop) {
 			// this is where we actually do something with the event
 			//  we call the event trigger function and
 			//  pass in message properties and the saved state
-			go func() { //go call so we can run the trigger concurrently
-				err := looper.Trigger(msg.Id, msg.Timestamp, msg.Properties)
-				if err != nil {
-					log.Println("event error", err)
-				}
+			// go func() { //go call so we can run the trigger concurrently
+			id := loopId
 
-				// signal to the remove channel that we have finished processing the event
-				e.chRemove <- evtid
-			}()
+			// var newProps []map[string]interface{}
+			// for _, m := range eventMsg.Properties {
+			// 	newMap := make(map[string]interface{})
+			// 	for n, v := range m {
+			// 		newMap[n] = v
+			// 	}
+			// 	newProps = append(newProps, newMap)
+			// }
+
+			// msg := EventMsg{
+			// 	Id:         eventMsg.Id,
+			// 	EventId:    eventMsg.EventId,
+			// 	Properties: newProps,
+			// 	Timestamp:  eventMsg.Timestamp,
+			// }
+
+			// ready <- true
+			err := looper.Trigger(id, msg.Id, msg.Timestamp, msg.Properties)
+			if err != nil {
+				log.Println("event error", err)
+			}
+
+			// signal to the remove channel that we have finished processing the event
+			e.chRemove <- evtid
+			// }()
+			<-ready
 		case <-e.closeEventLoop:
 			log.Println("stopping EventLoop")
 			return
 		}
+		loopId++
 	}
 }

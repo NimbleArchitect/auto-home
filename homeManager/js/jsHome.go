@@ -1,7 +1,6 @@
 package js
 
 import (
-	"net/rpc"
 	"strings"
 	"time"
 )
@@ -9,26 +8,11 @@ import (
 type jsHome struct {
 	devices map[string]jsDevice
 	// groups             map[string]jsGroup
-	pluginList         map[string]*rpc.Client
+	// pluginList         map[string]*pluginManager.Caller
 	StopProcessing     int
 	GroupProcessing    int
 	ContinueProcessing int
 	PreventUpdate      int
-}
-
-func (d *jsHome) Plugin(name string) jsPlugin {
-
-	for val, rpc := range d.pluginList {
-		if val == name {
-			// fmt.Println(">> setting plugin", val)
-			return jsPlugin{
-				client: rpc,
-				name:   name,
-			}
-		}
-	}
-
-	return jsPlugin{}
 }
 
 func (d *jsHome) GetDeviceByName(name string) jsDevice {
@@ -62,7 +46,7 @@ func (d *jsHome) GetDevices() []jsDevice {
 
 func (d *jsHome) GetDevicesStartName(s string) []jsDevice {
 	var out []jsDevice
-	// fmt.Println("hello")
+
 	for k, v := range d.devices {
 		if strings.HasPrefix(k, s) {
 			out = append(out, v)
@@ -74,7 +58,7 @@ func (d *jsHome) GetDevicesStartName(s string) []jsDevice {
 
 func (d *jsHome) GetGroupByName(s string) []jsDevice {
 	var out []jsDevice
-	// fmt.Println("hello")
+
 	for k, v := range d.devices {
 		if strings.HasPrefix(k, s) {
 			out = append(out, v)

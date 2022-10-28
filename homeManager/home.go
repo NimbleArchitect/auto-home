@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/rpc"
 	"os"
 	"path"
 	"sync"
@@ -14,11 +13,13 @@ import (
 	"server/deviceManager"
 	"server/groupManager"
 	js "server/homeManager/js"
+	"server/homeManager/pluginManager"
 
 	"github.com/dop251/goja"
 )
 
 type Manager struct {
+	// homeManager
 	RecordHistory bool
 	eventHistory  *historyProcessor //TODO: finish history capture
 	// devices       map[string]Device
@@ -38,7 +39,7 @@ type Manager struct {
 	chActiveVM         chan int
 
 	compiledScripts js.CompiledScripts
-	plugins         map[string]*rpc.Client
+	plugins         *pluginManager.Plugin
 
 	pluginPath        string
 	chStartupComplete chan bool
@@ -65,14 +66,16 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, max
 	systemPath := path.Join(homePath, "system")
 	deviceMgr := deviceManager.New(maxPropertyHistory, systemPath)
 
+	// p := pluginManager.Plugin{}
+
 	m := Manager{
-		configPath:         path.Join(homePath, "system"),
-		RecordHistory:      recordHistory,
-		eventHistory:       &eventProc,
-		MaxVMCount:         preAllocateVMs,
-		chActiveVM:         make(chan int, preAllocateVMs),
-		scriptPath:         path.Join(homePath, "scripts"),
-		plugins:            make(map[string]*rpc.Client),
+		configPath:    path.Join(homePath, "system"),
+		RecordHistory: recordHistory,
+		eventHistory:  &eventProc,
+		MaxVMCount:    preAllocateVMs,
+		chActiveVM:    make(chan int, preAllocateVMs),
+		scriptPath:    path.Join(homePath, "scripts"),
+		// plugins:            &p,
 		devices:            deviceMgr,
 		groups:             groupManager.New(systemPath),
 		MaxPropertyHistory: maxPropertyHistory,
@@ -84,20 +87,22 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, max
 }
 
 func (m *Manager) Start() {
+	pluginsList := pluginManager.Plugin{}
+
 	m.LoadSystem()
-	m.StartPlugins()
-	m.initVMs()
+	m.StartPlugins(&pluginsList)
 
 	// TODO: need a channel to signal when the plugins have finished loading
 
-	go func() {
-		// wait for the startup complete signal
-		ok := <-m.chStartupComplete
-		// then run the start script
-		if ok {
-			m.runStartScript()
-		}
-	}()
+	// go func() {
+	ok := <-m.chStartupComplete
+	// wait for the startup complete signal
+	m.initVMs(&pluginsList)
+	// then run the start script
+	if ok {
+		m.runStartScript()
+	}
+	// }()
 }
 
 func (m *Manager) DeviceWindow(deviceId string) map[string]int64 {
@@ -170,12 +175,13 @@ func (m *Manager) LoadSystem() {
 	}
 }
 
-func (m *Manager) initVMs() {
+func (m *Manager) initVMs(plugs *pluginManager.Plugin) {
 	m.compiledScripts = js.LoadAllScripts(m.scriptPath)
 
 	for i := 0; i < m.MaxVMCount; i++ {
 		// start the preallocated javascrip VMs
-		js, err := m.compiledScripts.NewVM()
+		// js, err := m.compiledScripts.NewVM(m.plugins)
+		js, err := m.compiledScripts.NewVM(plugs)
 		if err == nil {
 			// Set the group properties, this is not expected to change very often so we run it during vm creation
 			iterator := m.groups.Iterate()
@@ -216,25 +222,28 @@ func (m *Manager) ReloadVMs() {
 
 	m.activeVMs = nil
 
-	m.initVMs()
+	m.initVMs(m.plugins)
 
 	log.Println("reload complete")
 
 }
 
 func (m *Manager) PushVMID(id int) {
+	fmt.Println("==>> release id:", id)
 	m.chActiveVM <- id
 }
 
 func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 	tryagain := true
 
+	hastried := 0
 	// TODO: finish ME
 	for tryagain {
 		select {
 		case id := <-m.chActiveVM:
 			if len(m.activeVMs) >= id {
 				log.Printf("selected javascript VM #%d", id)
+				fmt.Println("==>> got id:", id)
 				return m.activeVMs[id], id
 			}
 			tryagain = false
@@ -242,15 +251,19 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 			// TODO: this warning needs to be visible in the UI
 			log.Println("WARN: not enough javascript VMs avaliable for use")
 			tryagain = true
+			hastried++
 		}
+		// if hastried > 5 {
+		// 	log.Panicln("wont clear")
+		// }
 	}
 
 	return nil, 0
 }
 
 // Trigger is called one at a time with the deviceid
-func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[string]interface{}) error {
-	log.Println("event triggered")
+func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}) error {
+	fmt.Println("start Trigger:", id)
 	//TODO: call client on trigger, need to work out the client script to run
 
 	// if vm := m.actions[deviceid].jsvm; vm == nil {
@@ -271,9 +284,9 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 		// groups are set during vm init
 
 		// register plugins
-		for n, v := range m.plugins {
-			vm.NewPlugin(n, v)
-		}
+		// for n, v := range m.plugins.All() {
+		// 	vm.NewPlugin(n, v)
+		// }
 
 		// lookup changes, trigger change notifications, what am I supposed
 		//  to trigger and how am I supposed to trigger it???
@@ -318,7 +331,7 @@ func (m *Manager) Trigger(deviceid string, timestamp time.Time, props []map[stri
 
 	}
 
-	log.Println("event finished")
+	fmt.Println("finish Trigger:", id)
 	return nil
 }
 
@@ -411,35 +424,11 @@ func (m *Manager) runStartScript() {
 	vm, id := m.GetNextVM()
 	defer m.PushVMID(id)
 
-	for n, v := range m.plugins {
-		vm.NewPlugin(n, v)
-	}
-
 	svr := "homeserver"
 	_, err := vm.RunJS(svr, js.StrOnStart, goja.Undefined())
 	if err != nil {
 		fmt.Println("21>>", err)
 	}
-	// fmt.Println("!>", v)
-}
-
-func (m *Manager) StartPlugins() {
-	var pluginList []string
-	pluginList = append(pluginList, "telegram")
-
-	connected := make(chan int)
-	// TODO: plugins/manager need a rewrite
-	go m.startPluginManager(connected)
-
-	<-connected
-
-	for i := 0; i < len(pluginList); i++ {
-		go m.startPlugin(pluginList[i])
-		<-connected
-	}
-
-	fmt.Println("plugins started")
-	m.chStartupComplete <- true
 }
 
 // func (m *Manager) RunGroupAction(groupId string, fnName string, props []map[string]interface{}) (interface{}, error) {

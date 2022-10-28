@@ -5,17 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"time"
+
 	"log"
-	"net"
 	"net/http"
-	"net/rpc"
 	"os"
 	"path"
-	"time"
 )
 
-const SockAddr = "/tmp/rpc.sock"
+// const SockAddr = "/tmp/rpc.sock"
 
 type Client int
 
@@ -35,68 +33,56 @@ type Result struct {
 	Data map[string]interface{}
 }
 
-// This procedure is invoked by rpc and calls rpcexample.Multiply which stores product of args.A and args.B in result pointer
-func (t *Client) RoleCall(args map[string]interface{}, result *Result) error {
+func (t *Telegram) SendMessage(raw []byte) {
+	// var m event
+	var val map[int]interface{}
 
-	result.Data = make(map[string]interface{})
+	err := json.Unmarshal(raw, &val)
+	if err != nil {
+		fmt.Println("e>>", err)
+	}
 
-	result.Data["name"] = "Telegram"
-	result.Data["SendMessage"] = ""
-	result.Ok = true
+	msg := val[0].(string)
 
-	return nil
-}
-
-func (t *Telegram) SendMessage(args map[string]interface{}, result *Result) error {
-
-	result.Data = make(map[string]interface{})
-
-	// fmt.Println("SendMessage called")
-	msg := args["message"].(string)
-
-	// fmt.Println(msg)
+	fmt.Println("sending telegram>>", msg)
 
 	// Global variables
-	var err error
 	var response *http.Response
 
-	// time.Sleep(5 * time.Second)
 	// Send the message
 	url := "https://api.telegram.org/" + t.conf.BotID + ":" + t.conf.Key + "/sendMessage"
 	body, _ := json.Marshal(map[string]string{
 		"chat_id": t.conf.ChatId,
 		"text":    msg,
 	})
-	response, err = http.Post(
+
+	client := http.Client{
+		Timeout: 1 * time.Second,
+	}
+
+	response, err = client.Post(
 		url,
 		"application/json",
 		bytes.NewBuffer(body),
 	)
 	if err != nil {
-		// fmt.Println(err)
-		result.Data["error"] = err.Error()
-		return nil
+		return
 	}
 
 	// Close the request at the end
 	defer response.Body.Close()
 
 	// Body
-	body, err = ioutil.ReadAll(response.Body)
+	body, err = io.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println("err<<", err)
-		result.Data["error"] = err.Error()
-		return nil
+		return
 	}
 
 	// Log
 	log.Printf("Message '%s' was sent", msg)
 	log.Printf("Response JSON: %s", string(body))
 
-	result.Data["msg"] = string(body)
-	result.Ok = true
-
-	return nil
 }
 
 func main() {
@@ -118,21 +104,15 @@ func main() {
 	var conf settings
 	json.Unmarshal(byteValue, &conf)
 
-	reg := new(Client)
-	arith := new(Telegram)
-	arith.conf = conf
+	p := Connect(SockAddr)
 
-	conn, err := net.Dial("unix", SockAddr)
+	cal := new(Telegram)
+	cal.conf = conf
+	p.Register("telegram", cal)
+
+	err = p.Done()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
-	defer conn.Close()
 
-	svr := rpc.NewServer()
-	svr.Register(arith)
-	svr.Register(reg)
-	fmt.Println("telegram connected")
-	svr.ServeConn(conn)
-
-	time.Sleep(5 * time.Second)
 }

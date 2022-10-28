@@ -2,8 +2,8 @@ package js
 
 import (
 	"log"
-	"net/rpc"
 	"server/deviceManager"
+	"server/homeManager/pluginManager"
 	"strings"
 	"time"
 
@@ -17,7 +17,8 @@ type JavascriptVM struct {
 	groupCode   map[string]*goja.Object
 	groups      map[string]jsGroup
 	userCode    map[string]*goja.Object
-	pluginList  map[string]*rpc.Client
+	pluginCode  map[string]*goja.Object
+	pluginList  *pluginManager.Plugin
 	// users      map[string]jsUser
 	Updater DeviceUpdator
 }
@@ -39,6 +40,8 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 
 	parts := strings.Split(deviceid, "/")
 	switch parts[0] {
+	case "plugin":
+		val, ok = r.pluginCode[deviceid]
 	case "group":
 		val, ok = r.groupCode[deviceid]
 	case "user":
@@ -70,8 +73,6 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 
 	jsHome.devices = r.deviceState
 
-	jsHome.pluginList = r.pluginList
-
 	r.runtime.Set("home", jsHome)
 
 	if props == nil {
@@ -101,11 +102,24 @@ func (r *JavascriptVM) RunJSGroup(groupId string, props JSPropsList) (int64, err
 
 }
 
+func (r *JavascriptVM) RunJSPlugin(pluginName string, fName string, obj *goja.Object) (int64, error) {
+	val, err := r.RunJS("plugin/"+pluginName, fName, obj)
+	if err != nil {
+		return 0, err
+	} else {
+		if val == nil {
+			return 0, nil
+		}
+		return r.runtime.ToValue(val).ToInteger(), nil
+	}
+
+}
+
 // Process main entry point after a trigger, this allows processin gthe event data
 func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList) {
 	var dev jsDevice
 
-	log.Println("event triggered")
+	log.Println("process triggered")
 
 	dev.propSwitch = make(map[string]jsSwitch)
 	dev.propDial = make(map[string]jsDial)

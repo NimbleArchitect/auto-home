@@ -2,6 +2,7 @@ package js
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"server/booltype"
 	"strings"
@@ -48,6 +49,7 @@ func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
 		var jsHome jsHome
 		var ok bool
 
+		fmt.Println("1>> runAsThread")
 		vm, id := r.Updater.GetNextVM()
 		defer r.Updater.PushVMID(id)
 
@@ -56,7 +58,6 @@ func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
 		jsHome.GroupProcessing = FLAG_GROUPPROCESSING
 
 		jsHome.devices = r.deviceState
-		jsHome.pluginList = r.pluginList
 
 		vm.runtime.Set("home", jsHome)
 

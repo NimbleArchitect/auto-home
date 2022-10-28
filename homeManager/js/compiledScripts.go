@@ -2,8 +2,8 @@ package js
 
 import (
 	"log"
-	"net/rpc"
 	"os"
+	"server/homeManager/pluginManager"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -36,7 +36,8 @@ func loadScript(filename string) *goja.Program {
 	return prog
 }
 
-func (c *CompiledScripts) NewVM() (*JavascriptVM, error) {
+// func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM, error) {
+func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM, error) {
 	var console jsConsole
 
 	runtime := goja.New()
@@ -48,8 +49,19 @@ func (c *CompiledScripts) NewVM() (*JavascriptVM, error) {
 		deviceState: make(map[string]jsDevice),
 		groupCode:   make(map[string]*goja.Object),
 		groups:      make(map[string]jsGroup),
-		pluginList:  make(map[string]*rpc.Client),
+		pluginList:  pluginList,
 	}
+
+	plugins := runtime.NewObject()
+	for n, plugin := range pluginList.All() {
+		thisPlugin := runtime.NewObject()
+		for _, caller := range plugin.All() {
+			thisPlugin.Set(caller.Call, caller.Run)
+		}
+
+		plugins.Set(n, thisPlugin)
+	}
+	runtime.Set("plugin", plugins)
 
 	err := runtime.Set("console", console)
 	if err != nil {
@@ -107,9 +119,7 @@ func LoadAllScripts(path string) CompiledScripts {
 			fullname := pathname + sep + item.Name()
 			log.Println("loading script", fullname)
 			p := loadScript(fullname)
-			// fmt.Println(p)
 			if p != nil {
-				// log.Println("saving compiled code")
 				compiled[item.Name()] = p
 			}
 		}

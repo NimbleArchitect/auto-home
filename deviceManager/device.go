@@ -101,7 +101,6 @@ func (m *Manager) SetActionWriter(clientId string, writer ActionWriter) {
 	devicelist := m.FindDeviceWithClientID(clientId)
 
 	for _, v := range devicelist {
-		// fmt.Println("**>>", v)
 		m.devices[v].SetActionWriter(writer)
 	}
 }

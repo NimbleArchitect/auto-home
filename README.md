@@ -68,10 +68,11 @@ once the build has finished copy the files from the config folder with
 ```sh
 # for linux use
 cp -r ./config ~/.config/auto-home
-cp -r ./bin/{clients,plugins} ~/.config/auto-home/
+cp -r ./bin/plugins ~/.config/auto-home/
 ```
 
-you can start the server with ```./server``` once the log messages settle you can start the demo clients and run the tests from the ```./tests/``` folder
+increase your buffer size ```sysctl -w net.core.rmem_max=2500000``` then
+you can start the server with ```./bin/server``` once the log messages settle you can start the demo clients and run the tests from the ```./tests/``` folder
 
 # Further information
 I have a rough outline of how the system works in the [design](./docs/design.md) documentation

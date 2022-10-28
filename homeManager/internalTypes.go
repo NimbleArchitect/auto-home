@@ -1,9 +1,5 @@
 package home
 
-import (
-	js "server/homeManager/js"
-)
-
 type Hub struct {
 	Id          string
 	Name        string
@@ -25,5 +21,5 @@ type Hub struct {
 type Action struct {
 	Name     string
 	Location string
-	jsvm     *js.JavascriptVM
+	// jsvm     *js.JavascriptVM
 }
