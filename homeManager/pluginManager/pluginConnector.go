@@ -47,25 +47,25 @@ type PluginConnector struct {
 }
 
 func (c *PluginConnector) Name() string {
-	// c.lock.Lock()
+	c.lock.Lock()
 	out := c.name
-	// c.lock.Unlock()
+	c.lock.Unlock()
 	return out
 }
 
 func (c *PluginConnector) All() map[string]*Caller {
-	// c.lock.Lock()
+	c.lock.Lock()
 	out := c.funcList
-	// c.lock.Unlock()
+	c.lock.Unlock()
 	return out
 }
 
 func (c *PluginConnector) writeB(b []byte) {
 	// fmt.Println("->> sending", string(b))
-	// c.lock.Lock()
 	c.c.Write(b)
+	c.lock.Lock()
 	c.c.Write([]byte("\n\n"))
-	// c.lock.Unlock()
+	c.lock.Unlock()
 }
 
 func (c *PluginConnector) handle() {
@@ -79,7 +79,6 @@ func (c *PluginConnector) handle() {
 		for {
 			tmp := make([]byte, 256)
 			n, err := c.c.Read(tmp)
-			fmt.Println("7>>", string(tmp))
 			if err != nil {
 				chError <- err
 				break
@@ -92,11 +91,10 @@ func (c *PluginConnector) handle() {
 						buf = []byte{}
 						continue
 					}
-					fmt.Println("-<< recieved", string(buf), ">>-")
 					last := 0
 					for i := 1; i < len(buf); i++ {
 						if buf[i-1] == 10 && buf[i] == 10 {
-							fmt.Println("--<< recieved", string(buf[last:i-2]))
+							// fmt.Println("--<< recieved", string(buf[last:i-2]))
 							go c.decode(buf[last:i])
 							last = i
 						}
@@ -159,13 +157,6 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 		// TODO: trigger dosent work, needs partially moving to js VM and we need to use c.jsCallBack
 		switch field := m.Fields.(type) {
 		case map[string]interface{}:
-			// jsobj = runtime.NewObject()
-			// for rawName, value := range field {
-			// 	name := []rune(rawName)
-			// 	name[0] = unicode.ToLower(name[0])
-
-			// jsobj.Set(string(name), value)
-			// }
 			c.jsCallBack(m.Name, m.Call, field)
 		default:
 			errMsg := fmt.Sprintf("I don't know about type %T!\n", field)
@@ -175,13 +166,16 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 
 		out := makeError(obj.Id, nil)
 		c.writeB(out)
+		c.lock.Lock()
+		c.wait[obj.Id] <- true
+		c.lock.Unlock()
 
 	case "result":
 		var m result
 		json.Unmarshal(raw, &m)
-		// c.lock.Lock()
+		c.lock.Lock()
 		c.wait[obj.Id] <- true
-		// c.lock.Unlock()
+		c.lock.Unlock()
 
 	case "create":
 		var m create
@@ -210,9 +204,9 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 			c.wg.Done()
 		}
 		c.writeB(out)
-		// c.lock.Lock()
+		c.lock.Lock()
 		c.wait[obj.Id] <- true
-		// c.lock.Unlock()
+		c.lock.Unlock()
 	}
 
 	return nil

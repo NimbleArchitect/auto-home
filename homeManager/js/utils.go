@@ -2,7 +2,6 @@ package js
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"server/booltype"
 	"strings"
@@ -49,7 +48,6 @@ func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
 		var jsHome jsHome
 		var ok bool
 
-		fmt.Println("1>> runAsThread")
 		vm, id := r.Updater.GetNextVM()
 		defer r.Updater.PushVMID(id)
 

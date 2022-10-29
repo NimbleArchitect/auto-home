@@ -44,7 +44,7 @@ func (t *Telegram) SendMessage(raw []byte) {
 
 	msg := val[0].(string)
 
-	fmt.Println("sending telegram>>", msg)
+	// fmt.Println("sending telegram>>", msg)
 
 	// Global variables
 	var response *http.Response
@@ -126,6 +126,8 @@ func main() {
 	}
 
 	time.Sleep(10 * time.Second)
+
+	// TODO: callback dosent work, looks like im not recieving the result or its not being sent needs more investigation
 	p.Call("onEvent", ev)
 	// }()
 

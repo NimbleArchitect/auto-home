@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -143,7 +144,7 @@ func Connect(addr string) *plugin {
 		c: connector{
 			c:      conn,
 			lock:   sync.Mutex{},
-			NextId: -1,
+			NextId: 100,
 			wait:   make(map[int]chan bool),
 		},
 		lock:       sync.Mutex{},
@@ -182,7 +183,7 @@ func (p *plugin) handle() {
 					last := 0
 					for i := 1; i < len(buf); i++ {
 						if buf[i-1] == 10 && buf[i] == 10 {
-							// fmt.Println("--<< recieved", string(buf[last:i-2]))
+							// fmt.Println("==<< recieved", string(buf[last:i-2]))
 							go p.decode(buf[last:i])
 							last = i
 						}
@@ -219,13 +220,12 @@ func (p *plugin) decode(buf []byte) {
 
 	err = json.Unmarshal(buf, &generic)
 	if err != nil {
-		// log.Println("decode error", err)
+		log.Println("decode error", err)
 		resp := p.MakeError(generic.Id, err)
 		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		p.c.WriteB(resp)
 
 	} else {
-		// fmt.Println(">>", generic.Method)
 		//process message
 		p.processMessage(generic)
 	}
@@ -260,6 +260,9 @@ func (p *plugin) processMessage(obj Generic) error {
 		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 
 		p.c.WriteB(resp)
+		p.c.lock.Lock()
+		p.c.wait[obj.Id] <- true
+		p.c.lock.Unlock()
 	}
 
 	return nil
@@ -315,9 +318,12 @@ type connector struct {
 }
 
 func (c *connector) WriteB(b []byte) {
-	// fmt.Println("->> sending", string(b))
+	fmt.Println("=>> sending", string(b))
 	c.lock.Lock()
-	c.c.Write(b)
+	_, err := c.c.Write(b)
+	if err != nil {
+		log.Println("writeB error:", err)
+	}
 	c.c.Write([]byte("\n\n"))
 	c.lock.Unlock()
 }
