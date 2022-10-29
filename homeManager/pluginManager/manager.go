@@ -60,7 +60,7 @@ func Start(sockAddr string, wg *sync.WaitGroup, plugins *Plugin, jsCallBack func
 			wg:         wg,
 		}
 		completed := make(chan bool, 1)
-		con.wait[101] = completed
+		con.wait[0] = completed
 		go con.handle()
 		// wait for plugin to self register
 		// TODO: this should be wrapped in a select so it timesout

@@ -144,7 +144,7 @@ func Connect(addr string) *plugin {
 		c: connector{
 			c:      conn,
 			lock:   sync.Mutex{},
-			NextId: 100,
+			NextId: -1,
 			wait:   make(map[int]chan bool),
 		},
 		lock:       sync.Mutex{},
@@ -183,7 +183,7 @@ func (p *plugin) handle() {
 					last := 0
 					for i := 1; i < len(buf); i++ {
 						if buf[i-1] == 10 && buf[i] == 10 {
-							// fmt.Println("==<< recieved", string(buf[last:i-2]))
+							fmt.Println("telegram =<< recieved", string(buf[last:i-2]))
 							go p.decode(buf[last:i])
 							last = i
 						}
@@ -239,9 +239,9 @@ func (p *plugin) processMessage(obj Generic) error {
 	case "result":
 		var m result
 		json.Unmarshal(raw, &m)
-		p.c.lock.Lock()
+		// p.c.lock.Lock()
 		p.c.wait[obj.Id] <- true
-		p.c.lock.Unlock()
+		// p.c.lock.Unlock()
 
 	case "trigger":
 		// call the methods that where regestered from the object
@@ -318,7 +318,7 @@ type connector struct {
 }
 
 func (c *connector) WriteB(b []byte) {
-	fmt.Println("=>> sending", string(b))
+	fmt.Println("telegram =>> sending", string(b))
 	c.lock.Lock()
 	_, err := c.c.Write(b)
 	if err != nil {

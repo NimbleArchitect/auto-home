@@ -61,7 +61,7 @@ func (c *PluginConnector) All() map[string]*Caller {
 }
 
 func (c *PluginConnector) writeB(b []byte) {
-	// fmt.Println("->> sending", string(b))
+	fmt.Println("Mgr ->> sending", string(b))
 	c.c.Write(b)
 	c.lock.Lock()
 	c.c.Write([]byte("\n\n"))
@@ -94,7 +94,7 @@ func (c *PluginConnector) handle() {
 					last := 0
 					for i := 1; i < len(buf); i++ {
 						if buf[i-1] == 10 && buf[i] == 10 {
-							// fmt.Println("--<< recieved", string(buf[last:i-2]))
+							fmt.Println("Mgr -<< recieved", string(buf[last:i-2]))
 							go c.decode(buf[last:i])
 							last = i
 						}

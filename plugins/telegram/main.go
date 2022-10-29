@@ -28,11 +28,6 @@ type settings struct {
 	SockAddr string
 }
 
-type Result struct {
-	Ok   bool
-	Data map[string]interface{}
-}
-
 func (t *Telegram) SendMessage(raw []byte) {
 	// var m event
 	var val map[int]interface{}
@@ -118,17 +113,17 @@ func main() {
 	p.Register("telegram", cal)
 
 	// go func() {
-	ev := event{
-		Label:    "car Mot",
-		Date:     time.Now(),
-		Location: "home",
-		Notes:    "",
-	}
+	// 	ev := event{
+	// 		Label:    "car Mot",
+	// 		Date:     time.Now(),
+	// 		Location: "home",
+	// 		Notes:    "",
+	// 	}
 
-	time.Sleep(10 * time.Second)
+	// 	time.Sleep(4 * time.Second)
 
-	// TODO: callback dosent work, looks like im not recieving the result or its not being sent needs more investigation
-	p.Call("onEvent", ev)
+	// 	// TODO: callback dosent work, looks like im not recieving the result or its not being sent needs more investigation
+	// 	p.Call("onEvent", ev)
 	// }()
 
 	err = p.Done()

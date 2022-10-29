@@ -30,18 +30,19 @@ func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 	cmd.Stderr = os.Stderr
 	err := cmd.Start()
 	if err != nil {
-		log.Fatal(err)
 		wg.Done()
+		log.Println("startPlugin error:", err)
+	} else {
+		cmd.Wait()
+		log.Printf("just finished %s (%d)\n", pluginName, cmd.Process.Pid)
 	}
 
-	cmd.Wait()
-	log.Printf("just finished %s (%d)\n", pluginName, cmd.Process.Pid)
 }
 
 // StartPlugins starts the plugin manager and all the named plugins
 func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 	var pluginList []string
-	pluginList = append(pluginList, "telegram")
+	pluginList = append(pluginList, "telegram") //, "solar")
 
 	wg := sync.WaitGroup{}
 

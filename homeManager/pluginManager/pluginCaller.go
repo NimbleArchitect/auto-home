@@ -41,14 +41,14 @@ func (c *Caller) Run(values ...goja.Value) {
 	_, ok := c.c.wait[c.c.nextId]
 	c.c.lock.Unlock()
 	if !ok {
-		newChan := make(chan bool, 1)
 		c.c.lock.Lock()
-		c.c.wait[c.c.nextId] = newChan
-		<-c.c.wait[c.c.nextId]
-		c.c.writeB(data)
+		c.c.wait[c.c.nextId] = make(chan bool, 1)
 		c.c.lock.Unlock()
+		c.c.writeB(data)
+		c.c.lock.Lock()
 		// TODO: this needs to be wrapped in a select so we can have a timeout
-		// <-newChan
+		<-c.c.wait[c.c.nextId]
+		c.c.lock.Unlock()
 	}
 
 }
