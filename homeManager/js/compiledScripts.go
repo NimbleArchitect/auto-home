@@ -62,6 +62,7 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM
 
 		plugins.Set(n, thisPlugin)
 	}
+	//TODO: move this to runJS, to do that I need to move plugins to a pointer that is attached to the VM
 	runtime.Set("plugin", plugins)
 
 	err := runtime.Set("console", console)

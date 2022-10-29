@@ -19,7 +19,7 @@ type JavascriptVM struct {
 	groups      map[string]jsGroup
 	userCode    map[string]*goja.Object
 	pluginCode  map[string]*goja.Object
-	pluginList  *pluginManager.Plugin
+	pluginList  *pluginManager.Plugin // plugin connections, shared across all VMs
 	// users      map[string]jsUser
 	Updater DeviceUpdator
 }
