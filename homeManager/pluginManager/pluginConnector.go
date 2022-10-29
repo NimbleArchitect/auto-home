@@ -154,7 +154,6 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 			return err
 		}
 
-		// TODO: trigger dosent work, needs partially moving to js VM and we need to use c.jsCallBack
 		switch field := m.Fields.(type) {
 		case map[string]interface{}:
 			c.jsCallBack(m.Name, m.Call, field)

@@ -259,10 +259,10 @@ func (p *plugin) processMessage(obj Generic) error {
 		resp := p.MakeError(obj.Id, err)
 		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 
-		p.c.WriteB(resp)
 		p.c.lock.Lock()
 		p.c.wait[obj.Id] <- true
 		p.c.lock.Unlock()
+		p.c.WriteB(resp)
 	}
 
 	return nil
