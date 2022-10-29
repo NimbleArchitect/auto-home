@@ -35,15 +35,15 @@ type result struct {
 }
 
 type PluginConnector struct {
-	name       string
-	c          net.Conn
-	lock       sync.Mutex
-	nextId     int
-	wait       map[int]chan bool
-	plug       *Plugin
-	funcList   map[string]*Caller
-	jsCallBack func(string, string, map[string]interface{})
-	wg         *sync.WaitGroup
+	name         string
+	c            net.Conn
+	lock         sync.Mutex
+	nextId       int
+	responseWait map[int]*chan bool
+	plug         *Plugin
+	funcList     map[string]*Caller
+	jsCallBack   func(string, string, map[string]interface{})
+	wg           *sync.WaitGroup
 }
 
 func (c *PluginConnector) Name() string {
@@ -58,6 +58,39 @@ func (c *PluginConnector) All() map[string]*Caller {
 	out := c.funcList
 	c.lock.Unlock()
 	return out
+}
+
+func (c *PluginConnector) WaitAdd() int {
+	i := c.nextId
+	c.nextId++
+
+	wait := make(chan bool, 1)
+	c.lock.Lock()
+	c.responseWait[i] = &wait
+	c.lock.Unlock()
+
+	return i
+}
+
+func (c *PluginConnector) WaitDone(i int) {
+	c.lock.Lock()
+	wait, ok := c.responseWait[i]
+	if !ok {
+		channel := make(chan bool, 1)
+		wait = &channel
+		c.responseWait[i] = wait
+	}
+	c.lock.Unlock()
+
+	*wait <- true
+}
+
+func (c *PluginConnector) WaitOn(i int) {
+	c.lock.Lock()
+	wait := *c.responseWait[i]
+	c.lock.Unlock()
+
+	<-wait
 }
 
 func (c *PluginConnector) writeB(b []byte) {
@@ -140,7 +173,6 @@ func (c *PluginConnector) decode(buf []byte) {
 }
 
 func (c *PluginConnector) processMessage(obj Generic) error {
-
 	// runtime := goja.New()
 	// runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
@@ -156,6 +188,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 
 		switch field := m.Fields.(type) {
 		case map[string]interface{}:
+			// run the js callback caller.Run
 			c.jsCallBack(m.Name, m.Call, field)
 		default:
 			errMsg := fmt.Sprintf("I don't know about type %T!\n", field)
@@ -164,17 +197,13 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 		}
 
 		out := makeError(obj.Id, nil)
+		c.WaitDone(obj.Id)
 		c.writeB(out)
-		c.lock.Lock()
-		c.wait[obj.Id] <- true
-		c.lock.Unlock()
 
 	case "result":
 		var m result
 		json.Unmarshal(raw, &m)
-		c.lock.Lock()
-		c.wait[obj.Id] <- true
-		c.lock.Unlock()
+		c.WaitDone(obj.Id)
 
 	case "create":
 		var m create
@@ -202,10 +231,8 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 		if c.wg != nil {
 			c.wg.Done()
 		}
+		c.WaitDone(obj.Id)
 		c.writeB(out)
-		c.lock.Lock()
-		c.wait[obj.Id] <- true
-		c.lock.Unlock()
 	}
 
 	return nil

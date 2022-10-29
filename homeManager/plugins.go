@@ -42,7 +42,7 @@ func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 // StartPlugins starts the plugin manager and all the named plugins
 func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 	var pluginList []string
-	pluginList = append(pluginList, "telegram") //, "solar")
+	pluginList = append(pluginList, "telegram", "solar")
 
 	wg := sync.WaitGroup{}
 

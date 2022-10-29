@@ -58,11 +58,11 @@ type plugin struct {
 }
 
 func (p *plugin) Call(callName string, arg interface{}) {
-	p.c.NextId++
+	nextId := p.c.WaitAdd()
 
 	generic := request{
 		Method: "trigger",
-		Id:     p.c.NextId,
+		Id:     nextId,
 		Data: trigger{
 			Name:   p.name,
 			Call:   callName,
@@ -72,17 +72,20 @@ func (p *plugin) Call(callName string, arg interface{}) {
 
 	data, err := json.Marshal(generic)
 	if err != nil {
-		// log.Println("json error", err)
-		resp := p.MakeError(generic.Id, err)
-		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
-		p.c.WriteB(resp)
+		log.Println("json error", err)
+		// resp := p.MakeError(generic.Id, err)
+		// p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
+		// p.c.WriteB(resp)
 	}
 
-	if _, ok := p.c.wait[p.c.NextId]; !ok {
-		p.c.wait[p.c.NextId] = make(chan bool, 1)
-		p.c.WriteB(data)
-		<-p.c.wait[p.c.NextId]
-	}
+	p.c.WriteB(data)
+	p.c.WaitOn(nextId)
+
+	// if _, ok := p.c.wait[p.c.NextId]; !ok {
+	// 	p.c.wait[p.c.NextId] = make(chan bool, 1)
+	// 	p.c.WriteB(data)
+	// 	<-p.c.wait[p.c.NextId]
+	// }
 
 }
 
@@ -91,7 +94,7 @@ func (p *plugin) Register(name string, obj interface{}) {
 	methods := make(map[string]interface{})
 	p.name = name
 
-	p.c.NextId++
+	nextId := p.c.WaitAdd()
 
 	t := reflect.TypeOf(obj)
 	for i := 0; i < t.NumMethod(); i++ {
@@ -105,7 +108,7 @@ func (p *plugin) Register(name string, obj interface{}) {
 
 	generic := request{
 		Method: "create",
-		Id:     p.c.NextId,
+		Id:     nextId,
 		Data: create{
 			Name:   p.name,
 			Fields: methods,
@@ -114,17 +117,20 @@ func (p *plugin) Register(name string, obj interface{}) {
 
 	data, err := json.Marshal(generic)
 	if err != nil {
-		// log.Println("json error", err)
-		resp := p.MakeError(generic.Id, err)
-		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
-		p.c.WriteB(resp)
+		log.Println("json error", err)
+		// resp := p.MakeError(generic.Id, err)
+		// p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
+		// p.c.WriteB(resp)
 	}
 
-	if _, ok := p.c.wait[p.c.NextId]; !ok {
-		p.c.wait[p.c.NextId] = make(chan bool, 1)
-		p.c.WriteB(data)
-		<-p.c.wait[p.c.NextId]
-	}
+	p.c.WriteB(data)
+	p.c.WaitOn(nextId)
+
+	// if _, ok := p.c.wait[p.c.NextId]; !ok {
+	// 	p.c.wait[p.c.NextId] = make(chan bool, 1)
+	// 	p.c.WriteB(data)
+	// 	<-p.c.wait[p.c.NextId]
+	// }
 
 }
 
@@ -142,10 +148,10 @@ func Connect(addr string) *plugin {
 
 	out := plugin{
 		c: connector{
-			c:      conn,
-			lock:   sync.Mutex{},
-			NextId: -1,
-			wait:   make(map[int]chan bool),
+			c:            conn,
+			lock:         sync.Mutex{},
+			nextId:       0,
+			responseWait: make(map[int]*chan bool),
 		},
 		lock:       sync.Mutex{},
 		chError:    make(chan error),
@@ -224,7 +230,6 @@ func (p *plugin) decode(buf []byte) {
 		resp := p.MakeError(generic.Id, err)
 		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		p.c.WriteB(resp)
-
 	} else {
 		//process message
 		p.processMessage(generic)
@@ -238,10 +243,8 @@ func (p *plugin) processMessage(obj Generic) error {
 
 	case "result":
 		var m result
+		p.c.WaitDone(obj.Id)
 		json.Unmarshal(raw, &m)
-		// p.c.lock.Lock()
-		p.c.wait[obj.Id] <- true
-		// p.c.lock.Unlock()
 
 	case "trigger":
 		// call the methods that where regestered from the object
@@ -256,13 +259,11 @@ func (p *plugin) processMessage(obj Generic) error {
 		function := p.functions[m.Call]
 		function.Call([]reflect.Value{v})
 
-		resp := p.MakeError(obj.Id, err)
+		out := p.MakeError(obj.Id, err)
 		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 
-		p.c.lock.Lock()
-		p.c.wait[obj.Id] <- true
-		p.c.lock.Unlock()
-		p.c.WriteB(resp)
+		p.c.WriteB(out)
+		p.c.WaitDone(obj.Id)
 	}
 
 	return nil
@@ -311,10 +312,43 @@ func (p *plugin) MakeError(id int, err error) []byte {
 }
 
 type connector struct {
-	c      net.Conn
-	lock   sync.Mutex
-	NextId int
-	wait   map[int]chan bool
+	c            net.Conn
+	lock         sync.Mutex
+	nextId       int
+	responseWait map[int]*chan bool
+}
+
+func (c *connector) WaitAdd() int {
+	i := c.nextId
+	c.nextId++
+
+	wait := make(chan bool, 1)
+	c.lock.Lock()
+	c.responseWait[i] = &wait
+	c.lock.Unlock()
+
+	return i
+}
+
+func (c *connector) WaitDone(i int) {
+	c.lock.Lock()
+	wait, ok := c.responseWait[i]
+	if !ok {
+		channel := make(chan bool, 1)
+		wait = &channel
+		c.responseWait[i] = wait
+	}
+	c.lock.Unlock()
+
+	*wait <- true
+}
+
+func (c *connector) WaitOn(i int) {
+	c.lock.Lock()
+	wait := *c.responseWait[i]
+	c.lock.Unlock()
+
+	<-wait
 }
 
 func (c *connector) WriteB(b []byte) {

@@ -51,20 +51,19 @@ func Start(sockAddr string, wg *sync.WaitGroup, plugins *Plugin, jsCallBack func
 		incoming, _ := l.Accept()
 
 		con := PluginConnector{
-			c:          incoming,
-			lock:       sync.Mutex{},
-			wait:       map[int]chan bool{},
-			funcList:   make(map[string]*Caller),
-			plug:       plugins,
-			jsCallBack: jsCallBack,
-			wg:         wg,
+			c:            incoming,
+			lock:         sync.Mutex{},
+			responseWait: map[int]*chan bool{},
+			funcList:     make(map[string]*Caller),
+			plug:         plugins,
+			jsCallBack:   jsCallBack,
+			wg:           wg,
 		}
-		completed := make(chan bool, 1)
-		con.wait[0] = completed
+		nextId := con.WaitAdd()
 		go con.handle()
 		// wait for plugin to self register
 		// TODO: this should be wrapped in a select so it timesout
-		<-completed
+		con.WaitOn(nextId)
 		// now we have registered we add to the global plugin list
 		plugins.Add(con.name, &con)
 	}

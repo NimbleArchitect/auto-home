@@ -16,10 +16,11 @@ type Caller struct {
 func (c *Caller) Run(values ...goja.Value) {
 	var t trigger
 
-	fields := make(map[int]interface{})
-	c.c.nextId++
+	nextId := c.c.WaitAdd()
 
-	log.Printf("called: %s.%s()\n", c.Name, c.Call)
+	fields := make(map[int]interface{})
+
+	log.Printf("called: %s.%s(%s)\n", c.Name, c.Call, values)
 	for i, v := range values {
 		fields[i] = v.Export()
 	}
@@ -29,7 +30,7 @@ func (c *Caller) Run(values ...goja.Value) {
 
 	generic := response{
 		Method: "trigger",
-		Id:     c.c.nextId,
+		Id:     nextId,
 		Data:   t,
 	}
 	data, err := json.Marshal(generic)
@@ -37,19 +38,6 @@ func (c *Caller) Run(values ...goja.Value) {
 		log.Println("json error", err)
 	}
 
-	c.c.lock.Lock()
-	_, ok := c.c.wait[c.c.nextId]
-	c.c.lock.Unlock()
-	if !ok {
-		c.c.lock.Lock()
-		c.c.wait[c.c.nextId] = make(chan bool, 1)
-		c.c.lock.Unlock()
-		// c.c.lock.Lock()
-		// TODO: this should wait but its not working correctly
-		//  this needs to be wrapped in a select so we can have a timeout
-		// <-c.c.wait[c.c.nextId]
-		// c.c.lock.Unlock()
-	}
 	c.c.writeB(data)
-
+	c.c.WaitOn(nextId)
 }
