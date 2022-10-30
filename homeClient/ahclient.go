@@ -200,6 +200,9 @@ func (c *AhClient) Close() {
 	c.done <- true
 }
 
+// ListenEvents starts the listener and calls the provided callback function on recieved events,
+//
+//	the returned channel allows the caller to respond to EVENT flags
 func (c *AhClient) ListenEvents(callback func(string, map[string]interface{})) (chan int, error) {
 	if c.done != nil {
 		return nil, errors.New("already listening")

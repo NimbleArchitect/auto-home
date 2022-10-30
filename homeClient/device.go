@@ -13,6 +13,7 @@ type Device struct {
 	props       map[string]string
 }
 
+// NewDevice returns a new device object, with the name and id fields set
 func NewDevice(name string, deviceid string) Device {
 	return Device{
 		Name:  name,
