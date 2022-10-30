@@ -8,8 +8,6 @@ function sendUserMsg(msg) {
 
 function sendmessage(msg) {
     console.log("called sendmessage >>")
-    home.plugin("Telegram").call("SendMessage", {
-        message: msg, 
-    })
+    plugin.telegram.sendMessage(msg)
     
 }

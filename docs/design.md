@@ -78,7 +78,7 @@ the server then register the signal handler so we get a clean shutdown before re
 ## plugins
 during server startup the plugin manager is started which also loads the various plugin executables from disk, once started each plugin connects to the server and registers its actions, when all plugins have been loaded the server can continue
 
-currently only a basic telegram plugin is up and running
+currently only a basic telegram and solar plugins are up and running
 
 ## clients
 the software that communicates with the server and the actual device
