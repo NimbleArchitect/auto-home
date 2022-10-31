@@ -36,7 +36,7 @@ Step 1 is to validate all properties passed in and check if the device propertie
 
 Step 2 we get a list of groups that the device is a member of and recursively look for all parent groups then, we look for and call the onchange event for every group in the list, when the groups functions have been called the return code is checked to see if we should continue processing further groups or continue our merry way.
 
-Step 3 (assuming we go this far) is our onchange process, this part of the process allows us to loop over each property that was set to be changed, first we check to make sure the stop processing flag has not been set then we check for and run the onchange script for every property before we writing the change back to the deviceManager via the liveDevice field.
+Step 3 (assuming we got this far) THIS HAS BEEN CHANGED 
 
 ### devices
 A snapshot copy of all devices is taken every time the JavaScript VM is called as this allows uninterrupted access to every device in the system, it also allows script users to view the state at the time the event was triggered,and we don't have to deal with mutex locking or race conditions, I also provide access to the live (most recent) device property which can be retrieved via latest
