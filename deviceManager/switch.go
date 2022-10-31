@@ -120,11 +120,13 @@ func (d *Device) SetSwitchValue(name string, value string) {
 		property.data.Value.Set(value)
 		// copy the Id so we can unlock before we start the call back action, this means we dont have to
 		//  keep the lock open until the client has rwsponded
-		id := property.data.Id
+		// TODO: is the property id even needed any more??
+		// id := property.data.Id
+
 		property.lock.Unlock()
 
 		if d.actionWriter != nil {
-			jsonOut := d.MakeAction(id, name, DIAL, fmt.Sprint(value))
+			jsonOut := d.MakeAction(d.Id, name, SWITCH, fmt.Sprint(value))
 			d.actionWriter.Write(jsonOut)
 		}
 	}

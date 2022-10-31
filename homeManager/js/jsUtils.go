@@ -124,6 +124,12 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 	}
 
 	for name, swi := range dev.propSwitch {
+		// now everything has finished we can update the device props
+		// save value to device state
+		if liveDevice != nil && swi.flag.Not(FLAG_PREVENTUPDATE) {
+			liveDevice.SetSwitchValue(name, swi.Value)
+		}
+
 		if FLAG != FLAG_STOPPROCESSING {
 			// all state props have been updated for the device so we call onchange with the property that was changed
 			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(swi.Value))
@@ -135,19 +141,14 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 				}
 			}
 		}
-
-		// now everything has finished we can update the device props
-		// save value to device state
-
-		if liveDevice != nil && swi.flag.Not(FLAG_PREVENTUPDATE) {
-			liveDevice.SetSwitchValue(name, swi.Value)
-		}
-		// if err != nil {
-		// 	log.Println("unable to update device state:", err)
-		// }
 	}
 
 	for name, dial := range dev.propDial {
+		// save value to live device
+		if liveDevice != nil && dial.flag.Not(FLAG_PREVENTUPDATE) {
+			liveDevice.SetDialValue(name, dial.Value)
+		}
+
 		if FLAG != FLAG_STOPPROCESSING {
 			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(dial.Value))
 			if err != nil {
@@ -158,17 +159,15 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 				}
 			}
 		}
-		// save value to live device
-		if liveDevice != nil && dial.flag.Not(FLAG_PREVENTUPDATE) {
-			liveDevice.SetDialValue(name, dial.Value)
-		}
-		// err = r.Updater.UpdateDial(deviceid, name, dial.Value)
-		// if err != nil {
-		// 	log.Println("unable to update device state:", err)
-		// }
 	}
 
 	for name, button := range dev.propButton {
+		// now everything has finished we can update the device props
+		// save value to device state
+		if liveDevice != nil && button.flag.Not(FLAG_PREVENTUPDATE) {
+			liveDevice.SetButtonValue(name, button.label)
+		}
+
 		if FLAG != FLAG_STOPPROCESSING {
 			// all state props have been updated for the device so we call onchange with the property that was changed
 			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(button.label))
@@ -180,17 +179,15 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 				}
 			}
 		}
-		// now everything has finished we can update the device props
-		// save value to device state
-		if liveDevice != nil && button.flag.Not(FLAG_PREVENTUPDATE) {
-			liveDevice.SetButtonValue(name, button.label)
-		}
-		// if err != nil {
-		// 	log.Println("unable to update device state:", err)
-		// }
 	}
 
 	for name, txt := range dev.propText {
+		// now everything has finished we can update the device props
+		// save value to device state
+		if liveDevice != nil && txt.flag.Not(FLAG_PREVENTUPDATE) {
+			liveDevice.SetTextValue(name, txt.Value)
+		}
+
 		if FLAG != FLAG_STOPPROCESSING {
 			// all state props have been updated for the device so we call onchange with the property that was changed
 			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(txt.Value))
@@ -202,14 +199,6 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 				}
 			}
 		}
-		// now everything has finished we can update the device props
-		// save value to device state
-		if liveDevice != nil && txt.flag.Not(FLAG_PREVENTUPDATE) {
-			liveDevice.SetTextValue(name, txt.Value)
-		}
-		// if err != nil {
-		// 	log.Println("unable to update device state:", err)
-		// }
 	}
 }
 

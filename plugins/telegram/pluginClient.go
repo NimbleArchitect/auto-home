@@ -255,9 +255,16 @@ func (p *plugin) processMessage(obj Generic) error {
 		if err != nil {
 			return err
 		}
-		v := reflect.ValueOf(raw)
+
+		var callArgs []reflect.Value
 		function := p.functions[m.Call]
-		function.Call([]reflect.Value{v})
+		if len(raw) <= 2 {
+			function.Call(nil)
+		} else {
+			v := reflect.ValueOf(raw)
+			callArgs = []reflect.Value{v}
+			function.Call(callArgs)
+		}
 
 		out := p.MakeError(obj.Id, err)
 		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))

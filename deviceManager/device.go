@@ -1,6 +1,8 @@
 package deviceManager
 
-import "log"
+import (
+	"log"
+)
 
 type Device struct {
 	Id          string
