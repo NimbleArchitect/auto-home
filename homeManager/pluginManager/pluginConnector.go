@@ -42,7 +42,7 @@ type PluginConnector struct {
 	nextId       int
 	responseWait map[int]*chan result
 	plug         *Plugin
-	funcList     map[string]*Caller
+	funcList     map[string]*Caller // list of function names provided by the plugin
 	jsCallBack   func(string, string, map[string]interface{})
 	wg           *sync.WaitGroup
 }
@@ -235,15 +235,15 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 
 		c.name = m.Name
 		for rawName := range m.Fields {
-			name := []rune(rawName)
-			name[0] = unicode.ToLower(name[0])
+			tmpName := []rune(rawName)
+			tmpName[0] = unicode.ToLower(tmpName[0])
+			name := string(tmpName)
 			caller := Caller{
 				Name: m.Name,
-				Call: string(name),
+				Call: name,
 				c:    c,
 			}
-
-			c.funcList[string(name)] = &caller
+			c.funcList[name] = &caller
 		}
 
 		out := makeResponse(obj.Id, nil)

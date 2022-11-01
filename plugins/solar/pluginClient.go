@@ -272,10 +272,7 @@ func (p *plugin) processMessage(obj Generic) error {
 		var retValues interface{}
 		if len(response) > 0 {
 			// process answer from function.call
-			//   response its an array so need to process each
-			//   value maybe I can convert it to json without doing anything?
-			//   for now dummy it so go dosent complain
-			_ = response
+			// TODO: response is an array so need to process each value
 
 			if response[0].IsValid() {
 				retValues = response[0].Interface()

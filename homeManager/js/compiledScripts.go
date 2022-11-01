@@ -56,11 +56,11 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM
 	plugins := runtime.NewObject()
 	for n, plugin := range pluginList.All() {
 		thisPlugin := runtime.NewObject()
-		for _, caller := range plugin.All() {
-
-			// thisPlugin.Set(caller.Call, caller.Run)
-			thisPlugin.Set(caller.Call, func(values ...goja.Value) goja.Value {
-				out := caller.Run(values)
+		for name, caller := range plugin.All() {
+			// de-reference caller so we get a copy of it that we can use in the function
+			localCall := *caller
+			thisPlugin.Set(name, func(values ...goja.Value) goja.Value {
+				out := localCall.Run(values)
 				if len(out) == 0 {
 					return goja.Undefined()
 				}

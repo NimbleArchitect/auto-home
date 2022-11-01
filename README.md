@@ -2,9 +2,9 @@
 interested and want to help, please drop a message in [discussions](https://github.com/NimbleArchitect/auto-home/discussions)
 
 # Introduction
-A fully reactive home automation controller, this is probably the third revision of an idea that started back in 2018
+A fully reactive smart home automation controller, this is probably the third revision of an idea that started back in 2018
 
-designed to work on a raspberry pi and be network aware the new code uses JavaScript as the internal scripting language which allows you to link up onchange and ontrigger events, its also possible to create custom functions that control devices, i.e. if you want to flash your lights red you can by creating a JavaScript function that flashes the lights for you. 
+designed to work on a raspberry pi and be network aware the new code uses JavaScript as the internal scripting language which allows you to link up onchange and ontrigger events to make your home even smarter, its also possible to create custom functions that control devices, i.e. if you want to flash your lights red you can by creating a JavaScript function that flashes the lights for you. 
 
 The advanced group support allows devices to be part of multiple groups and groups to also be part of other groups so you can end up like this ascii image, I have labelled the groups and devices to make it a bit easier to read.
 
@@ -39,6 +39,7 @@ Its also completly possible to script the kitchen lights group to automatically 
 * event repeat protection, devices/groups support a cool down period of X milliseconds where duplicate events are ignored
 * server start script
 * scripts can prevent group events and device updates from happening
+* custom plugin interfaces
 
 # Planned features
 * web UI
@@ -48,9 +49,8 @@ Its also completly possible to script the kitchen lights group to automatically 
 * support for file uploads
 * full http API support
 * user presence support
-* more plugins (sunrise/sunset, )
+* more plugins (sunrise/sunset, telegram)
 * integrated calendar
-* custom plugin interfaces
 * call http post/get from JavaScript
 * devices support custom data fields that can be read/written from JavaScript
 * custom fields are automatically removed after a set age
