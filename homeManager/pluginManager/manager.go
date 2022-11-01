@@ -53,7 +53,7 @@ func Start(sockAddr string, wg *sync.WaitGroup, plugins *Plugin, jsCallBack func
 		con := PluginConnector{
 			c:            incoming,
 			lock:         sync.Mutex{},
-			responseWait: map[int]*chan bool{},
+			responseWait: map[int]*chan result{},
 			funcList:     make(map[string]*Caller),
 			plug:         plugins,
 			jsCallBack:   jsCallBack,
@@ -85,6 +85,27 @@ func makeError(id int, err error) []byte {
 		Data: result{
 			Ok:      ok,
 			Message: msg,
+		},
+	}
+
+	data, err := json.Marshal(resp)
+	if err != nil {
+		log.Println("json error", err)
+	}
+
+	return data
+}
+
+func makeResponse(id int, singleArg interface{}) []byte {
+	arg := make(map[string]interface{})
+	arg["0"] = singleArg
+
+	resp := response{
+		Method: "result",
+		Id:     id,
+		Data: result{
+			Ok:   true,
+			Data: arg,
 		},
 	}
 

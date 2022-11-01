@@ -13,7 +13,8 @@ type Caller struct {
 	c    *PluginConnector
 }
 
-func (c *Caller) Run(values ...goja.Value) {
+// Run sends a call to the remote plugin and waits for a response
+func (c *Caller) Run(values []goja.Value) map[string]interface{} {
 	var t trigger
 
 	nextId := c.c.WaitAdd()
@@ -39,5 +40,12 @@ func (c *Caller) Run(values ...goja.Value) {
 	}
 
 	c.c.writeB(data)
-	c.c.WaitOn(nextId)
+	msg, args, ok := c.c.WaitOn(nextId)
+
+	if !ok {
+		log.Println(c.Name, "error:", msg)
+	}
+
+	return args
+
 }

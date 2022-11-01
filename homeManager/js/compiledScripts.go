@@ -57,7 +57,20 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM
 	for n, plugin := range pluginList.All() {
 		thisPlugin := runtime.NewObject()
 		for _, caller := range plugin.All() {
-			thisPlugin.Set(caller.Call, caller.Run)
+
+			// thisPlugin.Set(caller.Call, caller.Run)
+			thisPlugin.Set(caller.Call, func(values ...goja.Value) goja.Value {
+				out := caller.Run(values)
+				if len(out) == 0 {
+					return goja.Undefined()
+				}
+				if len(out) == 1 {
+					for _, v := range out {
+						return vm.runtime.ToValue(v)
+					}
+				}
+				return vm.runtime.ToValue(out)
+			})
 		}
 
 		plugins.Set(n, thisPlugin)

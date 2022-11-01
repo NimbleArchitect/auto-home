@@ -27,12 +27,12 @@ type settings struct {
 	Lon      float64
 }
 
-type event struct {
-	Label    string
-	Date     time.Time
-	Location string
-	Notes    string
-}
+// type event struct {
+// 	Label    string
+// 	Date     time.Time
+// 	Location string
+// 	Notes    string
+// }
 
 func main() {
 

@@ -93,6 +93,7 @@ func (p *plugin) Register(name string, obj interface{}) {
 	//register an object and its methods
 	methods := make(map[string]interface{})
 	p.name = name
+	p.c.name = &p.name
 
 	nextId := p.c.WaitAdd()
 
@@ -151,7 +152,7 @@ func Connect(addr string) *plugin {
 			c:            conn,
 			lock:         sync.Mutex{},
 			nextId:       0,
-			responseWait: make(map[int]*chan bool),
+			responseWait: make(map[int]*chan result),
 		},
 		lock:       sync.Mutex{},
 		chError:    make(chan error),
@@ -189,7 +190,7 @@ func (p *plugin) handle() {
 					last := 0
 					for i := 1; i < len(buf); i++ {
 						if buf[i-1] == 10 && buf[i] == 10 {
-							fmt.Println("telegram =<< recieved", string(buf[last:i-2]))
+							fmt.Println(p.name, "=<< recieved", string(buf[last:i-2]))
 							go p.decode(buf[last:i])
 							last = i
 						}
@@ -243,7 +244,7 @@ func (p *plugin) processMessage(obj Generic) error {
 
 	case "result":
 		var m result
-		p.c.WaitDone(obj.Id)
+		p.c.WaitDone(obj.Id, nil, nil)
 		json.Unmarshal(raw, &m)
 
 	case "trigger":
@@ -257,20 +258,36 @@ func (p *plugin) processMessage(obj Generic) error {
 		}
 
 		var callArgs []reflect.Value
+		var response []reflect.Value
+
 		function := p.functions[m.Call]
 		if len(raw) <= 2 {
-			function.Call(nil)
+			response = function.Call(nil)
 		} else {
 			v := reflect.ValueOf(raw)
 			callArgs = []reflect.Value{v}
-			function.Call(callArgs)
+			response = function.Call(callArgs)
 		}
 
-		out := p.MakeError(obj.Id, err)
+		var retValues interface{}
+		if len(response) > 0 {
+			// process answer from function.call
+			//   response its an array so need to process each
+			//   value maybe I can convert it to json without doing anything?
+			//   for now dummy it so go dosent complain
+			_ = response
+
+			if response[0].IsValid() {
+				retValues = response[0].Interface()
+			}
+
+		}
+
+		out := p.MakeResponse(obj.Id, retValues)
 		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 
 		p.c.WriteB(out)
-		p.c.WaitDone(obj.Id)
+		p.c.WaitDone(obj.Id, nil, nil)
 	}
 
 	return nil
@@ -284,14 +301,14 @@ type Response struct {
 
 type result struct {
 	Ok      bool
-	Call    string
-	Message string
+	Message string                  `json:",omitempty"`
+	Data    *map[string]interface{} `json:",omitempty"`
 }
 
 func (p *plugin) MakeError(id int, err error) []byte {
-	var ok bool
 	var msg string
 
+	ok := false
 	if err == nil {
 		ok = true
 	} else {
@@ -318,18 +335,40 @@ func (p *plugin) MakeError(id int, err error) []byte {
 	return data
 }
 
+func (p *plugin) MakeResponse(id int, singleArg interface{}) []byte {
+	arg := make(map[string]interface{})
+	arg["0"] = singleArg
+
+	resp := Response{
+		Method: "result",
+		Id:     id,
+		Data: result{
+			Ok:   true,
+			Data: &arg,
+		},
+	}
+
+	data, err := json.Marshal(resp)
+	if err != nil {
+		log.Println("json error", err)
+	}
+
+	return data
+}
+
 type connector struct {
 	c            net.Conn
 	lock         sync.Mutex
 	nextId       int
-	responseWait map[int]*chan bool
+	responseWait map[int]*chan result
+	name         *string
 }
 
 func (c *connector) WaitAdd() int {
 	i := c.nextId
 	c.nextId++
 
-	wait := make(chan bool, 1)
+	wait := make(chan result, 1)
 	c.lock.Lock()
 	c.responseWait[i] = &wait
 	c.lock.Unlock()
@@ -337,29 +376,39 @@ func (c *connector) WaitAdd() int {
 	return i
 }
 
-func (c *connector) WaitDone(i int) {
+// WaitDone used to signal that we should not wait any more
+func (c *connector) WaitDone(i int, msg *string, data *map[string]interface{}) {
+	var msgData string
+
 	c.lock.Lock()
 	wait, ok := c.responseWait[i]
 	if !ok {
-		channel := make(chan bool, 1)
+		channel := make(chan result, 1)
 		wait = &channel
 		c.responseWait[i] = wait
 	}
 	c.lock.Unlock()
 
-	*wait <- true
+	if msg != nil {
+		msgData = *msg
+	}
+	*wait <- result{Ok: true, Message: msgData, Data: data}
 }
 
-func (c *connector) WaitOn(i int) {
+func (c *connector) WaitOn(i int) (string, map[string]interface{}, bool) {
 	c.lock.Lock()
 	wait := *c.responseWait[i]
 	c.lock.Unlock()
 
-	<-wait
+	out := <-wait
+
+	var args map[string]interface{}
+
+	return out.Message, args, out.Ok
 }
 
 func (c *connector) WriteB(b []byte) {
-	fmt.Println("telegram =>> sending", string(b))
+	fmt.Println(*c.name, "=>> sending", string(b))
 	c.lock.Lock()
 	_, err := c.c.Write(b)
 	if err != nil {

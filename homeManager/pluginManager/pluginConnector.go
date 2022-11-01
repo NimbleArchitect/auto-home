@@ -31,7 +31,8 @@ type create struct {
 
 type result struct {
 	Ok      bool
-	Message string
+	Message string                 `json:",omitempty"`
+	Data    map[string]interface{} `json:",omitempty"`
 }
 
 type PluginConnector struct {
@@ -39,7 +40,7 @@ type PluginConnector struct {
 	c            net.Conn
 	lock         sync.Mutex
 	nextId       int
-	responseWait map[int]*chan bool
+	responseWait map[int]*chan result
 	plug         *Plugin
 	funcList     map[string]*Caller
 	jsCallBack   func(string, string, map[string]interface{})
@@ -64,7 +65,7 @@ func (c *PluginConnector) WaitAdd() int {
 	i := c.nextId
 	c.nextId++
 
-	wait := make(chan bool, 1)
+	wait := make(chan result, 1)
 	c.lock.Lock()
 	c.responseWait[i] = &wait
 	c.lock.Unlock()
@@ -72,25 +73,33 @@ func (c *PluginConnector) WaitAdd() int {
 	return i
 }
 
-func (c *PluginConnector) WaitDone(i int) {
+// WaitDone used to signal that we should not wait any more
+func (c *PluginConnector) WaitDone(i int, msg *string, data map[string]interface{}) {
+	var msgData string
+
 	c.lock.Lock()
 	wait, ok := c.responseWait[i]
 	if !ok {
-		channel := make(chan bool, 1)
+		channel := make(chan result, 1)
 		wait = &channel
 		c.responseWait[i] = wait
 	}
 	c.lock.Unlock()
 
-	*wait <- true
+	if msg != nil {
+		msgData = *msg
+	}
+	*wait <- result{Ok: true, Message: msgData, Data: data}
 }
 
-func (c *PluginConnector) WaitOn(i int) {
+func (c *PluginConnector) WaitOn(i int) (string, map[string]interface{}, bool) {
 	c.lock.Lock()
 	wait := *c.responseWait[i]
 	c.lock.Unlock()
 
-	<-wait
+	out := <-wait
+
+	return out.Message, out.Data, out.Ok
 }
 
 func (c *PluginConnector) writeB(b []byte) {
@@ -188,6 +197,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 
 		switch field := m.Fields.(type) {
 		case map[string]interface{}:
+			// TODO: is is worth capturing the return vars from the js call?
 			// run the js callback caller.Run
 			c.jsCallBack(m.Name, m.Call, field)
 		default:
@@ -196,14 +206,23 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 			return errors.New(errMsg)
 		}
 
-		out := makeError(obj.Id, nil)
-		c.WaitDone(obj.Id)
+		out := makeResponse(obj.Id, nil)
+		c.WaitDone(obj.Id, nil, nil)
 		c.writeB(out)
 
 	case "result":
 		var m result
-		json.Unmarshal(raw, &m)
-		c.WaitDone(obj.Id)
+		err := json.Unmarshal(raw, &m)
+		if err != nil {
+			fmt.Println("err:", err)
+		}
+
+		// proceess the response from the client trigger?
+		if m.Ok {
+			c.WaitDone(obj.Id, nil, m.Data)
+		} else {
+			c.WaitDone(obj.Id, &m.Message, nil)
+		}
 
 	case "create":
 		var m create
@@ -227,11 +246,11 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 			c.funcList[string(name)] = &caller
 		}
 
-		out := makeError(obj.Id, nil)
+		out := makeResponse(obj.Id, nil)
 		if c.wg != nil {
 			c.wg.Done()
 		}
-		c.WaitDone(obj.Id)
+		c.WaitDone(obj.Id, nil, nil)
 		c.writeB(out)
 	}
 
