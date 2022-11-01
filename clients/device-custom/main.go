@@ -52,7 +52,7 @@ func main() {
 
 	dev := homeClient.NewDevice(conf.DeviceName, conf.Deviceid)
 
-	dev.AddSwitch("state", "", "closed", "RW")
+	dev.AddSwitch("state", "", "close", "RW")
 
 	client.RegisterDevice(&dev)
 
