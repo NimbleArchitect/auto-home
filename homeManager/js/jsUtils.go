@@ -1,6 +1,7 @@
 package js
 
 import (
+	"fmt"
 	"log"
 	"server/deviceManager"
 	"strings"
@@ -285,4 +286,27 @@ func (r *JavascriptVM) ParentsOf(name string) map[string]jsGroup {
 	}
 
 	return foundMap
+}
+
+// setJsGlobal sets up the objects for the runtime, these are the object that can
+//
+//	change so need loading everytime the vm is called, currently sets up home and plugin obects
+func (r *JavascriptVM) setJsGlobal() jsHome {
+	home := jsHome{
+		devices: r.deviceState,
+
+		StopProcessing:     FLAG_STOPPROCESSING,
+		ContinueProcessing: FLAG_CONTINUEPROCESSING,
+		GroupProcessing:    FLAG_GROUPPROCESSING,
+		PreventUpdate:      FLAG_PREVENTUPDATE,
+	}
+
+	if err := r.runtime.Set("plugin", r.plugins); err != nil {
+		fmt.Println("unable to attach plugin object to javascript vm:", err)
+	}
+	if err := r.runtime.Set("home", home); err != nil {
+		fmt.Println("unable to attach plugin object to javascript vm:", err)
+	}
+
+	return home
 }

@@ -27,7 +27,6 @@ type JavascriptVM struct {
 
 // RunJS loads the js object attached to the specified deviceId and runs the function fName passing in props as an argument
 func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (goja.Value, error) {
-	var jsHome jsHome
 	var jsFunction goja.Value
 
 	var err error
@@ -68,15 +67,7 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 		return nil, nil
 	}
 
-	jsHome.StopProcessing = FLAG_STOPPROCESSING
-	jsHome.ContinueProcessing = FLAG_CONTINUEPROCESSING
-	jsHome.GroupProcessing = FLAG_GROUPPROCESSING
-	jsHome.PreventUpdate = FLAG_PREVENTUPDATE
-
-	jsHome.devices = r.deviceState
-
-	r.runtime.Set("plugin", r.plugins)
-	r.runtime.Set("home", jsHome)
+	r.setJsGlobal()
 
 	if props == nil {
 		log.Printf("calling %s/%s with no arguments\n", deviceid, fName)

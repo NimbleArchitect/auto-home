@@ -12,20 +12,6 @@ import (
 type DeviceUpdator interface {
 	GetNextVM() (*JavascriptVM, int)
 	PushVMID(int)
-
-	// UpdateDial(string, string, int) error
-	// UpdateSwitch(string, string, string) error
-	// UpdateButton(string, string, string) error
-	// UpdateText(string, string, string) error
-
-	// GetDialValue(string, string) (int, bool)
-	// GetSwitchValue(string, string) (string, bool)
-	// GetButtonValue(string, string) (string, bool)
-	// GetTextValue(string, string) (string, bool)
-
-	// GetDialHistory()
-
-	// RunGroupAction(string, string, []map[string]interface{}) (interface{}, error)
 }
 
 const (
@@ -45,20 +31,12 @@ func BuildOnAction(values ...string) string {
 // runAsThread runs the js function as a new thread, this could be dangerous/not thread safe
 func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
 	go func() {
-		var jsHome jsHome
 		var ok bool
 
 		vm, id := r.Updater.GetNextVM()
 		defer r.Updater.PushVMID(id)
 
-		jsHome.StopProcessing = FLAG_STOPPROCESSING
-		jsHome.ContinueProcessing = FLAG_CONTINUEPROCESSING
-		jsHome.GroupProcessing = FLAG_GROUPPROCESSING
-
-		jsHome.devices = r.deviceState
-
-		vm.runtime.Set("plugin", vm.plugins)
-		vm.runtime.Set("home", jsHome)
+		vm.setJsGlobal()
 
 		obj := vm.runtime.Get(function.String())
 		call, ok := goja.AssertFunction(obj)
