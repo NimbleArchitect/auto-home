@@ -81,12 +81,6 @@ func (p *plugin) Call(callName string, arg interface{}) {
 	p.c.WriteB(data)
 	p.c.WaitOn(nextId)
 
-	// if _, ok := p.c.wait[p.c.NextId]; !ok {
-	// 	p.c.wait[p.c.NextId] = make(chan bool, 1)
-	// 	p.c.WriteB(data)
-	// 	<-p.c.wait[p.c.NextId]
-	// }
-
 }
 
 func (p *plugin) Register(name string, obj interface{}) {

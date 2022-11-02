@@ -81,12 +81,6 @@ func (p *plugin) Call(callName string, arg interface{}) {
 	p.c.WriteB(data)
 	p.c.WaitOn(nextId)
 
-	// if _, ok := p.c.wait[p.c.NextId]; !ok {
-	// 	p.c.wait[p.c.NextId] = make(chan bool, 1)
-	// 	p.c.WriteB(data)
-	// 	<-p.c.wait[p.c.NextId]
-	// }
-
 }
 
 func (p *plugin) Register(name string, obj interface{}) {
@@ -169,10 +163,6 @@ func (p *plugin) handle() {
 
 	defer p.c.c.Close()
 
-	// f, _ := os.Create("/tmp/" + p.name)
-	// defer f.Close()
-	// f.WriteString(string(tmp))
-
 	go func() {
 
 		for {
@@ -249,6 +239,7 @@ func (p *plugin) processMessage(obj Generic) error {
 		p.c.WaitDone(obj.Id, nil, nil)
 		json.Unmarshal(raw, &m)
 
+	// TODO: plugins still dont work, multi calls seem to break
 	case "trigger":
 		// call the methods that where regestered from the object
 		var m action
