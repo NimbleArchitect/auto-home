@@ -18,6 +18,7 @@ type JavascriptVM struct {
 	groupCode   map[string]*goja.Object
 	groups      map[string]jsGroup
 	userCode    map[string]*goja.Object
+	plugins     map[string]*goja.Object //vm's copy of all plugins attached to the plugin object
 	pluginCode  map[string]*goja.Object
 	pluginList  *pluginManager.Plugin // plugin connections, shared across all VMs
 	// users      map[string]jsUser
@@ -74,6 +75,7 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 
 	jsHome.devices = r.deviceState
 
+	r.runtime.Set("plugin", r.plugins)
 	r.runtime.Set("home", jsHome)
 
 	if props == nil {

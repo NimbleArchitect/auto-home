@@ -57,6 +57,7 @@ func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
 
 		jsHome.devices = r.deviceState
 
+		vm.runtime.Set("plugin", vm.plugins)
 		vm.runtime.Set("home", jsHome)
 
 		obj := vm.runtime.Get(function.String())

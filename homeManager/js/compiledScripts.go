@@ -51,32 +51,10 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM
 		groups:      make(map[string]jsGroup),
 		pluginList:  pluginList,
 		pluginCode:  make(map[string]*goja.Object),
+		plugins:     make(map[string]*goja.Object),
 	}
 
-	plugins := runtime.NewObject()
-	for n, plugin := range pluginList.All() {
-		thisPlugin := runtime.NewObject()
-		for name, caller := range plugin.All() {
-			// de-reference caller so we get a copy of it that we can use in the function
-			localCall := *caller
-			thisPlugin.Set(name, func(values ...goja.Value) goja.Value {
-				out := localCall.Run(values)
-				if len(out) == 0 {
-					return goja.Undefined()
-				}
-				if len(out) == 1 {
-					for _, v := range out {
-						return vm.runtime.ToValue(v)
-					}
-				}
-				return vm.runtime.ToValue(out)
-			})
-		}
-
-		plugins.Set(n, thisPlugin)
-	}
-	//TODO: move this to runJS, to do that I need to move plugins to a pointer that is attached to the VM
-	runtime.Set("plugin", plugins)
+	vm.loadPlugins()
 
 	err := runtime.Set("console", console)
 	if err != nil {
