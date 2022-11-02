@@ -169,6 +169,10 @@ func (p *plugin) handle() {
 
 	defer p.c.c.Close()
 
+	// f, _ := os.Create("/tmp/" + p.name)
+	// defer f.Close()
+	// f.WriteString(string(tmp))
+
 	go func() {
 
 		for {
@@ -213,7 +217,6 @@ func (p *plugin) handle() {
 				return
 			}
 		case <-time.After(1 * time.Minute):
-			p.c.c.SetWriteDeadline(time.Now().Add(2 * time.Second))
 			p.c.WriteB([]byte(nil))
 
 		}
@@ -229,7 +232,6 @@ func (p *plugin) decode(buf []byte) {
 	if err != nil {
 		log.Println("decode error", err)
 		resp := p.MakeError(generic.Id, err)
-		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		p.c.WriteB(resp)
 	} else {
 		//process message
@@ -272,10 +274,7 @@ func (p *plugin) processMessage(obj Generic) error {
 		var retValues interface{}
 		if len(response) > 0 {
 			// process answer from function.call
-			//   response its an array so need to process each
-			//   value maybe I can convert it to json without doing anything?
-			//   for now dummy it so go dosent complain
-			_ = response
+			// TODO: response is an array so need to process each value
 
 			if response[0].IsValid() {
 				retValues = response[0].Interface()
@@ -284,7 +283,6 @@ func (p *plugin) processMessage(obj Generic) error {
 		}
 
 		out := p.MakeResponse(obj.Id, retValues)
-		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 
 		p.c.WriteB(out)
 		p.c.WaitDone(obj.Id, nil, nil)

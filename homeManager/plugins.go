@@ -49,7 +49,12 @@ func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 	wg.Add(1)
 
 	// TODO: plugins/manager is better but still not happy with it
-	go pluginManager.Start("/tmp/rpc.sock", &wg, plug, m.callPluginObject)
+	pluginMgr := pluginManager.Manager{
+		SockAddr:  "/tmp/rpc.sock",
+		Plugins:   plug,
+		WaitGroup: &wg,
+	}
+	go pluginMgr.Start(m.callPluginObject)
 
 	for i := 0; i < len(pluginList); i++ {
 		wg.Add(1)
@@ -62,7 +67,7 @@ func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 
 	m.plugins = plug
 	m.chStartupComplete <- true
-
+	pluginMgr.WaitGroup = nil
 	log.Println("startup complete")
 }
 

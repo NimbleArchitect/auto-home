@@ -159,7 +159,6 @@ func (c *PluginConnector) handle() {
 				return
 			}
 		case <-time.After(1 * time.Minute):
-			c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 			c.writeB([]byte{})
 		}
 	}
@@ -172,7 +171,6 @@ func (c *PluginConnector) decode(buf []byte) {
 	if err != nil {
 		log.Println("decode error", err)
 		resp := makeError(generic.Id, err)
-		c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		c.writeB(resp)
 	} else {
 		//process message

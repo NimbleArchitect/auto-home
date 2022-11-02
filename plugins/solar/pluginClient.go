@@ -213,7 +213,6 @@ func (p *plugin) handle() {
 				return
 			}
 		case <-time.After(1 * time.Minute):
-			p.c.c.SetWriteDeadline(time.Now().Add(2 * time.Second))
 			p.c.WriteB([]byte(nil))
 
 		}
@@ -229,7 +228,6 @@ func (p *plugin) decode(buf []byte) {
 	if err != nil {
 		log.Println("decode error", err)
 		resp := p.MakeError(generic.Id, err)
-		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		p.c.WriteB(resp)
 	} else {
 		//process message
@@ -247,6 +245,7 @@ func (p *plugin) processMessage(obj Generic) error {
 		p.c.WaitDone(obj.Id, nil, nil)
 		json.Unmarshal(raw, &m)
 
+	// TODO: plugins still dont work, multi calls seem to break
 	case "trigger":
 		// call the methods that where regestered from the object
 		var m action
@@ -281,7 +280,6 @@ func (p *plugin) processMessage(obj Generic) error {
 		}
 
 		out := p.MakeResponse(obj.Id, retValues)
-		p.c.c.SetWriteDeadline(time.Now().Add(5 * time.Second))
 
 		p.c.WriteB(out)
 		p.c.WaitDone(obj.Id, nil, nil)

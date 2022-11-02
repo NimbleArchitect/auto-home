@@ -2,6 +2,7 @@ package pluginManager
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -37,27 +38,36 @@ func (p *Plugin) All() map[string]*PluginConnector {
 	return out
 }
 
-func Start(sockAddr string, wg *sync.WaitGroup, plugins *Plugin, jsCallBack func(string, string, map[string]interface{})) {
-	if err := os.RemoveAll(sockAddr); err != nil {
+type Manager struct {
+	SockAddr  string
+	Plugins   *Plugin
+	WaitGroup *sync.WaitGroup
+}
+
+func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{})) {
+	if err := os.RemoveAll(m.SockAddr); err != nil {
 		log.Fatal(err)
 	}
 
-	l, e := net.Listen("unix", sockAddr)
+	l, e := net.Listen("unix", m.SockAddr)
 	if e != nil {
 		log.Fatal("listen error:", e)
 	}
 
 	for {
-		incoming, _ := l.Accept()
+		incoming, err := l.Accept()
+		if err != nil {
+			fmt.Println("unable to accept connection:", err)
+		}
 
 		con := PluginConnector{
 			c:            incoming,
 			lock:         sync.Mutex{},
 			responseWait: map[int]*chan result{},
 			funcList:     make(map[string]*Caller),
-			plug:         plugins,
+			plug:         m.Plugins,
 			jsCallBack:   jsCallBack,
-			wg:           wg,
+			wg:           m.WaitGroup,
 		}
 		nextId := con.WaitAdd()
 		go con.handle()
@@ -65,7 +75,7 @@ func Start(sockAddr string, wg *sync.WaitGroup, plugins *Plugin, jsCallBack func
 		// TODO: this should be wrapped in a select so it timesout
 		con.WaitOn(nextId)
 		// now we have registered we add to the global plugin list
-		plugins.Add(con.name, &con)
+		m.Plugins.Add(con.name, &con)
 	}
 }
 
