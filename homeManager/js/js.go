@@ -5,6 +5,7 @@ import (
 	"server/deviceManager"
 	"server/homeManager/pluginManager"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -12,6 +13,7 @@ import (
 )
 
 type JavascriptVM struct {
+	waitGroup   sync.Mutex
 	runtime     *goja.Runtime
 	deviceCode  map[string]*goja.Object
 	deviceState map[string]jsDevice

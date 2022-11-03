@@ -110,12 +110,14 @@ func (e *Manager) EventLoop(looper EventLoop) {
 			//  we call the event trigger function and
 			//  pass in message properties and the saved state
 			//go call so we can run the trigger concurrently
-			id := loopId
+			go func() {
+				id := loopId
 
-			err := looper.Trigger(id, msg.Id, msg.Timestamp, msg.Properties)
-			if err != nil {
-				log.Println("event error", err)
-			}
+				err := looper.Trigger(id, msg.Id, msg.Timestamp, msg.Properties)
+				if err != nil {
+					log.Println("event error", err)
+				}
+			}()
 
 			// signal to the remove channel that we have finished processing the event
 			e.chRemove <- evtid

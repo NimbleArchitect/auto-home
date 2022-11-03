@@ -293,6 +293,7 @@ func (r *JavascriptVM) ParentsOf(name string) map[string]jsGroup {
 //	change so need loading everytime the vm is called, currently sets up home and plugin obects
 func (r *JavascriptVM) setJsGlobal() jsHome {
 	home := jsHome{
+		vm:      r,
 		devices: r.deviceState,
 
 		StopProcessing:     FLAG_STOPPROCESSING,

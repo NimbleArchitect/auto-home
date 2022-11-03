@@ -6,6 +6,7 @@ import (
 )
 
 type jsHome struct {
+	vm      *JavascriptVM
 	devices map[string]jsDevice
 	// groups             map[string]jsGroup
 	// pluginList         map[string]*pluginManager.Caller
