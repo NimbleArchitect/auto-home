@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"server/deviceManager"
+	"server/globals"
 	"server/groupManager"
 	js "server/homeManager/js"
 	"server/homeManager/pluginManager"
@@ -20,30 +21,32 @@ import (
 
 type Manager struct {
 	// homeManager
-	RecordHistory bool
+	RecordHistory bool              // true = capture the history and save it to the history file, false = dont save history
 	eventHistory  *historyProcessor //TODO: finish history capture
 	// devices       map[string]Device
 	devices *deviceManager.Manager
-	hubs    map[string]Hub
+	hubs    map[string]Hub // hubs store a list of device references
 	// events  event.Manager
-	actionChannel map[string]actionsChannel
+	actionChannel map[string]actionsChannel // client communication channel
 	groups        *groupManager.Manager
 	// actions       map[string]Action
 
 	configPath    string
-	timeoutWindow map[string]map[string]int64
+	timeoutWindow map[string]map[string]int64 // property repeat timeout
 
 	MaxPropertyHistory int
-	MaxVMCount         int
-	activeVMs          []*js.JavascriptVM
-	chActiveVM         chan int
+	MaxVMCount         int                // maximum number of VMs to start
+	activeVMs          []*js.JavascriptVM // list of active initalised VM's
+	chActiveVM         chan int           // stores a list of usable VM id's that are ready for use
 
-	compiledScripts js.CompiledScripts
-	plugins         *pluginManager.Plugin
+	compiledScripts js.CompiledScripts    // list of pre compiled script code
+	plugins         *pluginManager.Plugin // manages the plugins and connestions exspose a caller object to allow the server to run remote functions
 
-	pluginPath        string
-	chStartupComplete chan bool
-	scriptPath        string
+	pluginPath        string    // path to plugin excutables
+	chStartupComplete chan bool // recieves true when the home server has started enough tostart processing scripts
+	scriptPath        string    // path to javascript files
+
+	globals *globals.Global // items stored/referenced here can be used across VM instances
 }
 
 // type lockClient struct {
@@ -66,6 +69,7 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, max
 	systemPath := path.Join(homePath, "system")
 	deviceMgr := deviceManager.New(maxPropertyHistory, systemPath)
 
+	globalItems := globals.New()
 	// p := pluginManager.Plugin{}
 
 	m := Manager{
@@ -81,6 +85,8 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, max
 		MaxPropertyHistory: maxPropertyHistory,
 		chStartupComplete:  make(chan bool, 1),
 		pluginPath:         path.Join(homePath, "plugins"),
+
+		globals: globalItems,
 	}
 
 	return &m
@@ -181,7 +187,7 @@ func (m *Manager) initVMs(plugs *pluginManager.Plugin) {
 	for i := 0; i < m.MaxVMCount; i++ {
 		// start the preallocated javascrip VMs
 		// js, err := m.compiledScripts.NewVM(m.plugins)
-		js, err := m.compiledScripts.NewVM(plugs)
+		js, err := m.compiledScripts.NewVM(plugs, m.globals)
 		if err == nil {
 			// Set the group properties, this is not expected to change very often so we run it during vm creation
 			iterator := m.groups.Iterate()

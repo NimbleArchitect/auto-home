@@ -3,6 +3,7 @@ package js
 import (
 	"log"
 	"server/deviceManager"
+	"server/globals"
 	"server/homeManager/pluginManager"
 	"strings"
 	"sync"
@@ -14,6 +15,7 @@ import (
 
 type JavascriptVM struct {
 	waitGroup   sync.Mutex
+	global      *globals.Global
 	runtime     *goja.Runtime
 	deviceCode  map[string]*goja.Object
 	deviceState map[string]jsDevice
@@ -25,6 +27,11 @@ type JavascriptVM struct {
 	pluginList  *pluginManager.Plugin // plugin connections, shared across all VMs
 	// users      map[string]jsUser
 	Updater DeviceUpdator
+}
+
+func (r *JavascriptVM) Wait() {
+	r.waitGroup.Lock()
+	r.waitGroup.Unlock()
 }
 
 // RunJS loads the js object attached to the specified deviceId and runs the function fName passing in props as an argument

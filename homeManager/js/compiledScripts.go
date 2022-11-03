@@ -3,6 +3,7 @@ package js
 import (
 	"log"
 	"os"
+	"server/globals"
 	"server/homeManager/pluginManager"
 	"strings"
 
@@ -37,7 +38,7 @@ func loadScript(filename string) *goja.Program {
 }
 
 // func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM, error) {
-func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM, error) {
+func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *globals.Global) (*JavascriptVM, error) {
 	var console jsConsole
 
 	runtime := goja.New()
@@ -45,6 +46,7 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM
 
 	vm := JavascriptVM{
 		runtime:     runtime,
+		global:      global,
 		deviceCode:  make(map[string]*goja.Object),
 		deviceState: make(map[string]jsDevice),
 		groupCode:   make(map[string]*goja.Object),

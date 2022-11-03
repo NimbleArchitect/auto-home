@@ -3,6 +3,8 @@ package js
 import (
 	"strings"
 	"time"
+
+	"github.com/dop251/goja"
 )
 
 type jsHome struct {
@@ -71,4 +73,16 @@ func (d *jsHome) GetGroupByName(s string) []jsDevice {
 
 func (d *jsHome) Sleep(seconds int) {
 	time.Sleep(time.Duration(seconds) * time.Second)
+}
+
+func (d *jsHome) Countdown(name string, mSec int, function goja.Value) {
+	jscall, _ := goja.AssertFunction(function)
+
+	d.vm.waitGroup.TryLock()
+
+	d.vm.global.SetTimer(name, mSec, func() {
+		jscall(goja.Undefined())
+
+		d.vm.waitGroup.Unlock()
+	})
 }
