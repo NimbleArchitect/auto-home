@@ -1,7 +1,6 @@
 package globals
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -17,32 +16,6 @@ func New() *Global {
 		lock:   sync.Mutex{},
 		vars:   make(map[string]interface{}),
 		timers: make(map[string]*timer),
-	}
-}
-
-type timer struct {
-	lock     sync.Mutex
-	reset    chan bool
-	duration time.Duration
-}
-
-func (t *timer) Reset() {
-	t.reset <- true
-}
-
-func (t *timer) start() {
-
-	tick := time.NewTimer(t.duration)
-	for {
-		select {
-		case <-t.reset:
-			if !tick.Stop() {
-				<-tick.C
-			}
-			tick.Reset(t.duration)
-		case <-tick.C:
-			return
-		}
 	}
 }
 
@@ -65,10 +38,10 @@ func (g *Global) SetTimer(name string, mSec int, call func()) {
 		g.lock.Lock()
 		g.timers[name] = &newTimer
 		g.lock.Unlock()
-		// then start it
 		go func() {
-			newTimer.start()
-			fmt.Println("setTime start returned")
+			// then start it
+			newTimer.startAndWait()
+
 			call()
 			g.lock.Lock()
 			delete(g.timers, name)
