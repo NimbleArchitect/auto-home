@@ -16,6 +16,8 @@ type jsHome struct {
 	GroupProcessing    int
 	ContinueProcessing int
 	PreventUpdate      int
+
+	countdown goja.Object
 }
 
 func (d *jsHome) GetDeviceByName(name string) jsDevice {
@@ -75,14 +77,14 @@ func (d *jsHome) Sleep(seconds int) {
 	time.Sleep(time.Duration(seconds) * time.Second)
 }
 
-func (d *jsHome) Countdown(name string, mSec int, function goja.Value) {
-	jscall, _ := goja.AssertFunction(function)
+// func (d *jsHome) Countdown(name string, mSec int, function goja.Value) {
+// 	jscall, _ := goja.AssertFunction(function)
 
-	d.vm.waitGroup.TryLock()
+// 	d.vm.waitGroup.TryLock()
 
-	d.vm.global.SetTimer(name, mSec, func() {
-		jscall(goja.Undefined())
+// 	d.vm.global.SetTimer(name, mSec, func() {
+// 		jscall(goja.Undefined())
 
-		d.vm.waitGroup.Unlock()
-	})
-}
+// 		d.vm.waitGroup.Unlock()
+// 	})
+// }

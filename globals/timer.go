@@ -15,18 +15,30 @@ func (t *timer) Reset() {
 	t.reset <- true
 }
 
-func (t *timer) startAndWait() {
+func (t *timer) Cancel() {
+	t.reset <- false
+}
+
+// startAndWait starts the timer and waits for the timers to expire
+//
+// returns: true if we are ending due to the timer and false if we was cancelled
+func (t *timer) startAndWait() bool {
 
 	tick := time.NewTimer(t.duration)
 	for {
 		select {
-		case <-t.reset:
-			if !tick.Stop() {
-				<-tick.C
+		case shouldReset := <-t.reset:
+			if shouldReset {
+				if !tick.Stop() {
+					<-tick.C
+				}
+				tick.Reset(t.duration)
+			} else {
+				return false
 			}
-			tick.Reset(t.duration)
 		case <-tick.C:
-			return
+			return true
+
 		}
 	}
 }

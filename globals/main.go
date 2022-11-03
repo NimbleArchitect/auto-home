@@ -40,9 +40,10 @@ func (g *Global) SetTimer(name string, mSec int, call func()) {
 		g.lock.Unlock()
 		go func() {
 			// then start it
-			newTimer.startAndWait()
-
-			call()
+			doCall := newTimer.startAndWait()
+			if doCall {
+				call()
+			}
 			g.lock.Lock()
 			delete(g.timers, name)
 			g.lock.Unlock()

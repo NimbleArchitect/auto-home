@@ -292,9 +292,24 @@ func (r *JavascriptVM) ParentsOf(name string) map[string]jsGroup {
 //
 //	change so need loading everytime the vm is called, currently sets up home and plugin obects
 func (r *JavascriptVM) setJsGlobal() jsHome {
+	countdown := r.runtime.NewObject()
+
+	countdown.DefineAccessorProperty("set", r.runtime.ToValue(func(name string, mSec int, function goja.Value) {
+		jscall, _ := goja.AssertFunction(function)
+
+		r.waitGroup.TryLock()
+
+		r.global.SetTimer(name, mSec, func() {
+			jscall(goja.Undefined())
+
+			r.waitGroup.Unlock()
+		})
+	}), nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
+
 	home := jsHome{
-		vm:      r,
-		devices: r.deviceState,
+		vm:        r,
+		devices:   r.deviceState,
+		countdown: *countdown,
 
 		StopProcessing:     FLAG_STOPPROCESSING,
 		ContinueProcessing: FLAG_CONTINUEPROCESSING,
