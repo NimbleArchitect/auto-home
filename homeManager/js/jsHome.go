@@ -16,8 +16,6 @@ type jsHome struct {
 	GroupProcessing    int
 	ContinueProcessing int
 	PreventUpdate      int
-
-	countdown goja.Object
 }
 
 func (d *jsHome) GetDeviceByName(name string) jsDevice {
@@ -73,18 +71,30 @@ func (d *jsHome) GetGroupByName(s string) []jsDevice {
 	return out
 }
 
+// Sleep pauses the vm execution for the specified number of seconds
 func (d *jsHome) Sleep(seconds int) {
 	time.Sleep(time.Duration(seconds) * time.Second)
 }
 
-// func (d *jsHome) Countdown(name string, mSec int, function goja.Value) {
-// 	jscall, _ := goja.AssertFunction(function)
+// Countdown creates a counter thats identified by name and calls function after mSec milliseconds
+//
+//	if called multiple times the counter is reset, if mSec is 0 the counter is removed
+func (d *jsHome) Countdown(name string, mSec int, function goja.Value) {
+	var jsCall goja.Callable
+	var ok bool
 
-// 	d.vm.waitGroup.TryLock()
+	if !goja.IsUndefined(function) {
+		jsCall, ok = goja.AssertFunction(function)
+	}
 
-// 	d.vm.global.SetTimer(name, mSec, func() {
-// 		jscall(goja.Undefined())
+	d.vm.waitGroup.TryLock()
 
-// 		d.vm.waitGroup.Unlock()
-// 	})
-// }
+	d.vm.global.SetTimer(name, mSec, func() {
+		// we skip the js call if function isnt defined or was invalid
+		if ok && !goja.IsUndefined(function) {
+			jsCall(goja.Undefined())
+		}
+
+		d.vm.waitGroup.Unlock()
+	})
+}
