@@ -4,3 +4,4 @@ bin/
 clients/dummy/
 
 tests/*/test-run
+cover.out
