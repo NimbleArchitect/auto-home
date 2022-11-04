@@ -89,7 +89,12 @@ func (d *jsHome) Countdown(name string, mSec int, function goja.Value) {
 
 	d.vm.waitGroup.TryLock()
 
-	d.vm.global.SetTimer(name, mSec, func() {
+	d.vm.global.SetTimer(name, mSec, func(success bool) {
+		if !success {
+			d.vm.waitGroup.Unlock()
+			return
+		}
+
 		// we skip the js call if function isnt defined or was invalid
 		if ok && !goja.IsUndefined(function) {
 			jsCall(goja.Undefined())

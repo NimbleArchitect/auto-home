@@ -21,9 +21,10 @@ func New() *Global {
 
 // SetTimer creates a timer that calls the specified function when the timer expires,
 //
-//	calling SetTime multipkle times will reset the countdown, once set the duration cant be changed
-//	if mSec is set to zero the timer is stopped without firing and deleted
-func (g *Global) SetTimer(name string, mSec int, call func()) {
+// calling SetTime multiple times will reset the countdown, once set the duration cant be changed
+// if mSec is set to zero the timer is stopped without firing and deleted
+// called function accepts true if it should run as successfull and false if it was cancelled
+func (g *Global) SetTimer(name string, mSec int, call func(bool)) {
 	g.lock.Lock()
 	val, ok := g.timers[name]
 	g.lock.Unlock()
@@ -35,6 +36,8 @@ func (g *Global) SetTimer(name string, mSec int, call func()) {
 			g.lock.Lock()
 			delete(g.timers, name)
 			g.lock.Unlock()
+			// we must run call so it kicks back and unlocks the vm
+			call(false)
 		} else {
 			// exists - we have a timer setup and running, so call the reset
 			val.Reset()
@@ -54,7 +57,7 @@ func (g *Global) SetTimer(name string, mSec int, call func()) {
 			// then start it
 			doCall := newTimer.startAndWait()
 			if doCall {
-				call()
+				call(true)
 			}
 			g.lock.Lock()
 			delete(g.timers, name)
