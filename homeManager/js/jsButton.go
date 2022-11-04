@@ -4,8 +4,8 @@ import "log"
 
 type jsButton struct {
 	Name     string
-	Value    bool
-	label    string
+	Value    string //new .state, old .label
+	state    bool   //old .Value
 	previous string
 	flag     jsFlag
 }
@@ -31,7 +31,7 @@ func (d *jsButton) Type() string {
 }
 
 func (d *jsButton) AsBool(name string) bool {
-	return d.Value
+	return d.state
 }
 
 func (d *jsButton) Last(x int) interface{} {

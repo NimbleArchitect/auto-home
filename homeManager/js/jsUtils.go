@@ -166,12 +166,12 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 		// now everything has finished we can update the device props
 		// save value to device state
 		if liveDevice != nil && button.flag.Not(FLAG_PREVENTUPDATE) {
-			liveDevice.SetButtonValue(name, button.label)
+			liveDevice.SetButtonValue(name, button.Value)
 		}
 
 		if FLAG != FLAG_STOPPROCESSING {
 			// all state props have been updated for the device so we call onchange with the property that was changed
-			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(button.label))
+			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(button.Value))
 			if err != nil {
 				log.Println(err)
 			} else {

@@ -186,8 +186,8 @@ func (r *JavascriptVM) SaveDeviceState(devices *deviceManager.Manager) {
 		for key, property := range dev.ButtonAsMap() {
 			newDev.propButton[key] = jsButton{
 				Name:     property.Name,
-				Value:    property.Value.GetBool(),
-				label:    property.Value.String(),
+				Value:    property.Value.String(),
+				state:    property.Value.GetBool(),
 				previous: property.Value.String(),
 			}
 		}
