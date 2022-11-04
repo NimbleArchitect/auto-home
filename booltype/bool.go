@@ -120,10 +120,15 @@ func (b *BoolType) Set(v string) {
 		b.state = false
 
 	default:
-		log.Println("invalid switch state defaulting to", strFalse)
+		log.Println("bool.Set: invalid state defaulting to", strFalse)
 		b.kind = TRUEFALSE
 		b.state = false
 	}
+}
+
+func (b *BoolType) SetBool(value bool) {
+	b.kind = TRUEFALSE
+	b.state = value
 }
 
 func (b *BoolType) GetBool() bool {
