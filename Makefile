@@ -3,10 +3,10 @@ export GO111MODULE=on
 
 .PHONY: test
 test:
-	go test ... -coverprofile cover.out
+	go test ./... -coverprofile cover.out
 
 .PHONY: bin
-bin: fmt vet
+bin: fmt vet test
 	go build -o bin/server .
 
 CLIENTSUBDIRS := $(wildcard clients/*/.)

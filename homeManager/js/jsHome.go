@@ -50,8 +50,8 @@ func (d *jsHome) GetDevices() []jsDevice {
 func (d *jsHome) GetDevicesStartName(s string) []jsDevice {
 	var out []jsDevice
 
-	for k, v := range d.devices {
-		if strings.HasPrefix(k, s) {
+	for _, v := range d.devices {
+		if strings.HasPrefix(v.Name, s) {
 			out = append(out, v)
 		}
 	}

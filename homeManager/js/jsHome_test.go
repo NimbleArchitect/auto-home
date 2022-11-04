@@ -6,6 +6,7 @@ package js
 
 import (
 	"server/globals"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -13,16 +14,124 @@ import (
 	"github.com/dop251/goja"
 )
 
+func setupVM() JavascriptVM {
+	g := globals.New()
+
+	return JavascriptVM{
+		waitGroup: sync.Mutex{},
+		global:    g,
+	}
+}
+
+func TestGetDeviceByName(t *testing.T) {
+	vm := setupVM()
+
+	home := jsHome{
+		vm:      &vm,
+		devices: make(map[string]jsDevice),
+	}
+
+	home.devices["dev1"] = jsDevice{Name: "name1"}
+	home.devices["dev2"] = jsDevice{Name: "name2"}
+	home.devices["dev3"] = jsDevice{Name: "name3"}
+
+	dev := home.GetDeviceByName("name2")
+
+	if dev.Name != "name2" {
+		t.Fatalf("expected name2 got %s", dev.Name)
+	}
+}
+
+func TestGetDeviceById(t *testing.T) {
+	vm := setupVM()
+
+	home := jsHome{
+		vm:      &vm,
+		devices: make(map[string]jsDevice),
+	}
+
+	home.devices["dev1"] = jsDevice{Name: "name1", Id: "dev1"}
+	home.devices["dev2"] = jsDevice{Name: "name2", Id: "dev2"}
+	home.devices["dev3"] = jsDevice{Name: "name3", Id: "dev3"}
+
+	dev := home.GetDeviceById("dev2")
+
+	if dev.Id != "dev2" {
+		t.Fatalf("expected dev2 got %s", dev.Id)
+	}
+}
+
+func TestGetDevices(t *testing.T) {
+	vm := setupVM()
+
+	home := jsHome{
+		vm:      &vm,
+		devices: make(map[string]jsDevice),
+	}
+
+	home.devices["dev1"] = jsDevice{Name: "name1", Id: "dev1"}
+	home.devices["dev2"] = jsDevice{Name: "name2", Id: "dev2"}
+	home.devices["dev3"] = jsDevice{Name: "name3", Id: "dev3"}
+
+	dev := home.GetDevices()
+
+	if len(dev) != 3 {
+		t.Fatalf("expected 3 got %d", len(dev))
+	}
+
+	arrNames := make([]string, 3)
+	for _, v := range dev {
+		if v.Name == "name1" {
+			arrNames[0] = v.Name
+		}
+		if v.Name == "name2" {
+			arrNames[1] = v.Name
+		}
+		if v.Name == "name3" {
+			arrNames[2] = v.Name
+		}
+	}
+	found := strings.Join(arrNames, " ")
+
+	if found != "name1 name2 name3" {
+		t.Fatalf("expected \"name1 name2 name3\" got \"%s\"", found)
+	}
+}
+
+func TestGetDevicesStartName(t *testing.T) {
+	vm := setupVM()
+
+	home := jsHome{
+		vm:      &vm,
+		devices: make(map[string]jsDevice),
+	}
+
+	home.devices["dev1"] = jsDevice{Name: "name1", Id: "dev1"}
+	home.devices["dev2"] = jsDevice{Name: "notname2", Id: "dev2"}
+	home.devices["dev3"] = jsDevice{Name: "name3", Id: "dev3"}
+
+	dev := home.GetDevicesStartName("not")
+
+	if len(dev) != 1 {
+		t.Fatalf("expected 3 got %d", len(dev))
+	}
+
+	var arrNames []string
+	for _, v := range dev {
+		arrNames = append(arrNames, v.Name)
+	}
+	found := strings.Join(arrNames, " ")
+
+	if found != "notname2" {
+		t.Fatalf("expected \"notname2\" got \"%s\"", found)
+	}
+}
+
 func TestCountdownRestart(t *testing.T) {
 	const delay = 100
 	delayDuration := delay * time.Millisecond
 
-	g := globals.New()
-
-	vm := JavascriptVM{
-		waitGroup: sync.Mutex{},
-		global:    g,
-	}
+	vm := setupVM()
 
 	home := jsHome{
 		vm: &vm,
@@ -43,15 +152,10 @@ func TestCountdownRestart(t *testing.T) {
 }
 
 func TestCountdownCancel(t *testing.T) {
-	const delay = 500
-	delayDuration := delay * time.Nanosecond
+	const delay = 1
+	delayDuration := delay * time.Millisecond
 
-	g := globals.New()
-
-	vm := JavascriptVM{
-		waitGroup: sync.Mutex{},
-		global:    g,
-	}
+	vm := setupVM()
 
 	home := jsHome{
 		vm: &vm,
