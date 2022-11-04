@@ -142,6 +142,67 @@ returns all devices in the group named name
 home.getDeviceInGroup("group name")
 ```
 
+## obj.sleep(seconds)
+pauses the script for the specified number of seconds
+
+### Arguments
+
+| Parameter  | Type | Description |
+| - | - | - |
+| seconds  | Integer | number of seconds to pause the script |
+
+### Returns
+* none
+
+### Example
+```javascript
+home.sleep(5)
+```
+
+## obj.countdown(name, milliseconds, function)
+creates or restarts a timer called name, name is a timer identifier so must be unique, when the number of miliseconds have elapsed the timer calls function, if countdown is called again before the timer reaches zero the timer is reset.
+
+to remove the timer set milliseconds to 0
+
+### Arguments
+
+| Parameter  | Type | Description |
+| - | - | - |
+| name  | String | unique countdown name |
+| milliseconds  | Integer | length of time until the countdown timer calls function |
+| function  | Function | valid javascript function to run |
+
+### Returns
+* none
+
+### Example
+```javascript
+// after 60 seconds turn the light off
+home.countdown("porchlight", 60000, function () {
+    light.set("state", false) // turn off the light
+})
+```
+```javascript
+// to disable set the second parameter to 0
+home.countdown("porchlight", 0)
+```
+```javascript
+// while the porch door is open keep the light on, once the door is closed turn the light off after 60 seconds
+// if the door is opened again before 60 seconds have passed we keep the light on
+light.set("state",true) // first we turn the light on
+ while (porchdoor.get("state").latest == "open") { // while door is open
+    if (light.get("state").asBool() == true) { // and the light is on
+        // set the countdown timer, caling this in a loop means we reset before 60 seconds have passed
+        home.countdown("porchlight", 60000, function () {
+            // when the timer expires
+            light.set("state", false) // turn off the light
+        })
+
+        home.sleep(5) // this stops the system running in a tight loop and abusing resources
+    }
+}
+
+```
 
 # group object
 all group methods are called the same way as they are from the home object 
