@@ -17,23 +17,6 @@ type Group struct {
 
 	repeatWindowTimeStamp time.Time
 	repeatWindowDuration  time.Duration
-
-	// ActionWriter func(s string) (int, error)
-	// actionWriter ActionWriter
-	// Groups      []*group
-
-	// PropertySwitch map[string]*Switch
-	// PropertyDial   map[string]*Dial
-	// PropertyButton map[string]*Button
-	// PropertyText   map[string]*Text
-
-	// DialNames   []string
-	// SwitchNames []string
-	// ButtonNames []string
-	// TextNames   []string
-
-	// maxPropertyHistory int
-	// Uploads []*Upload
 }
 
 func NewGroup() *Group {
