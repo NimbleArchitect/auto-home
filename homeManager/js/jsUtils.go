@@ -10,8 +10,9 @@ import (
 	"github.com/dop251/goja"
 )
 
+// objLoader entry point for javascript set function
 func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
-	// TODO: make name safe as its use input
+	// TODO: make name safe as its user input
 	n := name.String()
 
 	parts := strings.Split(n, "/")
