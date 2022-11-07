@@ -155,7 +155,7 @@ func (c *PluginConnector) handle() {
 				if len(buf) > 0 {
 					c.decode(buf)
 				}
-				log.Println("connection dropped message", err)
+				log.Println(c.name, "dropped connection", err)
 				return
 			}
 		case <-time.After(1 * time.Minute):
