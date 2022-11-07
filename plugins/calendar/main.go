@@ -8,6 +8,7 @@ import (
 
 const (
 	FLAG_NOTSET = iota
+	FLAG_MINUTE
 	FLAG_HOUR
 	FLAG_DAY
 	FLAG_WEEK
@@ -47,25 +48,47 @@ func main() {
 }
 
 func LoadEvents(c *calendar) {
+	// theTime := time.Date(2022, 8, 15, 14, 30, 45, 100, time.Local)
+	// utcTime := theTime.UTC()
+
 	evt := Event{
 		Id:          "random",
 		Created:     time.Now(),
-		NextTrigger: time.Now().Add(time.Second * 5),
+		NextTrigger: time.Date(2022, 8, 15, 14, 30, 45, 100, time.Local),
 		CreatedBy:   "me",
 		Notify:      []string{"me"},
 		Msg:         "go to work",
 		Location:    "office",
+		RepeatCount: 4,
+		RepeatEvery: FLAG_MINUTE,
+	}
+	c.AddEvent(evt)
+
+	evt = Event{
+		Id:          "newrand",
+		Created:     time.Now(),
+		NextTrigger: time.Date(2022, 11, 7, 16, 57, 00, 0, time.Local),
+		CreatedBy:   "me",
+		Notify:      []string{"me"},
+		Msg:         "go home",
+		Location:    "home",
 		RepeatCount: 1,
 		RepeatEvery: FLAG_DAY,
 	}
-
 	c.AddEvent(evt)
 
 }
 
 func (c *calendar) AddEvent(event Event) {
+
+	event.updateNextTrigger()
+
 	d := event.NextTrigger
-	c.Add(d, event)
+	fmt.Println("adding:", event.NextTrigger)
+
+	if err := c.add(d, event); err != nil {
+		fmt.Println("error adding event:", err)
+	}
 }
 
 func (c *calendar) fireEvent(event interface{}) {
@@ -73,4 +96,35 @@ func (c *calendar) fireEvent(event interface{}) {
 	fmt.Println("fire event:", evt.NextTrigger, evt.Msg)
 
 	c.plugin.Call("onevent", evt)
+
+	evt.updateNextTrigger()
+	c.add(evt.NextTrigger, evt)
+}
+
+func (e *Event) updateNextTrigger() {
+	now := time.Now()
+	if e.NextTrigger.Before(now) {
+		if e.RepeatCount > FLAG_NOTSET {
+			nextDate := e.NextTrigger
+			for {
+				if nextDate.After(now) {
+					break
+				}
+
+				switch e.RepeatEvery {
+				case FLAG_MINUTE:
+					nextDate = nextDate.Add(time.Duration(e.RepeatCount) * time.Minute)
+				case FLAG_HOUR:
+					nextDate = nextDate.Add(time.Duration(e.RepeatCount) * time.Hour)
+				case FLAG_DAY:
+					nextDate = nextDate.AddDate(0, 0, e.RepeatCount)
+				case FLAG_MONTH:
+					nextDate = nextDate.AddDate(0, e.RepeatCount, 0)
+				case FLAG_YEAR:
+					nextDate = nextDate.AddDate(e.RepeatCount, 0, 0)
+				}
+			}
+			e.NextTrigger = nextDate
+		}
+	}
 }

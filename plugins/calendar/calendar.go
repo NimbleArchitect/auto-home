@@ -73,7 +73,7 @@ func (c *calendar) eventReCheck() {
 
 }
 
-func (c *calendar) Add(t time.Time, event interface{}) error {
+func (c *calendar) add(t time.Time, event interface{}) error {
 	if t.Before(time.Now()) {
 		return errors.New("unable to add dates in the past")
 	}

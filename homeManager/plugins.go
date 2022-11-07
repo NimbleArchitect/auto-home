@@ -31,6 +31,7 @@ func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Start()
+	// TODO: when plugins crash the server dosent recover, needs fixing
 	if err != nil {
 		wg.Done()
 		log.Println("startPlugin error:", err)
