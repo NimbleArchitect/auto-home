@@ -1,23 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"os"
-	"path"
+	"sync"
 	"time"
 )
-
-type settings struct {
-	SockAddr string
-}
-
-type Calendar struct {
-	c *calendar
-	p *plugin
-}
 
 const (
 	FLAG_NOTSET = iota
@@ -28,53 +15,62 @@ const (
 	FLAG_YEAR
 )
 
-type calEvent struct {
-	msg         string
-	repeatCount int
-	repeatEvery int
+type Event struct {
+	Id          string
+	Created     time.Time
+	NextTrigger time.Time
+	CreatedBy   string
+	Notify      []string // users/groups to notify when this event fires
+	Msg         string
+	Location    string
+	RepeatCount int // how many times to repeat
+	RepeatEvery int // repeat evey "RepeatCount" minute/hour/day/week/month/year
 }
 
 func main() {
+	p := Connect()
 
-	profile, err := os.UserConfigDir()
-	if err != nil {
-		log.Panic("unable to get users home folder", err)
+	cal := &calendar{
+		lock:   sync.Mutex{},
+		plugin: p,
 	}
-	configPath := path.Join(profile, "auto-home", "plugin.calendar.json")
 
-	jsonFile, err := os.Open(configPath)
-	if err != nil {
-		log.Println("unable to open plugin.calendar.json", err)
-	}
-	defer jsonFile.Close()
-
-	byteValue, _ := io.ReadAll(jsonFile)
-
-	var conf settings
-	json.Unmarshal(byteValue, &conf)
-
-	p := Connect(SockAddr)
-
-	cal := Calendar{p: p}
-	cal.c = New(cal.fireEvent)
-
-	cal.c.Add(time.Now().Add(6*time.Second), "check 3")
-	cal.c.Add(time.Now().Add(4*time.Second), "check 2")
-	cal.c.Add(time.Now().Add(8*time.Second), "check 4")
-	cal.c.Add(time.Now().Add(2*time.Second), "check 1")
+	LoadEvents(cal)
 
 	p.Register("calendar", cal)
 
-	err = p.Done()
+	err := p.Done()
 	if err != nil {
 		fmt.Println(err)
 	}
 
 }
 
-func (c *Calendar) fireEvent(event interface{}) {
-	evt := event.(calendarEvent)
-	fmt.Println("fire event:", evt.date, evt.data)
+func LoadEvents(c *calendar) {
+	evt := Event{
+		Id:          "random",
+		Created:     time.Now(),
+		NextTrigger: time.Now().Add(time.Second * 5),
+		CreatedBy:   "me",
+		Notify:      []string{"me"},
+		Msg:         "go to work",
+		Location:    "office",
+		RepeatCount: 1,
+		RepeatEvery: FLAG_DAY,
+	}
 
-	c.p.Call("onevent", evt)
+	c.AddEvent(evt)
+
+}
+
+func (c *calendar) AddEvent(event Event) {
+	d := event.NextTrigger
+	c.Add(d, event)
+}
+
+func (c *calendar) fireEvent(event interface{}) {
+	evt := event.(Event)
+	fmt.Println("fire event:", evt.NextTrigger, evt.Msg)
+
+	c.plugin.Call("onevent", evt)
 }
