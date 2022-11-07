@@ -1,6 +1,7 @@
 package home
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -25,7 +26,7 @@ func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 
 	cmd := exec.Command(pluginExec)
 	// cmd.Dir = path.Join(m.pluginPath, pluginName)
-
+	cmd.Env = append(cmd.Env, fmt.Sprint("autohome_sockaddr=", SockAddr))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Start()

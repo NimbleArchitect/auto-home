@@ -13,8 +13,6 @@ import (
 	"github.com/nathan-osman/go-sunrise"
 )
 
-// const SockAddr = "/tmp/rpc.sock"
-
 type Client int
 
 type Solar struct {
@@ -22,9 +20,8 @@ type Solar struct {
 }
 
 type settings struct {
-	SockAddr string
-	Lat      float64
-	Lon      float64
+	Lat float64
+	Lon float64
 }
 
 // type event struct {
@@ -35,7 +32,6 @@ type settings struct {
 // }
 
 func main() {
-
 	profile, err := os.UserConfigDir()
 	if err != nil {
 		log.Panic("unable to get users home folder", err)
@@ -53,10 +49,15 @@ func main() {
 	var conf settings
 	json.Unmarshal(byteValue, &conf)
 
-	p := Connect(SockAddr)
+	p := Connect()
 
 	cal := new(Solar)
 	cal.conf = conf
+
+	if conf.Lat == 0 && conf.Lon == 0 {
+		log.Panic("invalid latitude and longitude")
+	}
+
 	p.Register("solar", cal)
 
 	err = p.Done()

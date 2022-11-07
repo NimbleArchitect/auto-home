@@ -13,8 +13,6 @@ import (
 	"path"
 )
 
-// const SockAddr = "/tmp/rpc.sock"
-
 type Client int
 
 type Telegram struct {
@@ -22,10 +20,9 @@ type Telegram struct {
 }
 
 type settings struct {
-	BotID    string
-	Key      string
-	ChatId   string
-	SockAddr string
+	BotID  string
+	Key    string
+	ChatId string
 }
 
 func (t *Telegram) SendMessage(raw []byte) {
@@ -88,7 +85,6 @@ type event struct {
 }
 
 func main() {
-
 	profile, err := os.UserConfigDir()
 	if err != nil {
 		log.Panic("unable to get users home folder", err)
@@ -106,7 +102,7 @@ func main() {
 	var conf settings
 	json.Unmarshal(byteValue, &conf)
 
-	p := Connect(SockAddr)
+	p := Connect()
 
 	cal := new(Telegram)
 	cal.conf = conf

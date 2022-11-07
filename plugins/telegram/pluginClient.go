@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"reflect"
 	"sync"
 	"time"
@@ -134,7 +135,9 @@ func (p *plugin) Done() error {
 	return err
 }
 
-func Connect(addr string) *plugin {
+func Connect() *plugin {
+	addr := os.Getenv("autohome_sockaddr")
+
 	conn, err := net.Dial("unix", addr)
 	if err != nil {
 		panic(err)
