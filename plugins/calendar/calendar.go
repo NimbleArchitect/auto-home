@@ -19,7 +19,7 @@ type calendar struct {
 	eventEnd   *calendarEvent
 	nextEvent  *calendarEvent
 	isRunning  bool
-	call       func(interface{})
+	plugin     *plugin
 }
 
 func (c *calendar) start() {
@@ -45,7 +45,7 @@ func (c *calendar) start() {
 			}
 			lastKnownTime = now
 			if next.date.Sub(now).Seconds() <= 0 {
-				go c.call(*next)
+				go c.fireEvent(next.data)
 				c.loadNextEvent()
 			}
 			time.Sleep(1 * time.Second)
@@ -66,7 +66,11 @@ func (c *calendar) loadNextEvent() {
 }
 
 func (c *calendar) eventReCheck() {
-	fmt.Print("recheck next timer")
+	fmt.Print("FIXME: recheck next timer")
+	// TODO: we might have missed events as the system time was changed
+	// send a trigger back to the server so the users can attach an onchange event
+	// also fast-forward over any missed events so we dont sent out loads of alerts
+
 }
 
 func (c *calendar) Add(t time.Time, event interface{}) error {
@@ -114,11 +118,4 @@ func (c *calendar) latest() *calendarEvent {
 	}
 	c.lock.Unlock()
 	return out
-}
-
-func New(callBack func(interface{})) *calendar {
-	return &calendar{
-		lock: sync.Mutex{},
-		call: callBack,
-	}
 }
