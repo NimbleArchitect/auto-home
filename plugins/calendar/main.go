@@ -14,6 +14,26 @@ type settings struct {
 	SockAddr string
 }
 
+type Calendar struct {
+	c *calendar
+	p *plugin
+}
+
+const (
+	FLAG_NOTSET = iota
+	FLAG_HOUR
+	FLAG_DAY
+	FLAG_WEEK
+	FLAG_MONTH
+	FLAG_YEAR
+)
+
+type calEvent struct {
+	msg         string
+	repeatCount int
+	repeatEvery int
+}
+
 func main() {
 
 	profile, err := os.UserConfigDir()
@@ -35,12 +55,13 @@ func main() {
 
 	p := Connect(SockAddr)
 
-	cal := New(fireEvent)
+	cal := Calendar{p: p}
+	cal.c = New(cal.fireEvent)
 
-	cal.Add(time.Now().Add(6*time.Second), "check 3")
-	cal.Add(time.Now().Add(4*time.Second), "check 2")
-	cal.Add(time.Now().Add(8*time.Second), "check 4")
-	cal.Add(time.Now().Add(2*time.Second), "check 1")
+	cal.c.Add(time.Now().Add(6*time.Second), "check 3")
+	cal.c.Add(time.Now().Add(4*time.Second), "check 2")
+	cal.c.Add(time.Now().Add(8*time.Second), "check 4")
+	cal.c.Add(time.Now().Add(2*time.Second), "check 1")
 
 	p.Register("calendar", cal)
 
@@ -51,7 +72,9 @@ func main() {
 
 }
 
-func fireEvent(event interface{}) {
+func (c *Calendar) fireEvent(event interface{}) {
 	evt := event.(calendarEvent)
 	fmt.Println("fire event:", evt.date, evt.data)
+
+	c.p.Call("onevent", evt)
 }

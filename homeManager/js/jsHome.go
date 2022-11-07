@@ -76,10 +76,11 @@ func (d *jsHome) Sleep(seconds int) {
 	time.Sleep(time.Duration(seconds) * time.Second)
 }
 
-// Countdown creates a counter thats identified by name and calls function after mSec milliseconds
+// Countdown creates a counter thats identified by name and calls function after sec seconds
 //
-//	if called multiple times the counter is reset, if mSec is 0 the counter is removed
-func (d *jsHome) Countdown(name string, mSec int, function goja.Value) {
+// if called multiple times the counter is reset, if sec is 0 the counter is removed,
+// sec is a float and supports fractional seconds
+func (d *jsHome) Countdown(name string, sec float64, function goja.Value) {
 	var jsCall goja.Callable
 	var ok bool
 
@@ -89,7 +90,7 @@ func (d *jsHome) Countdown(name string, mSec int, function goja.Value) {
 
 	d.vm.waitGroup.TryLock()
 
-	d.vm.global.SetTimer(name, mSec, func(success bool) {
+	d.vm.global.SetTimer(name, sec, func(success bool) {
 		if !success {
 			d.vm.waitGroup.Unlock()
 			return

@@ -22,15 +22,15 @@ func New() *Global {
 // SetTimer creates a timer that calls the specified function when the timer expires,
 //
 // calling SetTime multiple times will reset the countdown, once set the duration cant be changed
-// if mSec is set to zero the timer is stopped without firing and deleted
-// called function accepts true if it should run as successfull and false if it was cancelled
-func (g *Global) SetTimer(name string, mSec int, call func(bool)) {
+// if sec is set to zero the timer is stopped without firing and deleted
+// call accepts true if it should run as successfull and false if it was cancelled
+func (g *Global) SetTimer(name string, sec float64, call func(bool)) {
 	g.lock.Lock()
 	val, ok := g.timers[name]
 	g.lock.Unlock()
 
 	if ok {
-		if mSec == 0 {
+		if sec == 0 {
 			val.Cancel()
 
 			g.lock.Lock()
@@ -47,7 +47,7 @@ func (g *Global) SetTimer(name string, mSec int, call func(bool)) {
 		newTimer := timer{
 			lock:     sync.Mutex{},
 			reset:    make(chan bool, 1),
-			duration: time.Duration(mSec) * time.Millisecond,
+			duration: time.Duration(sec*1000) * time.Millisecond,
 		}
 
 		g.lock.Lock()

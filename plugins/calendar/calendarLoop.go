@@ -45,7 +45,7 @@ func (c *calendar) start() {
 			}
 			lastKnownTime = now
 			if next.date.Sub(now).Seconds() <= 0 {
-				go fireEvent(*next)
+				go c.call(*next)
 				c.loadNextEvent()
 			}
 			time.Sleep(1 * time.Second)

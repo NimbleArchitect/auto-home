@@ -128,8 +128,8 @@ func TestGetDevicesStartName(t *testing.T) {
 }
 
 func TestCountdownRestart(t *testing.T) {
-	const delay = 100
-	delayDuration := delay * time.Millisecond
+	const delay = 0.0100
+	delayDuration := (delay * 1000) * time.Millisecond
 
 	vm := setupVM()
 
@@ -152,8 +152,8 @@ func TestCountdownRestart(t *testing.T) {
 }
 
 func TestCountdownCancel(t *testing.T) {
-	const delay = 1
-	delayDuration := delay * time.Millisecond
+	const delay = 0.0100
+	delayDuration := (delay * 1000) * time.Millisecond
 
 	vm := setupVM()
 
@@ -163,7 +163,7 @@ func TestCountdownCancel(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		time.Sleep(25 * time.Millisecond)
-		home.Countdown("trial", 100, goja.Undefined())
+		home.Countdown("trial", 0.0100, goja.Undefined())
 	}
 
 	home.Countdown("trial", 0, goja.Undefined())
