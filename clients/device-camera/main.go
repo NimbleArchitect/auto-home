@@ -107,10 +107,8 @@ func main() {
 	for {
 		select {
 		case msg := <-event:
-			if msg == homeClient.EVENT_RELOAD {
-				// conf.hueRegisterHub(conf.Username, conf.HubAddress, &client)
-			}
-			if msg == homeClient.EVENT_SHUTDOWN {
+			switch msg {
+			case homeClient.EVENT_SHUTDOWN:
 				finished = true
 			}
 		case <-time.After(10 * time.Second):

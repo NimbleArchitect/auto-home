@@ -99,7 +99,8 @@ func main() {
 	for {
 		select {
 		case msg := <-event:
-			if msg == homeClient.EVENT_SHUTDOWN {
+			switch msg {
+			case homeClient.EVENT_SHUTDOWN:
 				finished = true
 			}
 		}

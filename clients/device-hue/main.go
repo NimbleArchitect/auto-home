@@ -70,11 +70,14 @@ func main() {
 	for {
 		select {
 		case msg := <-event:
-			if msg == homeClient.EVENT_RELOAD {
+			switch msg {
+			case homeClient.EVENT_RELOAD:
 				conf.hueRegisterHub(conf.Username, conf.HubAddress, &client)
-			}
-			if msg == homeClient.EVENT_SHUTDOWN {
+
+			case homeClient.EVENT_SHUTDOWN:
 				finished = true
+			default:
+				fmt.Println(">> *** hit default ***")
 			}
 		case <-time.After(10 * time.Second):
 			log.Println(">> pull state <<")
