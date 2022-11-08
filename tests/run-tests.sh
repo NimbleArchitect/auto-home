@@ -3,7 +3,7 @@
 cd tests
 
 ############################
-out=$(./request-response-timing/test-run 2> /dev/null)
+out=$(go run ./request-response-timing/*.go 2> /dev/null)
 if [[ $? -ne 0 ]]; then
     echo "$out"
     exit 1
@@ -11,7 +11,7 @@ fi
 echo "$out" | grep longest
 
 ############################
-out=$(./request-response-echo/test-run 2> /dev/null)
+out=$(go run ./request-response-echo/*.go 2> /dev/null)
 if [[ $? -ne 0 ]]; then
     echo "$out"
     exit 1

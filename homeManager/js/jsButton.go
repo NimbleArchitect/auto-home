@@ -30,8 +30,12 @@ func (d *jsButton) Type() string {
 	return "button"
 }
 
-func (d *jsButton) AsBool(name string) bool {
+func (d *jsButton) ValueOf() bool {
 	return d.state
+}
+
+func (d *jsButton) ToString() string {
+	return d.Value
 }
 
 func (d *jsButton) Last(x int) interface{} {

@@ -93,16 +93,16 @@ func (d *Device) SetButton(name string, property *ButtonProperty) {
 	}
 }
 
-func (d *Device) ButtonValue(name string) (string, bool) {
+func (d *Device) ButtonValue(name string) (booltype.BoolType, bool) {
 	property, ok := d.PropertyButton[name]
 	if ok {
 		property.lock.RLock()
 		data := property.data
 		property.lock.RUnlock()
-		return data.Value.String(), true
+		return data.Value, true
 	}
 
-	return "", false
+	return booltype.BoolType{}, false
 }
 
 // Was UpdateButton

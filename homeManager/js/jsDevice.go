@@ -2,6 +2,7 @@ package js
 
 import (
 	"log"
+	"server/booltype"
 	"server/deviceManager"
 	"strconv"
 
@@ -48,6 +49,7 @@ func (d *jsDevice) GetDial(name string) interface{} {
 }
 
 func (d *jsDevice) GetSwitch(name string) interface{} {
+
 	if val, ok := d.propSwitch[name]; ok {
 		// create a js object so we cn add a new property
 		jsVal := d.js.runtime.ToValue(val)
@@ -56,7 +58,10 @@ func (d *jsDevice) GetSwitch(name string) interface{} {
 		if d.liveDevice != nil {
 			jsObj.DefineAccessorProperty("latest", d.js.runtime.ToValue(func() interface{} {
 				if val, ok := d.liveDevice.SwitchValue(name); ok {
-					return val
+					return jsBool{
+						s: val.String(),
+						b: val.GetBool(),
+					}
 				}
 				return nil
 			}),
@@ -64,8 +69,13 @@ func (d *jsDevice) GetSwitch(name string) interface{} {
 		}
 
 		// also add previous as a readonly property
-		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() string {
-			return val.previous
+		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() jsBool {
+			boolVal := booltype.BoolType{}
+			boolVal.Set(val.previous)
+			return jsBool{
+				s: boolVal.String(),
+				b: boolVal.GetBool(),
+			}
 		}),
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
 
@@ -84,7 +94,10 @@ func (d *jsDevice) GetButton(name string) interface{} {
 		if d.liveDevice != nil {
 			jsObj.DefineAccessorProperty("latest", d.js.runtime.ToValue(func() interface{} {
 				if val, ok := d.liveDevice.ButtonValue(name); ok {
-					return val
+					return jsBool{
+						s: val.String(),
+						b: val.GetBool(),
+					}
 				}
 				return nil
 			}),
@@ -100,8 +113,13 @@ func (d *jsDevice) GetButton(name string) interface{} {
 		}
 
 		// also add previous as a readonly property
-		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() string {
-			return val.previous
+		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() jsBool {
+			boolVal := booltype.BoolType{}
+			boolVal.Set(val.previous)
+			return jsBool{
+				s: boolVal.String(),
+				b: boolVal.GetBool(),
+			}
 		}),
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
 

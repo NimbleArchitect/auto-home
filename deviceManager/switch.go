@@ -87,16 +87,16 @@ func (d *Device) SetSwitch(name string, property *SwitchProperty) {
 	}
 }
 
-func (d *Device) SwitchValue(name string) (string, bool) {
+func (d *Device) SwitchValue(name string) (booltype.BoolType, bool) {
 	property, ok := d.PropertySwitch[name]
 	if ok {
 		property.lock.RLock()
 		data := property.data
 		property.lock.RUnlock()
-		return data.Value.String(), true
+		return data.Value, true
 	}
 
-	return "", false
+	return booltype.BoolType{}, false
 }
 
 // Was UpdateSwitch

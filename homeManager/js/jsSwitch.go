@@ -30,8 +30,12 @@ func (d *jsSwitch) Type() string {
 	return "switch"
 }
 
-func (d *jsSwitch) AsBool(name string) bool {
+func (d *jsSwitch) ValueOf() bool {
 	return d.state
+}
+
+func (d *jsSwitch) ToString() string {
+	return d.Value
 }
 
 func (d *jsSwitch) Last(x int) interface{} {
