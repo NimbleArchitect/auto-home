@@ -40,6 +40,7 @@ Its also completly possible to script the kitchen lights group to automatically 
 * server start script
 * scripts can prevent group events and device updates from happening
 * custom plugin interfaces
+* countdown - run custom functions when the timer reaches zero 
 
 # Planned features
 * web UI

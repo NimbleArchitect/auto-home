@@ -190,8 +190,8 @@ home.countdown("porchlight", 0)
 // while the porch door is open keep the light on, once the door is closed turn the light off after 60 seconds
 // if the door is opened again before 60 seconds have passed we keep the light on
 light.set("state",true) // first we turn the light on
- while (porchdoor.get("state").latest == "open") { // while door is open
-    if (light.get("state").asBool() == true) { // and the light is on
+ while (porchdoor.get("state").latest.toString() == "open") { // while door is open
+    if (light.get("state") == true) { // and the light is on
         // set the countdown timer, caling this in a loop means we reset before 60 seconds have passed
         home.countdown("porchlight", 60000, function () {
             // when the timer expires
