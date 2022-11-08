@@ -1,6 +1,9 @@
 package webHandle
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -16,9 +19,35 @@ func (h *Handler) showPage(w http.ResponseWriter, r *http.Request, elements []st
 		// TODO: this needs moving/fixing
 		h.HomeManager.ReloadVMs()
 
+	case "plugin":
+		if r.Method == "POST" {
+			var jsonData map[string]interface{}
+
+			err := json.NewDecoder(r.Body).Decode(&jsonData)
+			if err != nil && err != io.EOF {
+				fmt.Println("json decode error:", err)
+				// TODO: need to return a proper error
+				w.Write([]byte("decode error"))
+				return
+			}
+			callRet := h.makePluginCall(elements[2:], jsonData)
+			w.Write(callRet)
+		}
+
 	default:
 		w.Write([]byte("index page"))
 	}
+}
+
+func (h *Handler) makePluginCall(elements []string, postData map[string]interface{}) []byte {
+	// TODO: needs safety checks adding
+
+	pluginName := elements[0]
+	callName := elements[1]
+
+	out := h.HomeManager.WebCallPlugin(pluginName, callName, postData)
+
+	return out
 }
 
 // func (h *Handler) streamFile(w http.ResponseWriter, r *http.Request, elements []string) {

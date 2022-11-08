@@ -1,6 +1,7 @@
 package home
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -8,6 +9,8 @@ import (
 	"path"
 	"server/homeManager/pluginManager"
 	"sync"
+
+	"github.com/dop251/goja"
 )
 
 const SockAddr = "/tmp/rpc.sock"
@@ -105,4 +108,23 @@ func (m *Manager) callPluginObject(pluginName string, call string, obj map[strin
 	}
 
 	log.Println("event finished")
+}
+
+// WebCallPlugin calls the function callNAme of the plugin named pluginName using the postData as the arguments,
+// only to be called from web interfaces
+func (m *Manager) WebCallPlugin(pluginName string, callName string, postData map[string]interface{}) []byte {
+	var out map[string]interface{}
+
+	if plugin := m.plugins.Get(pluginName); plugin != nil {
+		if caller := plugin.Get(callName); caller != nil {
+			if len(postData) > 0 {
+				out = caller.Run([]goja.Value{goja.New().ToValue(postData)})
+			} else {
+				out = caller.Run([]goja.Value{})
+			}
+			data, _ := json.Marshal(out)
+			return data
+		}
+	}
+	return []byte{}
 }

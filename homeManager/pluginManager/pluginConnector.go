@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"sync"
 	"time"
 	"unicode"
@@ -59,6 +60,17 @@ func (c *PluginConnector) All() map[string]*Caller {
 	out := c.funcList
 	c.lock.Unlock()
 	return out
+}
+
+func (c *PluginConnector) Get(name string) *Caller {
+	c.lock.Lock()
+	out, ok := c.funcList[name]
+	c.lock.Unlock()
+
+	if ok {
+		return out
+	}
+	return nil
 }
 
 func (c *PluginConnector) WaitAdd() int {
@@ -231,6 +243,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 			return err
 		}
 
+		var callList []string
 		c.name = m.Name
 		for rawName := range m.Fields {
 			tmpName := []rune(rawName)
@@ -242,6 +255,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 				c:    c,
 			}
 			c.funcList[name] = &caller
+			callList = append(callList, name)
 		}
 
 		out := makeResponse(obj.Id, nil)
@@ -250,6 +264,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 		}
 		c.WaitDone(obj.Id, nil, nil)
 		c.writeB(out)
+		log.Printf("plugin \"%s\" registered: %s\n", m.Name, strings.Join(callList, ", "))
 	}
 
 	return nil

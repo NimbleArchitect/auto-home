@@ -13,8 +13,6 @@ import (
 	"unicode"
 )
 
-const SockAddr = "/tmp/rpc.sock"
-
 type Generic struct {
 	Method string
 	Id     int

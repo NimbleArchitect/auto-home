@@ -24,3 +24,15 @@ func (p *Plugin) All() map[string]*PluginConnector {
 	p.lock.RUnlock()
 	return out
 }
+
+// Get returns the plugin named pluginName returns nil if the named plugin dosent exist
+func (p *Plugin) Get(pluginName string) *PluginConnector {
+	p.lock.RLock()
+	out, ok := p.list[pluginName]
+	p.lock.RUnlock()
+
+	if ok {
+		return out
+	}
+	return nil
+}
