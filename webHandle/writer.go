@@ -5,15 +5,14 @@ import (
 	"net/http"
 )
 
-func getWriter(w http.ResponseWriter) func(string) (int, error) {
-	svr := serverWriter{
-		responseWriter: w,
-	}
+// writeFlush returns a writeFlush function if it exists
+func writeFlush(w http.ResponseWriter, text string) (int, error) {
+	log.Println(">> writeFlush:", text)
+	bytesOut, err := w.Write([]byte(text))
 
 	f, canFlush := w.(http.Flusher)
 	if canFlush {
-		svr.flusher = f
-		return svr.WriteFlush
+		f.Flush()
 	} else {
 		log.Print("Damn, no flush")
 		return svr.Write

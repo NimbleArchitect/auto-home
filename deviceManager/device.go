@@ -29,7 +29,9 @@ type Device struct {
 	// Uploads []*Upload
 }
 
+// NewDevice retuarns a new initalizsed device object
 func NewDevice(maxPropertyHistory int) *Device {
+	// TODO: need to add clientID to arguments when this is merged with AddDevice
 	return &Device{
 		PropertyDial:   make(map[string]*Dial),
 		PropertySwitch: make(map[string]*Switch),
@@ -98,6 +100,7 @@ func (d Device) MakeAction(deviceid string, propName string, propType int, value
 	return json
 }
 
+// setActionWriter sets the outgoing connection to allow writes back to the client
 func (m *Manager) SetActionWriter(clientId string, writer ActionWriter) {
 
 	devicelist := m.FindDeviceWithClientID(clientId)

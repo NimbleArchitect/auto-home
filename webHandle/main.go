@@ -51,9 +51,7 @@ func (h *Handler) unRegisterClientAction(id string) {
 	log.Println("wait action", id, "closed")
 }
 
-func (h *Handler) waitClientActions(val string, wait waitActions) {
-
-	ctx := wait.req.Context()
+// waitClientActions either waits for the context to complete or the waitActions.done to complete
 
 	defer h.unRegisterClientAction(val)
 
@@ -64,14 +62,14 @@ func (h *Handler) waitClientActions(val string, wait waitActions) {
 		tmp, _ := h.readActionID(val)
 		// tmp := h.deviceActionList[val]
 		tmp.inuse = false
-		h.writeActionID(val, tmp)
+		h.setActionID(val, tmp)
 		// h.deviceActionList[val] = tmp
 	case <-wait.done:
 		log.Println("waitClientActions wait.done")
 		tmp, _ := h.readActionID(val)
 		// tmp := h.deviceActionList[val]
 		tmp.inuse = false
-		h.writeActionID(val, tmp)
+		h.setActionID(val, tmp)
 		// h.deviceActionList[val] = tmp
 	}
 

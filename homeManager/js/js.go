@@ -126,7 +126,7 @@ func (r *JavascriptVM) RunJSPlugin(pluginName string, fName string, args map[str
 
 }
 
-// Process main entry point after a trigger, this allows processin gthe event data
+// Process main entry point after a trigger, this allows processing the event data
 func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList) {
 	var dev jsDevice
 

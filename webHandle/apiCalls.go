@@ -132,7 +132,7 @@ func (h *Handler) callV1api(w http.ResponseWriter, r *http.Request, elements []s
 		}
 		fmt.Println(">> session id:", newSession)
 		w.Header().Set("session", newSession)
-		w.Write([]byte(``))
+		writeFlush(w, ``)
 		// TODO: load js script and call onConnection function
 
 		return
@@ -166,7 +166,7 @@ func (h *Handler) callV1api(w http.ResponseWriter, r *http.Request, elements []s
 			if id != clientInfo.actionId {
 				log.Println("Error: invalid session")
 				w.WriteHeader(http.StatusConflict)
-				w.Write([]byte("Error"))
+				writeFlush(w, "Error")
 				return
 			}
 
@@ -183,11 +183,11 @@ func (h *Handler) callV1api(w http.ResponseWriter, r *http.Request, elements []s
 			val.write = getWriter(w)
 
 			h.HomeManager.RegisterActionChannel(clientInfo.ClientId, &val)
-			h.writeActionID(id, val)
+			h.setActionID(id, val)
 			// h.deviceActionList[id] = val
 
 			w.WriteHeader(http.StatusAccepted)
-			val.write("")
+			writeFlush(w, "")
 			// this next line pauses
 			h.waitClientActions(id, val)
 

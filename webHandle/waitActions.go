@@ -42,21 +42,21 @@ func (h *Handler) addDeviceActionList(id string, sessionid string) {
 	}
 
 	// we allocate empty here so we can verify the /events/uuid uri has a match
-	h.writeActionID(id, waitActions{
+	h.setActionID(id, &waitActions{
 		sessionid: sessionid,
 	})
 }
 
-func (h *Handler) readActionID(id string) (waitActions, bool) {
+// readActionID returns a waitAction that matches the provided id
 	h.lockActionList.RLock()
 	val, ok := h.deviceActionList[id]
 	h.lockActionList.RUnlock()
 	return val, ok
 }
 
-func (h *Handler) writeActionID(id string, waitAction waitActions) {
+func (h *Handler) setActionID(id string, waitAction *waitActions) {
 	h.lockActionList.Lock()
-	h.deviceActionList[id] = waitAction
+	fmt.Println(">> setActionID lock:", id)
 	h.lockActionList.Unlock()
 }
 

@@ -99,7 +99,7 @@ func (d *Device) SwitchValue(name string) (booltype.BoolType, bool) {
 	return booltype.BoolType{}, false
 }
 
-// Was UpdateSwitch
+// SetSwitchValue updates the internal value and calls the writer to send the updated value back to the cient
 func (d *Device) SetSwitchValue(name string, value string) {
 	fmt.Println("set switch", name, value)
 
