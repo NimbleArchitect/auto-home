@@ -48,6 +48,7 @@ func (h *Handler) addDeviceActionList(id string, sessionid string) {
 }
 
 // readActionID returns a waitAction that matches the provided id
+func (h *Handler) readActionID(id string) (*waitActions, bool) {
 	h.lockActionList.RLock()
 	val, ok := h.deviceActionList[id]
 	h.lockActionList.RUnlock()
