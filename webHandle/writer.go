@@ -15,9 +15,8 @@ func writeFlush(w http.ResponseWriter, text string) (int, error) {
 		f.Flush()
 	} else {
 		log.Print("Damn, no flush")
-		return svr.Write
 	}
-
+	return bytesOut, err
 }
 
 type serverWriter struct {
