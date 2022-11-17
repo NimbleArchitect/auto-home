@@ -142,8 +142,8 @@ func main() {
 
 func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 	quicConf := &quic.Config{
-		KeepAlivePeriod: 11 * time.Second,
-		MaxIdleTimeout:  30 * time.Second,
+		KeepAlivePeriod: 500 * time.Second,
+		MaxIdleTimeout:  500 * time.Second,
 	}
 
 	server := http3.Server{

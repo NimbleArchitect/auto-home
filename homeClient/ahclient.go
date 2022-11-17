@@ -80,8 +80,8 @@ func NewClient(address string, clientId string, token string) AhClient {
 	// AddRootCA(pool)
 
 	qconf := quic.Config{
-		KeepAlivePeriod: 11 * time.Second,
-		MaxIdleTimeout:  30 * time.Second,
+		KeepAlivePeriod: 500 * time.Second,
+		MaxIdleTimeout:  500 * time.Second,
 	}
 
 	roundTripper := &http3.RoundTripper{
