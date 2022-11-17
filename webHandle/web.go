@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -40,7 +41,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	req.Body, err = io.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("http body read error:", err)
+		log.Println("http body read error:", err)
 	}
 
 	json.Unmarshal(req.Body, &req.JsonMessage)

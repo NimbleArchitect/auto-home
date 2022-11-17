@@ -2,9 +2,11 @@ package webHandle
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	event "server/eventManager"
 	home "server/homeManager"
@@ -73,8 +75,6 @@ func New(path string, publicPath string, evtMgr *event.Manager, homeMgr *home.Ma
 func (h *Handler) SaveSystem() {
 	log.Println("saving web configuration")
 
-	// TODO: this has all been changed
-
 	file, err := json.Marshal(h.userInfo)
 	if err != nil {
 		log.Println("unable to serialize clients", err)
@@ -88,32 +88,14 @@ func (h *Handler) SaveSystem() {
 func (h *Handler) LoadSystem() {
 	log.Println("loading web configuration")
 
-	// TODO: this has all been changed
-
-	h.userInfo["virtual.custom.light"] = clientItem{
-		AuthKey: "secretclientid",
+	file, err := ioutil.ReadFile(path.Join(h.ConfigPath, "clients.json"))
+	if !errors.Is(err, os.ErrNotExist) {
+		if err != nil {
+			log.Panic("unable to read clients.json ", err)
+		}
+		err = json.Unmarshal(file, &h.userInfo)
+		if err != nil {
+			log.Panic("unable to read previous web state ", err)
+		}
 	}
-
-	h.userInfo["virtual.custom.camera"] = clientItem{
-		AuthKey: "randomcameradeviceuuid",
-	}
-
-	h.userInfo["device.front.door"] = clientItem{
-		AuthKey: "randomfrontdoorid",
-	}
-
-	h.userInfo["com.ah.huehubv2"] = clientItem{
-		AuthKey: "randomhuehubuuid",
-	}
-
-	// file, err := ioutil.ReadFile(path.Join(h.ConfigPath, "clients.json"))
-	// if !errors.Is(err, os.ErrNotExist) {
-	// 	if err != nil {
-	// 		log.Panic("unable to read clients.json ", err)
-	// 	}
-	// 	err = json.Unmarshal(file, &h.userInfo)
-	// 	if err != nil {
-	// 		log.Panic("unable to read previous web state ", err)
-	// 	}
-	// }
 }

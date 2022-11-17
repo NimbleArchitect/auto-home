@@ -124,7 +124,7 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 				h.doLogin(req)
 			}
 		default:
-			fmt.Println("not logged in")
+			log.Println("not logged in")
 			writeFlush(req.Response, "not logged in")
 			return
 		}
@@ -152,13 +152,13 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 			fmt.Println("/event")
 			val, ok := h.session[req.Session]
 			if !ok {
-				fmt.Println("invalid session")
+				log.Println("invalid session")
 				return
 			}
 			h.processEvent(req, val.clientid)
 
 		default:
-			fmt.Println("unknown url:", req.Path)
+			log.Println("unknown url:", req.Path)
 		}
 
 	}
@@ -167,7 +167,7 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 }
 
 func (h *Handler) isConnected(req requestInfoBlock) bool {
-	fmt.Println("header:", req.Request.Header)
+	log.Println("header:", req.Request.Header)
 
 	if len(req.Session) <= 0 {
 		return false
@@ -175,14 +175,9 @@ func (h *Handler) isConnected(req requestInfoBlock) bool {
 
 	state, ok := h.session[req.Session]
 	if ok {
-		fmt.Println("state", state.timestamp)
-		fmt.Println("now", time.Now())
-
 		if state.timestamp.After(time.Now()) {
-			fmt.Println("time after")
 			return true
 		} else {
-			fmt.Println("time before")
 			return false
 		}
 	}
@@ -191,7 +186,6 @@ func (h *Handler) isConnected(req requestInfoBlock) bool {
 }
 
 func (h *Handler) doLogin(req requestInfoBlock) bool {
-	fmt.Println("doLogin")
 	type userLogin struct {
 		User string
 		Pass string
@@ -202,24 +196,24 @@ func (h *Handler) doLogin(req requestInfoBlock) bool {
 
 	rawMsg, err := req.JsonMessage.Data.MarshalJSON()
 	if err != nil {
-		fmt.Println("unable to retrieve bytes from generic:", err)
+		log.Println("unable to retrieve bytes from generic:", err)
 		return false
 	}
 
 	err = json.Unmarshal(rawMsg, &login)
 	if err != nil {
-		fmt.Println("unable to convert json string", err)
+		log.Println("unable to convert json string", err)
 		return false
 	}
 
 	val, ok := h.userInfo[login.User]
 	if !ok {
-		fmt.Println("username not found")
+		log.Println("username not found")
 		return false
 	}
 
 	if login.Pass != val.AuthKey {
-		fmt.Println("invalid password")
+		log.Println("invalid authKey")
 		return false
 	}
 
@@ -257,18 +251,18 @@ func (h *Handler) doLogin(req requestInfoBlock) bool {
 func (h *Handler) doActions(req requestInfoBlock) (sessionState, bool) {
 	val, ok := h.session[req.Session]
 	if !ok {
-		fmt.Println("invalid session")
+		log.Println("invalid session")
 		return sessionState{}, false
 	}
 
 	actionid := req.Components[2]
 	if len(actionid) == 0 {
-		fmt.Println("empty action id")
+		log.Println("empty action id")
 		return sessionState{}, false
 	}
 
 	if val.actionId != actionid {
-		fmt.Println("invalid action id")
+		log.Println("invalid action id")
 		return sessionState{}, false
 	}
 
