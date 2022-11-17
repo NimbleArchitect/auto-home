@@ -6,21 +6,31 @@ import (
 	"log"
 	"net/http"
 	event "server/eventManager"
+	"time"
+
+	"github.com/google/uuid"
 )
 
-func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
+type sessionState struct {
+	clientid  string
+	actionId  string
+	timestamp time.Time
+	InUse     bool
+	Done      chan bool
+}
+
+func (h *Handler) register(req requestInfoBlock) {
 	var tmp Generic
 	var hub jsonHub
 	var device jsonDevice
 
-	err := json.NewDecoder(r.Body).Decode(&tmp)
+	err := json.Unmarshal(req.Body, &tmp)
 	if err != nil {
-		log.Printf("error reading body for %s: %s\n", r.URL.Path, err.Error())
+		log.Printf("error reading body for %s: %s\n", req.Path, err.Error())
 	}
-	sessionid := r.Header.Get("session")
 
 	// TODO: lookup client id from session id
-	clientInfo, ok := h.lookupSessionClient(sessionid)
+	state, ok := h.session[req.Session]
 	if !ok {
 		log.Println("error invalid session id")
 		return
@@ -31,11 +41,11 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(raw, &hub)
 		log.Println("registration for hub", hub.Name)
 		// build device list
-		err = h.regHubList(hub, clientInfo.ClientId)
+		err = h.regHubList(hub, state.clientid)
 		if err != nil {
 			log.Println("Error:", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error: unable to add hub"))
+			req.Response.WriteHeader(http.StatusInternalServerError)
+			writeFlush(req.Response, "Error: unable to add hub")
 			return
 		}
 	}
@@ -45,34 +55,23 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal(raw, &device)
 		log.Printf("registration for device \"%s\" (id: %s)", device.Name, device.Id)
 
-		err := h.regDeviceList(device, clientInfo.ClientId)
+		err := h.regDeviceList(device, state.clientid)
 		if err != nil {
 			log.Println("Error:", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error: unable to add device"))
+			req.Response.WriteHeader(http.StatusInternalServerError)
+			writeFlush(req.Response, "Error: unable to add device")
 			return
 		}
 	}
 
-	if *tmp.Method == "listen" {
-		// TODO: check session id and generate actionid
-		// fmt.Println(">>", r.Header)
-
-		// clientInfo := h.lookupSessionClient(sessionid)
-		// raw, _ := tmp.Data.MarshalJSON()
-		// json.Unmarshal(raw, &connector)
-		h.addDeviceActionList(clientInfo.ClientId, sessionid)
-		w.Write([]byte((`{"result": {"status":"ok","msg":""}, "data": {"id": "` + clientInfo.actionId + `"}}\n`)))
-	}
-
 	// h.addDeviceActionList(newUuid)
 	log.Println("registration successful")
-	w.Write([]byte((`{"result": {"status":"ok","msg":""}}\n`)))
+	writeFlush(req.Response, `{"result": {"status":"ok","msg":""}}\n`)
 
 }
 
 // processEvent reads the incoming event as json, checks it valid and passes it off to the event manager
-func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId sessionItem) {
+func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 	var jEvent JsonEvent
 
 	// scanner := bufio.NewScanner(r.Body)
@@ -81,7 +80,9 @@ func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId 
 	// 	log.Println("scanner recieved", ln)
 	// }
 
-	err := json.NewDecoder(r.Body).Decode(&jEvent)
+	fmt.Println(">> jsonMessage:", string(req.Body))
+	// err := json.NewDecoder(req.Request.Body).Decode(&jEvent)
+	err := json.Unmarshal(req.Body, &jEvent)
 	if err != nil {
 		log.Println(err)
 	}
@@ -90,10 +91,10 @@ func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId 
 	case "event":
 		// make sure the client id has ownership of the device id
 		// and verify device exists
-		if !h.HomeManager.DeviceExistsWithClientId(jEvent.Data.Id, actionId.ClientId) {
+		if !h.HomeManager.DeviceExistsWithClientId(jEvent.Data.Id, clientId) {
 			log.Println("Error: invalid device id")
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Error: incorrect device id"))
+			req.Response.WriteHeader(http.StatusBadRequest)
+			writeFlush(req.Response, "Error: incorrect device id")
 			return
 		}
 	}
@@ -112,94 +113,170 @@ func (h *Handler) processEvent(w http.ResponseWriter, r *http.Request, actionId 
 
 }
 
-func (h *Handler) callV1api(w http.ResponseWriter, r *http.Request, elements []string) {
-	// r.RequestURI
-	var id string
-	var clientAuth login
-
-	// TODO: this whole func is crap and needs a complete rewrite
-	switch elements[2] {
-	case "connect":
-		// login
-		err := json.NewDecoder(r.Body).Decode(&clientAuth)
-		if err != nil {
-			log.Printf("error reading body for %s: %s\n", r.URL.Path, err.Error())
-		}
-
-		newSession, ok := h.getSessionWithToken(clientAuth.Token)
-		if !ok {
+func (h *Handler) callV1api(req requestInfoBlock) {
+	// is the user logged in
+	if !h.isConnected(req) {
+		// not logged in
+		switch req.Components[1] {
+		case "connect":
+			fmt.Println("/connect") // api login
+			if req.Request.Method == "POST" {
+				h.doLogin(req)
+			}
+		default:
+			fmt.Println("not logged in")
+			writeFlush(req.Response, "not logged in")
 			return
 		}
-		fmt.Println(">> session id:", newSession)
-		w.Header().Set("session", newSession)
-		writeFlush(w, ``)
-		// TODO: load js script and call onConnection function
 
-		return
+	} else {
+		// all ok
+		switch req.Components[1] {
+		case "register":
+			fmt.Println("/register")
+			h.register(req)
 
-	}
+		case "actions":
+			fmt.Println("/actions")
+			if client, ok := h.doActions(req); ok {
+				h.HomeManager.SetClient(client.clientid, req.Response, req.Request)
+				ctx := req.Request.Context()
+				select {
+				case <-ctx.Done():
+				case <-client.Done:
+				}
+				log.Println("finished /actions")
+			}
 
-	sessionid := r.Header.Get("session")
-	clientInfo, ok := h.lookupSessionClient(sessionid)
-	if !ok {
-		log.Println("bad session", clientInfo)
-		return
-	}
-
-	if r.RequestURI == "/v1/register" {
-		h.register(w, r)
-		return
-	}
-
-	if len(elements) >= 4 {
-		id = elements[3]
-		// /v1/actions/uuid
-		// fmt.Println(">>", id)
-		val, _ := h.readActionID(id)
-		// val, ok := h.deviceActionList[id]
-		// if !ok {
-		// 	log.Println("invalid id specified, id", id, "has not been registered")
-		// }
-
-		switch elements[2] {
-		case "actions": // /v1/actions/uuid
-			if id != clientInfo.actionId {
-				log.Println("Error: invalid session")
-				w.WriteHeader(http.StatusConflict)
-				writeFlush(w, "Error")
+		case "event":
+			fmt.Println("/event")
+			val, ok := h.session[req.Session]
+			if !ok {
+				fmt.Println("invalid session")
 				return
 			}
+			h.processEvent(req, val.clientid)
 
-			if val.inuse {
-				val.done <- true
-			}
+		default:
+			fmt.Println("unknown url:", req.Path)
+		}
 
-			log.Println("client id", clientInfo.ClientId)
+	}
 
-			val.inuse = true
-			val.done = make(chan bool)
-			val.req = r
-			val.resp = &w
-			val.write = getWriter(w)
+	// time.Sleep(4 * time.Second)
+}
 
-			h.HomeManager.RegisterActionChannel(clientInfo.ClientId, &val)
-			h.setActionID(id, val)
-			// h.deviceActionList[id] = val
+func (h *Handler) isConnected(req requestInfoBlock) bool {
+	fmt.Println("header:", req.Request.Header)
 
-			w.WriteHeader(http.StatusAccepted)
-			writeFlush(w, "")
-			// this next line pauses
-			h.waitClientActions(id, val)
+	if len(req.Session) <= 0 {
+		return false
+	}
 
-		case "event": // /v1/event/uuid
-			// if !val.inuse {
-			// 	log.Println("Error: invalid event id")
-			// 	w.WriteHeader(http.StatusBadRequest)
-			// 	w.Write([]byte("Error: incorrect id"))
-			// 	return
-			// }
-			h.processEvent(w, r, clientInfo)
+	state, ok := h.session[req.Session]
+	if ok {
+		fmt.Println("state", state.timestamp)
+		fmt.Println("now", time.Now())
 
+		if state.timestamp.After(time.Now()) {
+			fmt.Println("time after")
+			return true
+		} else {
+			fmt.Println("time before")
+			return false
 		}
 	}
+
+	return false
+}
+
+func (h *Handler) doLogin(req requestInfoBlock) bool {
+	fmt.Println("doLogin")
+	type userLogin struct {
+		User string
+		Pass string
+	}
+	var login userLogin
+
+	now := time.Now()
+
+	rawMsg, err := req.JsonMessage.Data.MarshalJSON()
+	if err != nil {
+		fmt.Println("unable to retrieve bytes from generic:", err)
+		return false
+	}
+
+	err = json.Unmarshal(rawMsg, &login)
+	if err != nil {
+		fmt.Println("unable to convert json string", err)
+		return false
+	}
+
+	val, ok := h.userInfo[login.User]
+	if !ok {
+		fmt.Println("username not found")
+		return false
+	}
+
+	if login.Pass != val.AuthKey {
+		fmt.Println("invalid password")
+		return false
+	}
+
+	// if len(val.RefreshToken) == 0 {
+	// 	val.RefreshToken = uuid.New().String()
+	// 	val.RefreshTime = now.Add(24 * time.Hour)
+	// } else if val.RefreshTime.After(now) {
+	// 	// long lived token has expired
+	// 	// do I need to do anything
+	// }
+
+	// user login is ok so generate session id and and action id then attach clientid
+	newSessionID := uuid.New().String()
+	newActionID := uuid.New().String()
+	h.session[newSessionID] = sessionState{
+		clientid:  login.User,
+		actionId:  newActionID,
+		timestamp: now.Add(24 * 60 * time.Minute),
+		InUse:     true,
+		Done:      make(chan bool),
+	}
+
+	req.Response.Header().Set("session", newSessionID)
+	req.Response.WriteHeader(200)
+	writeFlush(req.Response,
+		fmt.Sprintf(
+			`{"result":{"status":"ok","msg":""},"data":{"session":"%s","actionid":"%s"}}`,
+			newSessionID, newActionID,
+		),
+	)
+
+	return true
+}
+
+func (h *Handler) doActions(req requestInfoBlock) (sessionState, bool) {
+	val, ok := h.session[req.Session]
+	if !ok {
+		fmt.Println("invalid session")
+		return sessionState{}, false
+	}
+
+	actionid := req.Components[2]
+	if len(actionid) == 0 {
+		fmt.Println("empty action id")
+		return sessionState{}, false
+	}
+
+	if val.actionId != actionid {
+		fmt.Println("invalid action id")
+		return sessionState{}, false
+	}
+
+	// fmt.Println("go go go:", val.clientid)
+	// TODO: need to convert back to http3 and check that the waits work correctly and messages are
+	//  passed back and forth as needed
+	req.Response.WriteHeader(http.StatusAccepted)
+	writeFlush(req.Response, "")
+
+	return val, true
 }

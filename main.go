@@ -50,6 +50,7 @@ func main() {
 	// homeDir := path.Join(profile, "auto-home", "system")
 	homeDir := path.Join(profile, "auto-home")
 	publicPath := path.Join(profile, "auto-home", "public")
+	systemPath := path.Join(profile, "auto-home", "system")
 	configPath := path.Join(profile, "auto-home", "config.json")
 
 	jsonFile, err := os.Open(configPath)
@@ -67,13 +68,7 @@ func main() {
 
 	homeMgr := home.NewManager(conf.RecordHistory, conf.MaxHistory, conf.AllocateVMs, conf.MaxPropertyHistory, homeDir)
 
-	www := webHandle.Handler{
-		ConfigPath:   path.Join(profile, "auto-home", "system"),
-		EventManager: evtMgr,
-		HomeManager:  homeMgr,
-		FsHandle:     http.FileServer(http.Dir(publicPath)),
-		Address:      conf.HostAddress,
-	}
+	www := webHandle.New(systemPath, publicPath, evtMgr, homeMgr, conf.HostAddress)
 
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,
@@ -109,8 +104,8 @@ func main() {
 	// pass the trigger function "TriggerEvent" to the event loop, this allow us to keep some seperation of responsibilities
 	go evtMgr.EventLoop(homeMgr)
 	go evtMgr.EventManager()
-	go StartServer(done, &www, homeDir)
-	go StartWebsite(&www, homeDir)
+	go StartServer(done, www, homeDir)
+	go StartWebsite(www, homeDir)
 
 	// TODO: start event manager, i think???
 	//
@@ -147,8 +142,8 @@ func main() {
 
 func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 	quicConf := &quic.Config{
-		KeepAlivePeriod: 60 * time.Second,
-		MaxIdleTimeout:  600 * time.Second,
+		KeepAlivePeriod: 11 * time.Second,
+		MaxIdleTimeout:  30 * time.Second,
 	}
 
 	server := http3.Server{
@@ -164,7 +159,7 @@ func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 	if err != nil {
 		log.Println(err)
 	}
-	defer server.CloseGracefully(30 * time.Second)
+	defer server.CloseGracefully(10 * time.Second)
 
 	done <- true // used to close the program
 }

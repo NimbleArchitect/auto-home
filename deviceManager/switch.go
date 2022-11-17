@@ -125,9 +125,15 @@ func (d *Device) SetSwitchValue(name string, value string) {
 
 		property.lock.Unlock()
 
-		if d.actionWriter != nil {
-			jsonOut := d.MakeAction(d.Id, name, SWITCH, fmt.Sprint(value))
-			d.actionWriter.Write(jsonOut)
+		fmt.Println("F:SetSwitchValue:d.Id =", d.Id)
+
+		if d.clientConnection != nil {
+			if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
+				jsonOut := d.MakeAction(d.Id, name, SWITCH, fmt.Sprint(value))
+				writer.Write(jsonOut)
+			}
+		} else {
+			log.Panic("clientConnection should not be empty")
 		}
 	}
 

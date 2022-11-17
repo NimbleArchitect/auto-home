@@ -121,12 +121,15 @@ func (d *Device) SetDialValue(name string, value int) {
 		property.data.Value = value
 		// copy the Id so we can unlock before we start the call back action, this means we dont have to
 		//  keep the lock open until the client has rwsponded
-		id := property.data.Id
 		property.lock.Unlock()
 
-		if d.actionWriter != nil {
-			jsonOut := d.MakeAction(id, name, DIAL, fmt.Sprint(value))
-			d.actionWriter.Write(jsonOut)
+		fmt.Println("F:SetDialhValue:d.Id =", d.Id)
+
+		if d.clientConnection != nil {
+			if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
+				jsonOut := d.MakeAction(d.Id, name, DIAL, fmt.Sprint(value))
+				writer.Write(jsonOut)
+			}
 		}
 	}
 

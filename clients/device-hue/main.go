@@ -44,7 +44,7 @@ func main() {
 	var conf settings
 	json.Unmarshal(byteValue, &conf)
 
-	client := homeClient.NewClient(conf.ServerURL, token)
+	client := homeClient.NewClient(conf.ServerURL, "com.ah.huehubv2", token)
 
 	transport := &http2.Transport{
 		TLSClientConfig: &tls.Config{
@@ -65,6 +65,7 @@ func main() {
 		log.Panic("unable to listen", err)
 
 	}
+	fmt.Println(">> ListenEvents finished")
 
 	finished := false
 	for {

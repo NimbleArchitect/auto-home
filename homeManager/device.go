@@ -35,6 +35,7 @@ func (m *Manager) DeviceExistsWithClientId(deviceId string, clientId string) boo
 }
 
 func (m *Manager) AddDevice(d *deviceManager.Device, clientId string) error {
+	// TODO: this needs to be merged with NewDevice
 	log.Println("adding device:", d.Id)
 	// if len(m.devices) == 0 {
 	// 	m.devices = make(map[string]Device)

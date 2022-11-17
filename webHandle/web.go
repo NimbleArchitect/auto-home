@@ -1,21 +1,23 @@
 package webHandle
 
 import (
-	"log"
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"strings"
-	"sync"
-
-	"github.com/google/uuid"
 )
 
-type login struct {
-	Token string
-}
-
-type sessionItem struct {
-	actionId string
-	ClientId string
+type requestInfoBlock struct {
+	Path        string
+	Components  []string
+	Query       url.Values
+	Body        []byte
+	Session     string
+	Request     *http.Request
+	Response    http.ResponseWriter
+	JsonMessage Generic
 }
 
 type clientItem struct {
@@ -23,52 +25,36 @@ type clientItem struct {
 	AuthKey  string
 }
 
-func (h *Handler) getSessionWithToken(token string) (string, bool) {
-	// check if token exists
-	log.Println("recieved token:", token)
-	if len(h.sessionTable) == 0 {
-		h.sessionTable = make(map[string]sessionItem)
-		h.lockSessionTable = sync.RWMutex{}
-	}
-
-	if clientInfo, ok := h.clientTable[token]; ok {
-		session := uuid.New().String()
-		h.sessionTable[session] = sessionItem{
-			actionId: uuid.New().String(),
-			ClientId: clientInfo.ClientId,
-		}
-
-		// h.addDeviceActionList(newUuid)
-		// log.Println(h.clientTable)
-		return session, true
-	}
-	return "", false
-}
-
-func (h *Handler) lookupSessionClient(sessionid string) (sessionItem, bool) {
-	// TODO: check if sessionid is empty
-
-	h.lockSessionTable.RLock()
-	val, ok := h.sessionTable[sessionid]
-	h.lockSessionTable.RUnlock()
-
-	return val, ok
-}
-
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Actual web connection start
+	var err error
 
-	log.Println("processing Url:", r.RequestURI)
-
-	if len(r.RequestURI) == 0 {
-		h.showPage(w, r, []string{})
-	} else {
-		elements := strings.Split(r.RequestURI, "/")
-		switch elements[1] {
-		case "v1":
-			h.callV1api(w, r, elements)
-
-		default:
-			h.showPage(w, r, elements)
-		}
+	req := requestInfoBlock{
+		Path:     cleanPath(r.URL.Path),
+		Query:    r.URL.Query(),
+		Session:  r.Header.Get("session"),
+		Request:  r,
+		Response: w,
 	}
+	req.Components = strings.Split(req.Path, "/")[1:]
+
+	req.Body, err = io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("http body read error:", err)
+	}
+
+	json.Unmarshal(req.Body, &req.JsonMessage)
+
+	fmt.Println("| path:", req.Path)
+	fmt.Println("| sessionid:", req.Session)
+	fmt.Println("| query:", req.Query)
+	fmt.Println("| body:", string(req.Body))
+
+	if req.Components[0] == "v1" {
+		fmt.Println("is V1")
+		h.callV1api(req)
+	} else {
+		h.showPage(w, r, req.Components)
+	}
+
 }

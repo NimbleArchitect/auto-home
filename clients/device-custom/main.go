@@ -43,7 +43,7 @@ func main() {
 
 	os.Remove(conf.FifoFile)
 
-	client := homeClient.NewClient(conf.ServerURL, conf.Token)
+	client := homeClient.NewClient(conf.ServerURL, "device.front.door", conf.Token)
 
 	event, err := client.ListenEvents(conf.callback)
 	if err != nil {

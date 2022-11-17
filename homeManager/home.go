@@ -13,6 +13,7 @@ import (
 	"server/deviceManager"
 	"server/globals"
 	"server/groupManager"
+	"server/homeManager/clientConnector"
 	js "server/homeManager/js"
 	"server/homeManager/pluginManager"
 
@@ -27,8 +28,8 @@ type Manager struct {
 	devices *deviceManager.Manager
 	hubs    map[string]Hub // hubs store a list of device references
 	// events  event.Manager
-	actionChannel map[string]actionsChannel // client communication channel
-	groups        *groupManager.Manager
+	clientConnection *clientConnector.Manager // client communication channel
+	groups           *groupManager.Manager
 	// actions       map[string]Action
 
 	configPath    string
@@ -66,8 +67,10 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, max
 		max:  maxEventHistory,
 	}
 
+	clientMgr := clientConnector.NewManager()
+
 	systemPath := path.Join(homePath, "system")
-	deviceMgr := deviceManager.New(maxPropertyHistory, systemPath)
+	deviceMgr := deviceManager.New(maxPropertyHistory, systemPath, clientMgr)
 
 	globalItems := globals.New()
 	// p := pluginManager.Plugin{}
@@ -85,6 +88,7 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, max
 		MaxPropertyHistory: maxPropertyHistory,
 		chStartupComplete:  make(chan bool, 1),
 		pluginPath:         path.Join(homePath, "plugins"),
+		clientConnection:   clientMgr,
 
 		globals: globalItems,
 	}
@@ -411,9 +415,7 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 }
 
 func (m *Manager) Shutdown() {
-	for _, v := range m.actionChannel {
-		v.Write(`{"Method": "shutdown"}`)
-	}
+	m.clientConnection.CloseAll()
 
 	time.Sleep(1 * time.Second)
 }

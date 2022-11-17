@@ -1,17 +1,16 @@
 package deviceManager
 
-import (
-	"log"
-)
+import "server/homeManager/clientConnector"
 
 type Device struct {
 	Id          string
 	Name        string
 	Description string
 	Help        string
-	ClientId    string
+	ClientId    string // a unique id for each client
 	// ActionWriter func(s string) (int, error)
-	actionWriter ActionWriter
+	//clientWriter *clientConnector.ClientWriter
+	clientConnection *clientConnector.Manager
 	// Groups      []*group
 
 	PropertySwitch map[string]*Switch
@@ -71,6 +70,7 @@ func (m *Manager) SetDevice(deviceId string, dev *Device) {
 		m.deviceKeys = append(m.deviceKeys, deviceId)
 	}
 
+	dev.clientConnection = m.clientConnections
 	m.devices[deviceId] = dev
 	m.lock.Unlock()
 }
@@ -101,21 +101,20 @@ func (d Device) MakeAction(deviceid string, propName string, propType int, value
 }
 
 // setActionWriter sets the outgoing connection to allow writes back to the client
-func (m *Manager) SetActionWriter(clientId string, writer ActionWriter) {
+// func (m *Manager) SetActionWriter(clientId string, writer *clientConnector.ClientWriter) {
+// 	if writer == nil {
+// 		return
+// 	}
 
-	devicelist := m.FindDeviceWithClientID(clientId)
+// 	devicelist := m.GetDeviceMatchClientID(clientId)
+// 	for _, v := range devicelist {
+// 		v.clientWriter = writer
+// 	}
+// }
 
-	for _, v := range devicelist {
-		m.devices[v].SetActionWriter(writer)
-	}
-}
-
-func (d *Device) SetActionWriter(writer ActionWriter) {
-	if writer != nil {
-		if d.actionWriter != nil {
-			log.Println("ActionWriter has already been set for this device, refusing to set again")
-			return
-		}
-		d.actionWriter = writer
-	}
-}
+// // setActionWriter sets the outgoing connection to allow writes back to the client
+// func (d *Device) SetActionWriter(writer *clientConnector.ClientWriter) {
+// 	if writer != nil {
+// 		d.clientWriter = writer
+// 	}
+// }

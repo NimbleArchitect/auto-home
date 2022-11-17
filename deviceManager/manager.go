@@ -17,6 +17,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"server/homeManager/clientConnector"
 	"strings"
 	"sync"
 )
@@ -31,6 +32,8 @@ type Manager struct {
 
 	maxPropertyHistory int
 	deviceKeys         []string
+
+	clientConnections *clientConnector.Manager
 }
 
 // type duration map[string]int64
@@ -51,12 +54,13 @@ type onDiskDevice struct {
 // 	Prop map[string]int64
 // }
 
-func New(maxPropertyHistory int, configPath string) *Manager {
+func New(maxPropertyHistory int, configPath string, clientMgr *clientConnector.Manager) *Manager {
 	return &Manager{
 		configPath:         configPath,
 		lock:               &sync.RWMutex{},
 		devices:            make(map[string]*Device),
 		maxPropertyHistory: maxPropertyHistory,
+		clientConnections:  clientMgr,
 	}
 }
 
@@ -91,6 +95,20 @@ func (m *Manager) FindDeviceWithClientID(clientId string) []string {
 	for deviceid, client := range m.devices {
 		if client.ClientId == clientId {
 			deviceList = append(deviceList, deviceid)
+		}
+	}
+	m.lock.RUnlock()
+
+	return deviceList
+}
+
+func (m *Manager) GetDeviceMatchClientID(clientId string) []*Device {
+	var deviceList []*Device
+
+	m.lock.RLock()
+	for _, client := range m.devices {
+		if client.ClientId == clientId {
+			deviceList = append(deviceList, client)
 		}
 	}
 	m.lock.RUnlock()
@@ -228,6 +246,7 @@ func (m *Manager) Load() {
 		dev.ClientId = device.ClientId
 		dev.Name = device.Name
 		dev.Help = device.Help
+		dev.clientConnection = m.clientConnections
 
 		for name, property := range device.Dial {
 			dev.SetDial(name, &property)

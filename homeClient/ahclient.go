@@ -53,13 +53,13 @@ type actionData struct {
 
 type AhClient struct {
 	http      *http.Client
-	uuid      string
+	actionid  string
 	done      chan bool
 	address   string
 	sessionId string
 }
 
-func NewClient(address string, token string) AhClient {
+func NewClient(address string, clientId string, token string) AhClient {
 	// var start time.Time
 	// keyLogFile := "./key.log"
 
@@ -80,8 +80,8 @@ func NewClient(address string, token string) AhClient {
 	// AddRootCA(pool)
 
 	qconf := quic.Config{
-		KeepAlivePeriod: 60 * time.Second,
-		MaxIdleTimeout:  600 * time.Second,
+		KeepAlivePeriod: 11 * time.Second,
+		MaxIdleTimeout:  30 * time.Second,
 	}
 
 	roundTripper := &http3.RoundTripper{
@@ -101,31 +101,54 @@ func NewClient(address string, token string) AhClient {
 		address: address,
 		http: &http.Client{
 			Transport: roundTripper,
-			Timeout:   time.Second * 600,
+			Timeout:   time.Second * 30,
 		},
 		sessionId: "",
 	}
 
-	out.Connect(token)
+	out.Connect(clientId, token)
 	return out
 }
 
-func (c *AhClient) Connect(token string) {
-	data := `{"token":"` + token + `"}`
+func (c *AhClient) Connect(clientId string, token string) {
+	var result Result
 
-	r, err := c.makeRequest(c.address+"/connect", http.MethodPost, data)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	msgOut := fmt.Sprintf(`{"data":{"user": "%s", "pass": "%s"}}`, clientId, token)
+	r, err := c.makeRequest(c.address+"/connect", http.MethodPost, msgOut)
 
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
 	fmt.Println(">>", r.StatusCode)
-	c.sessionId = r.Header.Get("session")
+
+	// c.sessionId = r.Header.Get("session")
+	// asd, err := ioutil.ReadAll(r.Body)
+	// fmt.Println("1>>", string(asd))
+
+	err = json.NewDecoder(r.Body).Decode(&result)
+	if err != nil {
+		log.Println(err)
+	}
+
+	if result.Result.Status != "ok" {
+		fmt.Println("unable to connect")
+		return
+	}
+
+	data := result.Data
+	if val, ok := data["session"]; ok {
+		c.sessionId = val
+	} else {
+		fmt.Println("invalid session")
+	}
+	if val, ok := data["actionid"]; ok {
+		c.actionid = val
+	} else {
+		fmt.Println("invalid session")
+	}
+
 	fmt.Println(">> session:", c.sessionId)
 }
 
@@ -213,27 +236,6 @@ func (c *AhClient) ListenEvents(callback func(string, map[string]interface{})) (
 
 	ready := make(chan bool)
 
-	// first call the listener to get our id
-	json_data := `{"method": "listen"}`
-	r, err := c.makeRequest(c.address+"/register", http.MethodPost, json_data)
-	if err != nil {
-		return nil, err
-	}
-
-	var tmp Result
-	log.Println("decode json")
-	err = json.NewDecoder(r.Body).Decode(&tmp)
-	if err != nil {
-		return nil, err
-	}
-
-	if tmp.Result.Status != "ok" {
-		return nil, errors.New("ERROR: empty response from listen call")
-
-	}
-
-	c.uuid = tmp.Data["id"]
-
 	// now we can start listening
 	go c.startListener(&ready, eventAction, callback)
 	<-ready
@@ -241,76 +243,86 @@ func (c *AhClient) ListenEvents(callback func(string, map[string]interface{})) (
 }
 
 func (c *AhClient) startListener(ready *chan bool, eventAction chan int, callback func(string, map[string]interface{})) {
-	go func() {
-		log.Println("starting scanner")
-		for {
-			fmt.Println("connecting to", c.address+"/actions/"+c.uuid)
-			out, err := c.makeRequest(c.address+"/actions/"+c.uuid, http.MethodGet, "")
+
+	log.Println("starting scanner")
+	for {
+		// var out *http.Response
+		// var err error
+
+		fmt.Println("connecting to", c.address+"/actions/"+c.actionid)
+		out, err := c.makeRequest(c.address+"/actions/"+c.actionid, http.MethodPost, "")
+
+		if err != nil {
+			fmt.Println("unable to connect", err)
+		}
+
+		scanner := bufio.NewScanner(out.Body)
+		if scanner.Err() != nil {
+			log.Println("unable to start scanner:", scanner.Err())
+			break
+		}
+		if ready != nil {
+			fmt.Println("send ready true over channel")
+			*ready <- true
+			fmt.Println("channel send complete")
+			ready = nil
+		}
+
+		for scanner.Scan() {
+			// on a read error this loop breaks out
+
+			ln := scanner.Text()
+			if len(ln) == 0 {
+				//recieved empty line from the server
+				// treat it as a connection test and ignore
+				fmt.Println("scanner empty")
+				continue
+			}
+
+			fmt.Println("scanner recieved", ln)
+			var tmp actionResult
+			log.Println("decode json")
+
+			json.Unmarshal([]byte(ln), &tmp)
+			switch tmp.Method {
+			case "action":
+				props := make(map[string]interface{})
+				for _, v := range tmp.Data.Properties {
+					name := v["name"].(string)
+					val := v["value"]
+					props[name] = val
+				}
+				callback(tmp.Data.ID, props)
+
+			case "shutdown":
+				eventAction <- EVENT_SHUTDOWN
+
+			case "restart":
+				eventAction <- EVENT_RESTART
+
+			case "reload":
+				eventAction <- EVENT_RESTART
+
+			default:
+				log.Println("recieved unknown method:", tmp.Method)
+			}
 
 			if err != nil {
-				fmt.Println("unable to connect", err)
+				log.Println(err)
 			}
 
-			scanner := bufio.NewScanner(out.Body)
-			if scanner.Err() != nil {
-				log.Println("unable to start scanner")
-				break
-			}
-			if ready != nil {
-				*ready <- true
-			}
-
-			for scanner.Scan() {
-				// on a read error this loop breaks out
-
-				ln := scanner.Text()
-				if len(ln) == 0 {
-					//recieved empty line from the server
-					// treat it as a connection test and ignore
-					continue
-				}
-
-				log.Println("scanner recieved", ln)
-				var tmp actionResult
-				log.Println("decode json")
-
-				json.Unmarshal([]byte(ln), &tmp)
-				switch tmp.Method {
-				case "action":
-					props := make(map[string]interface{})
-					for _, v := range tmp.Data.Properties {
-						name := v["name"].(string)
-						val := v["value"]
-						props[name] = val
-					}
-					callback(tmp.Data.ID, props)
-
-				case "shutdown":
-					eventAction <- EVENT_SHUTDOWN
-
-				case "restart":
-					eventAction <- EVENT_RESTART
-
-				case "reload":
-					eventAction <- EVENT_RESTART
-
-				default:
-					log.Println("recieved unknown method:", tmp.Method)
-				}
-
-				if err != nil {
-					log.Println(err)
-				}
-
-				// done <- true
-			}
-			log.Println("scanner dropped:", scanner.Err())
-
-			log.Println("re-starting scanner")
-			// time.Sleep(1 * time.Second)
+			// done <- true
 		}
-	}()
+		log.Println("scanner dropped:", scanner.Err())
+		// didRestart = true
+		_, err = io.ReadAll(out.Body)
+		fmt.Println("read error:", err)
+		out.Body.Close()
+		log.Println("re-starting scanner", err)
+		// time.Sleep(1 * time.Second)
+	}
 
+	fmt.Println("wait for <-c.done")
 	<-c.done
 	fmt.Println(">> listen finished")
 }
@@ -320,14 +332,14 @@ func (c *AhClient) SendEvent(deviceid string, evt event) error {
 		return errors.New("invalid session, you must connect first")
 	}
 
-	eventurl := c.address + "/event/" + c.uuid
+	eventurl := c.address + "/event/" //+ c.eventId
 
 	var propJson string
 	for _, v := range evt.props {
-		propJson += v.json + ","
+		propJson += v.json //+ ","
 	}
 
-	propJson = propJson[0 : len(propJson)-2]
+	propJson = propJson[0 : len(propJson)-1]
 
 	fmt.Println(">> propJson", propJson)
 

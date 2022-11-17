@@ -42,7 +42,3 @@ var (
 
 	ErrWriteOnlyProperty = errors.New("unable to read from write only property")
 )
-
-type ActionWriter interface {
-	Write(s string) (int, error)
-}

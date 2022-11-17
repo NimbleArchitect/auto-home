@@ -52,7 +52,7 @@ func main() {
 	var conf settings
 	json.Unmarshal(byteValue, &conf)
 
-	client := homeClient.NewClient(conf.ServerURL, token)
+	client := homeClient.NewClient(conf.ServerURL, "virtual.custom.camera", token)
 
 	event, err := client.ListenEvents(conf.callback)
 	if err != nil {
