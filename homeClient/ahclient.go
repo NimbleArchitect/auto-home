@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -239,6 +240,22 @@ func (c *AhClient) ListenEvents(callback func(string, map[string]interface{})) (
 	// now we can start listening
 	go c.startListener(&ready, eventAction, callback)
 	<-ready
+
+	go func() {
+		//randomise start time to reduce chance of resource spike
+		rnd := rand.Intn(30)
+		time.Sleep(time.Second * time.Duration(rnd))
+
+		for {
+			// wake up and ping every 30 seconds
+			time.Sleep(30 * time.Second)
+			_, err := c.http.Get(c.address + "/ping")
+			if err != nil {
+				fmt.Println("ping", err)
+			}
+		}
+	}()
+
 	return eventAction, nil
 }
 
@@ -250,7 +267,7 @@ func (c *AhClient) startListener(ready *chan bool, eventAction chan int, callbac
 		// var err error
 
 		fmt.Println("connecting to", c.address+"/actions/"+c.actionid)
-		out, err := c.makeRequest(c.address+"/actions/"+c.actionid, http.MethodPost, "")
+		out, err := c.makeActionRequest(c.address+"/actions/"+c.actionid, http.MethodPost, "")
 
 		if err != nil {
 			fmt.Println("unable to connect", err)
@@ -378,6 +395,31 @@ func (c *AhClient) makeRequest(url string, method string, data string) (*http.Re
 	if err != nil {
 		return nil, err
 	}
+
+	return r, nil
+}
+
+func (c *AhClient) makeActionRequest(url string, method string, data string) (*http.Response, error) {
+
+	req, err := http.NewRequest(method, url, bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		return nil, err
+	}
+
+	// set the request header Content-Type for json
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	if len(c.sessionId) > 0 {
+		req.Header.Set("session", c.sessionId)
+	}
+
+	timeout := c.http.Timeout
+	c.http.Timeout = 0
+
+	r, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	c.http.Timeout = timeout
 
 	return r, nil
 }

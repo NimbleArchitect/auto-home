@@ -114,6 +114,7 @@ func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 }
 
 func (h *Handler) callV1api(req requestInfoBlock) {
+
 	// is the user logged in
 	if !h.isConnected(req) {
 		// not logged in

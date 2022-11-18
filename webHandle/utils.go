@@ -28,7 +28,7 @@ func cleanPath(rawPath string) string {
 	return string(runePath)
 }
 
-// writeFlush returns a writeFlush function if it exists
+// writeFlush attempts an immediate flush of the buffers after sending text
 func writeFlush(w http.ResponseWriter, text string) (int, error) {
 	log.Println(">> writeFlush:", text)
 	bytesOut, err := w.Write([]byte(text + "\n"))

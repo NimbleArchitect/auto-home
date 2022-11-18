@@ -39,6 +39,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Components = strings.Split(req.Path, "/")[1:]
 
+	if r.Method == "GET" {
+		if req.Components[1] == "ping" {
+			w.WriteHeader(200)
+			writeFlush(req.Response, "")
+			return
+		}
+	}
+
 	req.Body, err = io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("http body read error:", err)
