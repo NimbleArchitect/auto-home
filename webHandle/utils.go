@@ -30,7 +30,10 @@ func cleanPath(rawPath string) string {
 
 // writeFlush attempts an immediate flush of the buffers after sending text
 func writeFlush(w http.ResponseWriter, text string) (int, error) {
-	log.Println(">> writeFlush:", text)
+	if len(text) > 0 {
+		log.Println(">> writeFlush:", text)
+	}
+
 	bytesOut, err := w.Write([]byte(text + "\n"))
 
 	f, canFlush := w.(http.Flusher)

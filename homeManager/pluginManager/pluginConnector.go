@@ -115,7 +115,7 @@ func (c *PluginConnector) WaitOn(i int) (string, map[string]interface{}, bool) {
 }
 
 func (c *PluginConnector) writeB(b []byte) {
-	fmt.Println("Mgr ->> sending", string(b))
+	//fmt.Println("Mgr ->> sending", string(b))
 	c.c.Write(b)
 	c.lock.Lock()
 	c.c.Write([]byte("\n\n"))

@@ -400,7 +400,7 @@ func (c *connector) WaitOn(i int) (string, map[string]interface{}, bool) {
 }
 
 func (c *connector) WriteB(b []byte) {
-	fmt.Println(*c.name, "=>> sending", string(b))
+	//fmt.Println(*c.name, "=>> sending", string(b))
 	c.lock.Lock()
 	_, err := c.c.Write(b)
 	if err != nil {

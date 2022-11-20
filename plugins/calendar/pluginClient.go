@@ -240,7 +240,6 @@ func (p *plugin) processMessage(obj Generic) error {
 		p.c.WaitDone(obj.Id, nil, nil)
 		json.Unmarshal(raw, &m)
 
-	// TODO: plugins still dont work, multi calls seem to break
 	case "trigger":
 		// call the methods that where regestered from the object
 		var m action
@@ -250,6 +249,8 @@ func (p *plugin) processMessage(obj Generic) error {
 		if err != nil {
 			return err
 		}
+
+		fmt.Println("raw:", string(raw))
 
 		var callArgs []reflect.Value
 		var response []reflect.Value
@@ -398,7 +399,7 @@ func (c *connector) WaitOn(i int) (string, map[string]interface{}, bool) {
 }
 
 func (c *connector) WriteB(b []byte) {
-	fmt.Println(*c.name, "=>> sending", string(b))
+	//fmt.Println(*c.name, "=>> sending", string(b))
 	c.lock.Lock()
 	_, err := c.c.Write(b)
 	if err != nil {
