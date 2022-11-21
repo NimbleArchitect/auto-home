@@ -19,9 +19,11 @@ import (
 type settings struct {
 	Username   string
 	HubAddress string
-	devices    map[string]string
+	devices    map[string]light
 	http       *http.Client
 	ServerURL  string
+	State      lightState
+	client     *homeClient.AhClient
 }
 
 func main() {
@@ -45,7 +47,7 @@ func main() {
 	json.Unmarshal(byteValue, &conf)
 
 	client := homeClient.NewClient(conf.ServerURL, "com.ah.huehubv2", token)
-
+	conf.client = &client
 	transport := &http2.Transport{
 		TLSClientConfig: &tls.Config{
 			// RootCAs:            pool,
@@ -59,6 +61,7 @@ func main() {
 	conf.http = &http.Client{Transport: transport}
 
 	conf.hueRegisterHub(conf.Username, conf.HubAddress, &client)
+	go conf.listenEvents()
 
 	event, err := client.ListenEvents(conf.callback)
 	if err != nil {
@@ -81,7 +84,7 @@ func main() {
 				fmt.Println(">> *** hit default ***")
 			}
 		case <-time.After(10 * time.Second):
-			log.Println(">> pull state <<")
+			// log.Println(">> pull state <<")
 		}
 		if finished {
 			break
@@ -104,7 +107,7 @@ func (s *settings) callback(deviceid string, args map[string]interface{}) {
 
 	// fmt.Println(">>", s.HubAddress)
 
-	id := s.devices[deviceid]
+	id := s.devices[deviceid].id
 	url := s.HubAddress + "/api/" + s.Username + "/lights/"
 
 	for k, v := range args {
