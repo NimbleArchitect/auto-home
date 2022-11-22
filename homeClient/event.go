@@ -53,6 +53,8 @@ func (e *event) AddSwitch(name string, state interface{}) error {
 	if _, ok := e.props[name]; ok {
 		return errors.New("property exists with that name")
 	} else {
+		state := toString(state)
+
 		e.props[name] = property{
 			kind:  FLAG_SWITCH,
 			value: state,

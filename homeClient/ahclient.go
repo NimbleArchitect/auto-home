@@ -471,3 +471,22 @@ func AddRootCA(certPool *x509.CertPool) {
 		panic("Could not add root ceritificate to pool.")
 	}
 }
+
+func toString(value interface{}) string {
+
+	switch v := value.(type) {
+	case bool:
+		if v {
+			return "true"
+		} else {
+			return "false"
+		}
+	case int:
+		return fmt.Sprintf("%v", v)
+	case string:
+		return v
+	default:
+		return v.(string)
+	}
+
+}
