@@ -24,10 +24,11 @@ type Manager struct {
 // }
 
 type EventMsg struct {
-	Id         string
-	EventId    string
-	Properties []map[string]interface{}
-	Timestamp  time.Time
+	Id            string
+	EventId       string
+	Properties    []map[string]interface{}
+	Timestamp     time.Time
+	PreventUpdate bool // false if the server should send the updated change back to the client device
 }
 
 // NewManager
@@ -91,7 +92,7 @@ func (e *Manager) AddEvent(event EventMsg) {
 }
 
 type EventLoop interface {
-	Trigger(int, string, time.Time, []map[string]interface{}) error
+	Trigger(int, string, time.Time, []map[string]interface{}, bool) error
 	// SaveState() (interface{}, error)
 }
 
@@ -113,7 +114,7 @@ func (e *Manager) EventLoop(looper EventLoop) {
 			go func() {
 				id := loopId
 
-				err := looper.Trigger(id, msg.Id, msg.Timestamp, msg.Properties)
+				err := looper.Trigger(id, msg.Id, msg.Timestamp, msg.Properties, msg.PreventUpdate)
 				if err != nil {
 					log.Println("event error", err)
 				}

@@ -127,7 +127,7 @@ func (r *JavascriptVM) RunJSPlugin(pluginName string, fName string, args map[str
 }
 
 // Process main entry point after a trigger, this allows processing the event data
-func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList) {
+func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList, preventUpdate bool) {
 	var dev jsDevice
 
 	log.Println("process triggered")
@@ -144,7 +144,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPro
 
 	// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
 	continueFlag := r.processGroupChange(deviceid, props)
-	r.processOnChange(deviceid, &dev, continueFlag)
+	r.processOnChange(deviceid, &dev, continueFlag, preventUpdate)
 }
 
 // SaveDeviceState copies the current device sate and properties to the vm ready for processing/usage
