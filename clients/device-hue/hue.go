@@ -49,6 +49,8 @@ type hueConfig struct {
 func (s *settings) hueRegisterHub(username string, url string, client *homeClient.AhClient) {
 	info := s.getHueInfo()
 
+	s.State = make(map[string]lightState)
+
 	hub := homeClient.NewHub(info.Config.Name, info.Config.Bridgeid)
 
 	if len(s.devices) == 0 {
@@ -60,7 +62,7 @@ func (s *settings) hueRegisterHub(username string, url string, client *homeClien
 		dev := homeClient.NewDevice(v.Name, v.Uniqueid)
 
 		dev.AddSwitch("state", v.Productname, v.State.On, "RW")
-		dev.AddDial("brightness", v.Productname, v.State.Bri, 0, 254, "RW")
+		dev.AddDial("brightness", v.Productname, v.State.Bri, 0, 256, "RW")
 		hub.AddDevice(dev)
 
 		v.id = key
@@ -118,6 +120,8 @@ func (s *settings) listenEvents() {
 
 	for {
 		isConnected := false
+		// Get resource (lights, switches, temps, groups, scenes, dynamic scenes)
+		// /eventstream/clip/v2/lights ... maybe??
 		req, err := http.NewRequest(http.MethodGet, s.HubAddress+"/eventstream/clip/v2", bytes.NewBuffer([]byte{}))
 		if err != nil {
 			fmt.Println("eventstream read error:", err)
@@ -157,12 +161,11 @@ func (s *settings) listenEvents() {
 				// id = ln
 			case strings.HasPrefix(ln, "data: "):
 				data = ln
-
+				if isConnected {
+					s.eventDecode(data)
+				}
 			}
 
-			if isConnected {
-				s.eventDecode(data)
-			}
 		}
 	}
 }
@@ -219,17 +222,8 @@ func (s *settings) eventDecode(data string) {
 				fmt.Println("event.Kind", event.Kind)
 				switch event.Kind {
 				case "light":
-					evt := homeClient.NewEvent()
-					if val, ok := event.Dimming["brightness"]; ok {
-						fmt.Println("add brightness", int(val))
-						evt.AddDial("brightness", int(val))
-					}
-					if val, ok := event.On["on"]; ok {
-						fmt.Println("add state", val)
-						evt.AddSwitch("state", val)
-					}
 					parts := strings.Split(event.Id_v1, "/")
-					kind := strings.TrimSpace(parts[1])
+					kind := parts[1]
 					fmt.Println("kind", kind)
 
 					if kind == "lights" {
@@ -237,19 +231,49 @@ func (s *settings) eventDecode(data string) {
 							continue
 						}
 
+						var deviceId string
+						hasSet := false
+
 						for _, v := range s.devices {
 							if v.id == parts[2] {
-								fmt.Println("client.SendEvent", v.Uniqueid, evt)
-								s.client.SendEvent(v.Uniqueid, evt)
+								deviceId = v.Uniqueid
 							}
 						}
 
+						device := s.State[deviceId]
+						evt := homeClient.NewEvent()
+						if pVal, ok := event.Dimming["brightness"]; ok {
+
+							fmt.Println("Bri", device.Bri, "= val", pVal)
+
+							if device.Bri != int(pVal) {
+								fmt.Println("add brightness", pVal)
+								// TODO: need to convert %val to real number between 0-255
+
+								device.Bri = int(pVal)
+								val := int((pVal / 100) * 255)
+								evt.AddDial("brightness", int(val))
+								hasSet = true
+							}
+						}
+						if val, ok := event.On["on"]; ok {
+							fmt.Println("On", device.Bri, "= val", val)
+							if device.On != val {
+								fmt.Println("add state", val)
+								device.On = val
+								evt.AddSwitch("state", val)
+								hasSet = true
+							}
+						}
+
+						if hasSet {
+							fmt.Println("client.SendEvent", deviceId, evt)
+							s.State[deviceId] = device
+							s.client.SendEvent(deviceId, evt)
+						}
 					}
 				}
 			}
-
 		}
-
 	}
-
 }

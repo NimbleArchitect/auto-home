@@ -22,7 +22,7 @@ type settings struct {
 	devices    map[string]light
 	http       *http.Client
 	ServerURL  string
-	State      lightState
+	State      map[string]lightState
 	client     *homeClient.AhClient
 }
 
@@ -68,6 +68,8 @@ func main() {
 		log.Panic("unable to listen", err)
 
 	}
+
+	// TODO: this happened but I dont think it should have
 	fmt.Println(">> ListenEvents finished")
 
 	finished := false
@@ -108,6 +110,7 @@ func (s *settings) callback(deviceid string, args map[string]interface{}) {
 	// fmt.Println(">>", s.HubAddress)
 
 	id := s.devices[deviceid].id
+	dev := s.State[deviceid]
 	url := s.HubAddress + "/api/" + s.Username + "/lights/"
 
 	for k, v := range args {
@@ -118,8 +121,10 @@ func (s *settings) callback(deviceid string, args map[string]interface{}) {
 			if f <= 0 {
 				j = `{"on":false}`
 			} else {
-				s := strconv.FormatFloat(f, 'f', 0, 32)
-				j = `{"on":true,"bri":` + s + `}`
+				rawVal := f // 100.00
+				str := strconv.FormatFloat(rawVal, 'f', 0, 32)
+				j = `{"on":true,"bri":` + str + `}`
+				dev.Bri = int(rawVal)
 			}
 		}
 		if k == "state" {
@@ -133,5 +138,6 @@ func (s *settings) callback(deviceid string, args map[string]interface{}) {
 		if err != nil {
 			log.Println("error sending /state", err)
 		}
+		s.State[deviceid] = dev
 	}
 }

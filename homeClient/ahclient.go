@@ -107,20 +107,33 @@ func NewClient(address string, clientId string, token string) AhClient {
 		sessionId: "",
 	}
 
+	var ready *chan bool
+	ptrReady := make(chan bool, 2)
+	ready = &ptrReady
+
 	go func() {
 		rnd := rand.Intn(30)
 		for {
 			if out.Connect(clientId, token) {
 				// connection was successfull
+				if ready != nil {
+					*ready <- true
+					ready = nil
+				}
 				time.Sleep(22*60*time.Minute + (time.Minute * time.Duration(rnd)))
 			} else {
 				// connection failed so we sleep for a bit and try again
+				if ready != nil {
+					*ready <- true
+					ready = nil
+				}
 				// TODO: add stop on max retry count
 				time.Sleep(15 * time.Second)
 			}
 		}
 	}()
 
+	<-ptrReady
 	return out
 }
 
@@ -225,6 +238,13 @@ func (c *AhClient) RegisterHub(hub *Hub) {
 
 	var tmp Result
 	log.Println("decode json")
+
+	// out, err := io.ReadAll(r.Body)
+	// if err != nil {
+	// 	log.Println("read error:", err)
+	// }
+	// fmt.Println(">>", string(out))
+
 	err = json.NewDecoder(r.Body).Decode(&tmp)
 	if err != nil {
 		log.Println("decodeError:", err)
