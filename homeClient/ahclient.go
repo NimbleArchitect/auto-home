@@ -107,11 +107,24 @@ func NewClient(address string, clientId string, token string) AhClient {
 		sessionId: "",
 	}
 
-	out.Connect(clientId, token)
+	go func() {
+		rnd := rand.Intn(30)
+		for {
+			if out.Connect(clientId, token) {
+				// connection was successfull
+				time.Sleep(22*60*time.Minute + (time.Minute * time.Duration(rnd)))
+			} else {
+				// connection failed so we sleep for a bit and try again
+				// TODO: add stop on max retry count
+				time.Sleep(15 * time.Second)
+			}
+		}
+	}()
+
 	return out
 }
 
-func (c *AhClient) Connect(clientId string, token string) {
+func (c *AhClient) Connect(clientId string, token string) bool {
 	var result Result
 
 	msgOut := fmt.Sprintf(`{"data":{"user": "%s", "pass": "%s"}}`, clientId, token)
@@ -119,7 +132,7 @@ func (c *AhClient) Connect(clientId string, token string) {
 
 	if err != nil {
 		log.Println(err)
-		return
+		return false
 	}
 
 	fmt.Println(">>", r.StatusCode)
@@ -131,11 +144,12 @@ func (c *AhClient) Connect(clientId string, token string) {
 	err = json.NewDecoder(r.Body).Decode(&result)
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 
 	if result.Result.Status != "ok" {
 		fmt.Println("unable to connect")
-		return
+		return false
 	}
 
 	data := result.Data
@@ -143,14 +157,17 @@ func (c *AhClient) Connect(clientId string, token string) {
 		c.sessionId = val
 	} else {
 		fmt.Println("invalid session")
+		return false
 	}
 	if val, ok := data["actionid"]; ok {
 		c.actionid = val
 	} else {
 		fmt.Println("invalid session")
+		return false
 	}
 
 	fmt.Println(">> session:", c.sessionId)
+	return true
 }
 
 func (c *AhClient) RegisterDevice(device *Device) {
