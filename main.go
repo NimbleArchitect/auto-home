@@ -37,7 +37,7 @@ type settings struct {
 func main() {
 
 	log.Println("starting with", runtime.NumCPU(), "CPUs")
-	done := make(chan bool, 1)
+	done := make(chan bool, 2)
 
 	// get users home folder
 	// "publicPath": "/home/rich/data/Projects/go/auto-home/public/",
@@ -159,7 +159,7 @@ func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 	if err != nil {
 		log.Println(err)
 	}
-	defer server.CloseGracefully(10 * time.Second)
+	defer server.CloseGracefully(5 * time.Second)
 
 	done <- true // used to close the program
 }
