@@ -25,6 +25,7 @@ func (f *jsFlag) Not(flag int) bool {
 	return false
 }
 
+// set the should we process flag
 func (f *jsFlag) Set(flag int64) {
 	f.flag = int(flag)
 }

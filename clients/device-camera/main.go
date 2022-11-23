@@ -112,7 +112,7 @@ func main() {
 				finished = true
 			}
 		case <-time.After(10 * time.Second):
-			log.Println(">> pull state <<")
+			// log.Println(">> pull state <<")
 		}
 		if finished {
 			break

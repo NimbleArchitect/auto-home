@@ -168,7 +168,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 		// now everything has finished we can update the device props
 		// save value to device state
 		if liveDevice != nil && button.flag.Not(FLAG_PREVENTUPDATE) {
-			// liveDevice.SetButtonValue(name, button.Value)
+			liveDevice.SetButtonValue(name, button.Value)
 		}
 
 		if FLAG != FLAG_STOPPROCESSING {
@@ -188,7 +188,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 		// now everything has finished we can update the device props
 		// save value to device state
 		if liveDevice != nil && txt.flag.Not(FLAG_PREVENTUPDATE) {
-			// liveDevice.SetTextValue(name, txt.Value)
+			liveDevice.SetTextValue(name, txt.Value)
 		}
 
 		if FLAG != FLAG_STOPPROCESSING {
@@ -209,6 +209,7 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 	var finishAfterGroups bool
 	var searchList []jsGroup
 
+	// first get a list of groups that have our device as a member
 	for _, group := range r.groups {
 		for _, v := range group.devices {
 			if v == deviceid {
@@ -219,11 +220,14 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 
 	jsRunList := make(map[string]jsGroup)
 
+	// 60 is an upper limit on the number of groups we will attempt to check, we should bail before
+	//  hitting this limit so this is just a safety limit
 	for i := 0; i < 60; i++ {
 		var newList []jsGroup
 		var carryOn bool
 
 		// build a list of unique parent groups so we can run any attached scripts later
+		// this removes any duplicates so we only run a group once
 		for _, group := range searchList {
 			parents := r.ParentsOf(group.Id)
 			if len(parents) <= 0 {
@@ -275,6 +279,7 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 	return FLAG_CONTINUEPROCESSING
 }
 
+// ParentsOf list all parent groups of the group called name
 func (r *JavascriptVM) ParentsOf(name string) map[string]jsGroup {
 	foundMap := make(map[string]jsGroup)
 
