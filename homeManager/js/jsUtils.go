@@ -118,7 +118,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 // processOnChange call loops through all the properties and call the *_onchange for each property
 //
 // once _onchange has been called the changed value is sent to Updater.Update*
-func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int, preventUpdate bool) {
+func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int) {
 	var liveDevice *deviceManager.Device
 	tmp, ok := r.deviceState[deviceid]
 	if ok {
@@ -129,9 +129,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int,
 		// now everything has finished we can update the device props
 		// save value to device state
 
-		// TODO: not sure this is correct, preventupdate will stop script from updating values when called from a client onchange event
-		if liveDevice != nil && swi.flag.Not(FLAG_PREVENTUPDATE) && !preventUpdate {
-
+		if liveDevice != nil && swi.flag.Not(FLAG_PREVENTUPDATE) {
 			liveDevice.SetSwitchValue(name, swi.Value)
 		}
 
@@ -150,7 +148,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int,
 
 	for name, dial := range dev.propDial {
 		// save value to live device
-		if liveDevice != nil && dial.flag.Not(FLAG_PREVENTUPDATE) && !preventUpdate {
+		if liveDevice != nil && dial.flag.Not(FLAG_PREVENTUPDATE) {
 			liveDevice.SetDialValue(name, dial.Value)
 		}
 
@@ -169,8 +167,8 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int,
 	for name, button := range dev.propButton {
 		// now everything has finished we can update the device props
 		// save value to device state
-		if liveDevice != nil && button.flag.Not(FLAG_PREVENTUPDATE) && !preventUpdate {
-			liveDevice.SetButtonValue(name, button.Value)
+		if liveDevice != nil && button.flag.Not(FLAG_PREVENTUPDATE) {
+			// liveDevice.SetButtonValue(name, button.Value)
 		}
 
 		if FLAG != FLAG_STOPPROCESSING {
@@ -189,8 +187,8 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int,
 	for name, txt := range dev.propText {
 		// now everything has finished we can update the device props
 		// save value to device state
-		if liveDevice != nil && txt.flag.Not(FLAG_PREVENTUPDATE) && !preventUpdate {
-			liveDevice.SetTextValue(name, txt.Value)
+		if liveDevice != nil && txt.flag.Not(FLAG_PREVENTUPDATE) {
+			// liveDevice.SetTextValue(name, txt.Value)
 		}
 
 		if FLAG != FLAG_STOPPROCESSING {

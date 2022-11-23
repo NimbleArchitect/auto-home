@@ -100,6 +100,18 @@ func (d *Device) DialValue(name string) (int, bool) {
 	return 0, false
 }
 
+// updates the live device
+func (d *Device) WriteDialValue(name string, value int) {
+	fmt.Println("F:WriteDialValue:d.Id =", d.Id)
+
+	if d.clientConnection != nil {
+		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
+			jsonOut := d.MakeAction(d.Id, name, DIAL, fmt.Sprint(value))
+			writer.Write(jsonOut)
+		}
+	}
+}
+
 // Was UpdateDial
 func (d *Device) SetDialValue(name string, value int) {
 	fmt.Println("set dial", name, value)
@@ -122,17 +134,7 @@ func (d *Device) SetDialValue(name string, value int) {
 		// copy the Id so we can unlock before we start the call back action, this means we dont have to
 		//  keep the lock open until the client has rwsponded
 		property.lock.Unlock()
-
-		fmt.Println("F:SetDialhValue:d.Id =", d.Id)
-
-		if d.clientConnection != nil {
-			if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
-				jsonOut := d.MakeAction(d.Id, name, DIAL, fmt.Sprint(value))
-				writer.Write(jsonOut)
-			}
-		}
 	}
-
 }
 
 func (d *Device) DialWindow(name string, timestamp time.Time) bool {

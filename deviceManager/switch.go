@@ -99,6 +99,19 @@ func (d *Device) SwitchValue(name string) (booltype.BoolType, bool) {
 	return booltype.BoolType{}, false
 }
 
+// updates the live device
+func (d *Device) WriteSwitchValue(name string, value string) {
+	fmt.Println("F:WriteSwitchValue:d.Id =", d.Id)
+	if d.clientConnection != nil {
+		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
+			jsonOut := d.MakeAction(d.Id, name, SWITCH, fmt.Sprint(value))
+			writer.Write(jsonOut)
+		}
+	} else {
+		log.Panic("clientConnection should not be empty")
+	}
+}
+
 // SetSwitchValue updates the internal value and calls the writer to send the updated value back to the cient
 func (d *Device) SetSwitchValue(name string, value string) {
 	fmt.Println("set switch", name, value)
@@ -124,19 +137,7 @@ func (d *Device) SetSwitchValue(name string, value string) {
 		// id := property.data.Id
 
 		property.lock.Unlock()
-
-		fmt.Println("F:SetSwitchValue:d.Id =", d.Id)
-
-		if d.clientConnection != nil {
-			if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
-				jsonOut := d.MakeAction(d.Id, name, SWITCH, fmt.Sprint(value))
-				writer.Write(jsonOut)
-			}
-		} else {
-			log.Panic("clientConnection should not be empty")
-		}
 	}
-
 }
 
 func (d *Device) SwitchWindow(name string, timestamp time.Time) bool {

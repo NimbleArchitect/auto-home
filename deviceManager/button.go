@@ -105,6 +105,18 @@ func (d *Device) ButtonValue(name string) (booltype.BoolType, bool) {
 	return booltype.BoolType{}, false
 }
 
+// updates the live device
+func (d *Device) WriteButtonValue(name string, value string) {
+	fmt.Println("F:WriteButtonValue:d.Id =", d.Id)
+
+	if d.clientConnection != nil {
+		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
+			jsonOut := d.MakeAction(d.Id, name, BUTTON, fmt.Sprint(value))
+			writer.Write(jsonOut)
+		}
+	}
+}
+
 // Was UpdateButton
 func (d *Device) SetButtonValue(name string, value string) {
 	property, ok := d.PropertyButton[name]
@@ -126,15 +138,7 @@ func (d *Device) SetButtonValue(name string, value string) {
 		//  keep the lock open until the client has rwsponded
 
 		property.lock.Unlock()
-
-		if d.clientConnection != nil {
-			if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
-				jsonOut := d.MakeAction(d.Id, name, DIAL, fmt.Sprint(value))
-				writer.Write(jsonOut)
-			}
-		}
 	}
-
 }
 
 func (d *Device) ButtonWindow(name string, timestamp time.Time) bool {

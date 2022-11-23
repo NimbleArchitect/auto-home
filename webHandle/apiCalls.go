@@ -73,7 +73,6 @@ func (h *Handler) register(req requestInfoBlock) {
 // processEvent reads the incoming event as json, checks it valid and passes it off to the event manager
 func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 	var jEvent JsonEvent
-	preventUpdate := false
 
 	// scanner := bufio.NewScanner(r.Body)
 	// for scanner.Scan() {
@@ -98,7 +97,6 @@ func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 			writeFlush(req.Response, "Error: incorrect device id")
 			return
 		}
-		preventUpdate = true
 	}
 
 	// TODO: validate the timestamp
@@ -107,8 +105,7 @@ func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 	msg := event.EventMsg{
 		Id: jEvent.Data.Id,
 		// Timestamp:  time.Now(),
-		Properties:    jEvent.Data.Properties,
-		PreventUpdate: preventUpdate,
+		Properties: jEvent.Data.Properties,
 	}
 
 	// add event to queue

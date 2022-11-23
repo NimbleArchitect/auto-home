@@ -98,6 +98,18 @@ func (d *Device) TextValue(name string) (string, bool) {
 	return "", false
 }
 
+// updates the live device
+func (d *Device) WriteTextValue(name string, value string) {
+	fmt.Println("F:WriteTextValue:d.Id =", d.Id)
+
+	if d.clientConnection != nil {
+		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
+			jsonOut := d.MakeAction(d.Id, name, TEXT, fmt.Sprint(value))
+			writer.Write(jsonOut)
+		}
+	}
+}
+
 // Was UpdateText
 func (d *Device) SetTextValue(name string, value string) {
 	fmt.Println("set text", name, value)
@@ -120,15 +132,7 @@ func (d *Device) SetTextValue(name string, value string) {
 		//  keep the lock open until the client has rwsponded
 
 		property.lock.Unlock()
-
-		if d.clientConnection != nil {
-			if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
-				jsonOut := d.MakeAction(d.Id, name, DIAL, fmt.Sprint(value))
-				writer.Write(jsonOut)
-			}
-		}
 	}
-
 }
 
 func (d *Device) TextWindow(name string, timestamp time.Time) bool {

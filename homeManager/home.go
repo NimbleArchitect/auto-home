@@ -271,7 +271,7 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 }
 
 // Trigger is called one at a time with the deviceid
-func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}, preventUpdate bool) error {
+func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}) error {
 	log.Println("start Trigger:", id)
 
 	//get next avaliable vm
@@ -305,7 +305,7 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 		// moved the go func from event loop to here as there isnt an easy way to copy an interface and it was causing a strange race bug
 
 		vm.Updater = m
-		vm.Process(deviceid, timestamp, devList, preventUpdate)
+		vm.Process(deviceid, timestamp, devList)
 
 		vm.Wait()
 

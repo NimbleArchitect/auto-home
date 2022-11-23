@@ -185,24 +185,28 @@ func (d *jsDevice) Set(name string, value string) {
 				continue
 			}
 			d.liveDevice.SetDialValue(name, i)
+			d.liveDevice.WriteDialValue(name, i)
 		}
 	}
 
 	for _, v := range d.propSwitch {
 		if v.Name == name {
 			d.liveDevice.SetSwitchValue(name, value)
+			d.liveDevice.WriteSwitchValue(name, value)
 		}
 	}
 
 	for _, v := range d.propButton {
 		if v.Name == name {
 			d.liveDevice.SetButtonValue(name, value)
+			d.liveDevice.WriteButtonValue(name, value)
 		}
 	}
 
 	for _, v := range d.propText {
 		if v.Name == name {
 			d.liveDevice.SetTextValue(name, value)
+			d.liveDevice.WriteTextValue(name, value)
 		}
 	}
 }
