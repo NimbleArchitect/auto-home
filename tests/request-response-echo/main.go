@@ -92,7 +92,8 @@ const deviceEvent = `{
 `
 
 func main() {
-
+	var sessionid string
+	var actionid string
 	pool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatal(err)
@@ -119,8 +120,8 @@ func main() {
 
 	// login
 	// connect and get a session id
-	data := `{"token":"secretclientid"}`
-	req, err := http.NewRequest(http.MethodPost, serverUrl+"/connect", bytes.NewBuffer([]byte(data)))
+	auth_data := []byte(fmt.Sprintf(`{"data":{"user": "%s", "pass": "%s"}}`, "virtual.custom.light", "secretclientid"))
+	req, err := http.NewRequest(http.MethodPost, serverUrl+"/connect", bytes.NewBuffer([]byte(auth_data)))
 	if err != nil {
 		log.Println(err)
 		return
@@ -133,9 +134,31 @@ func main() {
 		log.Println(err)
 		return
 	}
-	// fmt.Println(resp.StatusCode)
-	sessionid := resp.Header.Get("session")
-	// fmt.Println("session:", sessionid)
+
+	type AuthResult struct {
+		Result jsonStatus
+		Data   map[string]string
+	}
+
+	var result AuthResult
+	err = json.NewDecoder(resp.Body).Decode(&result)
+
+	if result.Result.Status != "ok" {
+		fmt.Println("unable to connect")
+		return
+	}
+
+	data := result.Data
+	if val, ok := data["session"]; ok {
+		sessionid = val
+	} else {
+		fmt.Println("invalid session")
+	}
+	if val, ok := data["actionid"]; ok {
+		actionid = val
+	} else {
+		fmt.Println("invalid session")
+	}
 
 	if registerDevices {
 		// registration
@@ -146,7 +169,7 @@ func main() {
 
 		req, err = http.NewRequest(http.MethodPost, serverUrl+"/register", bytes.NewBuffer(json_data))
 		if err != nil {
-			log.Println(err)
+			log.Println("error:", err)
 			return
 		}
 
@@ -173,42 +196,7 @@ func main() {
 		}
 	}
 
-	// listen
-	// setup listener to actions channel
-	// log.Println("open listen channel")
-
-	json_data := []byte(`{"method": "listen"}`)
-	req, err = http.NewRequest(http.MethodPost, serverUrl+"/register", bytes.NewBuffer(json_data))
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	// set the request header Content-Type for json
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	req.Header.Set("session", sessionid)
-	r, err := hclient.Do(req)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	var tmp Result
-	// log.Println("decode json")
-	err = json.NewDecoder(r.Body).Decode(&tmp)
-	if err != nil {
-		log.Println(err)
-	}
-
-	if tmp.Result.Status != "ok" {
-		log.Println("ERROR: empty response from listen call")
-		os.Exit(1)
-	}
-
 	// fmt.Println(">>", tmp)
-
-	registrationid := tmp.Data["id"]
-	// fmt.Println("opening stream to:", registrationid)
 
 	ready := make(chan bool, 1)
 
@@ -219,25 +207,22 @@ func main() {
 	go func() {
 		log.Println("starting scanner")
 		for {
-			req, err = http.NewRequest(http.MethodGet, serverUrl+"/actions/"+registrationid, bytes.NewBuffer(json_data))
+			req, err = http.NewRequest(http.MethodGet, serverUrl+"/actions/"+actionid, bytes.NewBuffer([]byte("")))
 			if err != nil {
-				log.Println(err)
+				log.Println("error:", err)
 				return
 			}
 
 			// set the request header Content-Type for json
 			req.Header.Set("Content-Type", "application/json; charset=utf-8")
-			req.Header.Set("session", sessionid)
-			out, err := hclient.Do(req)
-			if err != nil {
-				log.Println(err)
-				return
+			if len(sessionid) > 0 {
+				req.Header.Set("session", sessionid)
 			}
 
-			// out, err := hclient.Get(serverUrl + "/actions/" + registrationid)
-
+			out, err := hclient.Do(req)
 			if err != nil {
-				fmt.Println("!>", err)
+				log.Println("error", err)
+				return
 			}
 
 			scanner := bufio.NewScanner(out.Body)
@@ -249,7 +234,7 @@ func main() {
 				// on a read error this loop breaks out
 
 				ln := scanner.Text()
-				// log.Println("scanner recieved", ln)
+				// log.Println("scanner recieved:", ln)
 				if ln == "{\"Method\": \"shutdown\"}" {
 					break
 				}
@@ -287,7 +272,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	ready <- true
+	// ready <- true
 
 	s2 := rand.NewSource(42)
 	r2 := rand.New(s2)
@@ -297,7 +282,7 @@ func main() {
 
 		<-ready
 
-		eventurl := serverUrl + "/event/" + registrationid
+		eventurl := serverUrl + "/event/" + actionid
 
 		ri := r2.Intn(300)
 		expectedValue = ri
