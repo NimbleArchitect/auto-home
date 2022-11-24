@@ -65,3 +65,25 @@ func (g *Global) SetTimer(name string, sec float64, call func(bool)) {
 		}()
 	}
 }
+
+func (g *Global) SetVariable(name string, value interface{}) {
+	g.lock.Lock()
+	_, ok := g.vars[name]
+	if ok {
+		g.vars[name] = value
+	}
+	g.lock.Unlock()
+
+}
+
+func (g *Global) GetVariable(name string) interface{} {
+	g.lock.Lock()
+	val, ok := g.vars[name]
+	g.lock.Unlock()
+
+	if ok {
+		return val
+	}
+
+	return nil
+}
