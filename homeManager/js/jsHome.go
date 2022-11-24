@@ -18,8 +18,8 @@ type jsHome struct {
 	PreventUpdate      int
 }
 
-func (d *jsHome) GetDeviceByName(name string) jsDevice {
-	for _, v := range d.devices {
+func (h *jsHome) GetDeviceByName(name string) jsDevice {
+	for _, v := range h.devices {
 		if v.Name == name {
 			return v
 		}
@@ -28,8 +28,8 @@ func (d *jsHome) GetDeviceByName(name string) jsDevice {
 	return jsDevice{}
 }
 
-func (d *jsHome) GetDeviceById(deviceId string) jsDevice {
-	for _, v := range d.devices {
+func (h *jsHome) GetDeviceById(deviceId string) jsDevice {
+	for _, v := range h.devices {
 		if v.Id == deviceId {
 			return v
 		}
@@ -38,19 +38,19 @@ func (d *jsHome) GetDeviceById(deviceId string) jsDevice {
 	return jsDevice{}
 }
 
-func (d *jsHome) GetDevices() []jsDevice {
+func (h *jsHome) GetDevices() []jsDevice {
 	var out []jsDevice
-	for _, v := range d.devices {
+	for _, v := range h.devices {
 		out = append(out, v)
 	}
 
 	return out
 }
 
-func (d *jsHome) GetDevicesStartName(s string) []jsDevice {
+func (h *jsHome) GetDevicesStartName(s string) []jsDevice {
 	var out []jsDevice
 
-	for _, v := range d.devices {
+	for _, v := range h.devices {
 		if strings.HasPrefix(v.Name, s) {
 			out = append(out, v)
 		}
@@ -59,10 +59,10 @@ func (d *jsHome) GetDevicesStartName(s string) []jsDevice {
 	return out
 }
 
-func (d *jsHome) GetGroupByName(s string) []jsDevice {
+func (h *jsHome) GetGroupByName(s string) []jsDevice {
 	var out []jsDevice
 
-	for k, v := range d.devices {
+	for k, v := range h.devices {
 		if strings.HasPrefix(k, s) {
 			out = append(out, v)
 		}
@@ -72,7 +72,7 @@ func (d *jsHome) GetGroupByName(s string) []jsDevice {
 }
 
 // Sleep pauses the vm execution for the specified number of seconds
-func (d *jsHome) Sleep(seconds int) {
+func (h *jsHome) Sleep(seconds int) {
 	time.Sleep(time.Duration(seconds) * time.Second)
 }
 
@@ -80,7 +80,7 @@ func (d *jsHome) Sleep(seconds int) {
 //
 // if called multiple times the counter is reset, if sec is 0 the counter is removed,
 // sec is a float and supports fractional seconds
-func (d *jsHome) Countdown(name string, sec float64, function goja.Value) {
+func (h *jsHome) Countdown(name string, sec float64, function goja.Value) {
 	var jsCall goja.Callable
 	var ok bool
 
@@ -88,11 +88,11 @@ func (d *jsHome) Countdown(name string, sec float64, function goja.Value) {
 		jsCall, ok = goja.AssertFunction(function)
 	}
 
-	d.vm.waitGroup.TryLock()
+	h.vm.waitGroup.TryLock()
 
-	d.vm.global.SetTimer(name, sec, func(success bool) {
+	h.vm.global.SetTimer(name, sec, func(success bool) {
 		if !success {
-			d.vm.waitGroup.Unlock()
+			h.vm.waitGroup.Unlock()
 			return
 		}
 
@@ -101,6 +101,14 @@ func (d *jsHome) Countdown(name string, sec float64, function goja.Value) {
 			jsCall(goja.Undefined())
 		}
 
-		d.vm.waitGroup.Unlock()
+		h.vm.waitGroup.Unlock()
 	})
+}
+
+func (h *jsHome) SetGlobal(name string, value interface{}) {
+	h.vm.global.SetVariable(name, value)
+}
+
+func (h *jsHome) GetGlobal(name string) interface{} {
+	return h.vm.global.GetVariable(name)
 }
