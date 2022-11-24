@@ -112,6 +112,7 @@ func NewClient(address string, clientId string, token string) AhClient {
 	ready = &ptrReady
 
 	go func() {
+		// setup random relogin timer, currently it refreshes the login token every 22 hours with the server set to expire the token every 24 hours
 		rnd := rand.Intn(30)
 		for {
 			if out.Connect(clientId, token) {
@@ -304,7 +305,7 @@ func (c *AhClient) startListener(ready *chan bool, eventAction chan int, callbac
 		// var err error
 
 		fmt.Println("connecting to", c.address+"/actions/"+c.actionid)
-		out, err := c.makeActionRequest(c.address+"/actions/"+c.actionid, http.MethodPost, "")
+		out, err := c.makeActionRequest(c.address+"/actions/"+c.actionid, http.MethodGet, "")
 
 		if err != nil {
 			fmt.Println("unable to connect", err)
