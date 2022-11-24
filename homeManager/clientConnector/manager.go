@@ -1,6 +1,7 @@
 package clientConnector
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -82,6 +83,10 @@ func (m *Manager) SetClient(clientId string, w http.ResponseWriter, r *http.Requ
 func (c *ClientWriter) Write(text string) (int, error) {
 	log.Println("http response Write:", text)
 	fmt.Println(">>clientWrite:", c.responseWriter)
+	if c.responseWriter == nil {
+		return 0, errors.New("nil responseWriter")
+	}
+
 	bytesOut, err := c.responseWriter.Write([]byte(text + "\n"))
 
 	if c.canFlush {
