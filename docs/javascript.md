@@ -160,7 +160,7 @@ home.sleep(5)
 ```
 
 ## obj.countdown(name, milliseconds, function)
-creates or restarts a timer called name, name is a timer identifier so must be unique, when the number of miliseconds have elapsed the timer calls function, if countdown is called again before the timer reaches zero the timer is reset.
+creates or restarts a timer called name, name is a timer identifier so must be unique, when the number of seconds have elapsed the timer calls function, if countdown is called again before the timer reaches zero the timer is reset.
 
 to remove the timer set milliseconds to 0
 
@@ -169,7 +169,7 @@ to remove the timer set milliseconds to 0
 | Parameter  | Type | Description |
 | - | - | - |
 | name  | String | unique countdown name |
-| milliseconds  | Integer | length of time until the countdown timer calls function |
+| seconds  | Integer | length of time until the countdown timer calls function |
 | function  | Function | valid javascript function to run |
 
 ### Returns
@@ -178,7 +178,7 @@ to remove the timer set milliseconds to 0
 ### Example
 ```javascript
 // after 60 seconds turn the light off
-home.countdown("porchlight", 60000, function () {
+home.countdown("porchlight", 60, function () {
     light.set("state", false) // turn off the light
 })
 ```
@@ -193,7 +193,7 @@ light.set("state",true) // first we turn the light on
  while (porchdoor.get("state").latest.toString() == "open") { // while door is open
     if (light.get("state") == true) { // and the light is on
         // set the countdown timer, caling this in a loop means we reset before 60 seconds have passed
-        home.countdown("porchlight", 60000, function () {
+        home.countdown("porchlight", 60, function () {
             // when the timer expires
             light.set("state", false) // turn off the light
         })

@@ -95,3 +95,6 @@ the general startup process looks similar to the following:
 once setup you can:
 * long poll /actions/id and wait for actions to be received from the server
 * post and changes and updates to the server using /event/id
+
+## clientConnector
+runs from within the homeManager and holds onto the http responseWriter and http request, the clientConnector provides a SetClient function to allow the requestWriter and response to be stored in a custom object that provided a Write method, this method also tests for and sets the flush function so that data writted is flushed straight away. The created object is stored internally and retrieved using the clientConnectot.ClientWriter method which returns a *ClientWriter object with the Write method exposed 

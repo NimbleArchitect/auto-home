@@ -1,4 +1,4 @@
-# ** currently in development, don't expect much **
+# ** still in development, I'm now using this for parts of my house though **
 interested and want to help, please drop a message in [discussions](https://github.com/NimbleArchitect/auto-home/discussions)
 
 # Introduction
@@ -40,7 +40,7 @@ Its also completly possible to script the kitchen lights group to automatically 
 * server start script
 * scripts can prevent group events and device updates from happening
 * custom plugin interfaces
-* countdown - run custom functions when the timer reaches zero 
+* countdown - run custom functions when the timer reaches zero
 
 # Planned features
 * web UI
@@ -56,6 +56,24 @@ Its also completly possible to script the kitchen lights group to automatically 
 * devices support custom data fields that can be read/written from JavaScript
 * custom fields are automatically removed after a set age
 * plus much, much more...
+
+# Device status
+the below table provides a list of devices and their current status
+| Client name | Device type | Description | Status |
+| ----------- | ----------- | ----------- | ------ |
+| device-hue | lights | Philips Hue (V2 Hub) | light on/off and brightness work eventstram |
+| device-custom | custom | custom switch provides a unix file device that forwards the incomming text to the server | working |
+
+
+# Plugin Status
+list of current plugins along with their status
+| Plugin name | Description | Status |
+| ------------- | ----------- |-------------|
+| Solar | detects sunrise/sunset | only isLight() and isDark() functions work |
+| Telegram | sends bot message to group | working |
+| Calendar | allows setting events, also triggers on date/time events | broken |
+
+
 
 # Building and running
 
