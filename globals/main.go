@@ -1,8 +1,11 @@
 package globals
 
 import (
+	"fmt"
 	"sync"
 	"time"
+
+	"github.com/dop251/goja"
 )
 
 type Global struct {
@@ -68,12 +71,10 @@ func (g *Global) SetTimer(name string, sec float64, call func(bool)) {
 
 func (g *Global) SetVariable(name string, value interface{}) {
 	g.lock.Lock()
-	_, ok := g.vars[name]
-	if ok {
-		g.vars[name] = value
-	}
+	g.vars[name] = value
 	g.lock.Unlock()
 
+	fmt.Println("***", g.vars)
 }
 
 func (g *Global) GetVariable(name string) interface{} {
@@ -81,9 +82,11 @@ func (g *Global) GetVariable(name string) interface{} {
 	val, ok := g.vars[name]
 	g.lock.Unlock()
 
+	fmt.Println("***", g.vars)
+
 	if ok {
 		return val
 	}
 
-	return nil
+	return goja.Undefined()
 }
