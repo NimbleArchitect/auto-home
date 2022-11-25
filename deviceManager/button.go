@@ -188,15 +188,19 @@ func (d *Device) Map2Button(props map[string]interface{}) (*ButtonProperty, erro
 	}
 
 	if v, ok := props["value"]; !ok {
+		fmt.Println("error missing value")
 		return nil, ErrMissingPropertyValue
 	} else {
-		prop.Value.Set(v.(string))
+		prop.Value.SetBool(v.(bool))
+		// prop.Value.Set(v.(string))
 	}
 
 	if v, ok := props["mode"]; !ok {
+		fmt.Println("error mssing mode")
 		return nil, ErrMissingPropertyMode
 	} else {
 		prop.Mode, err = GetModeFromString(v.(string))
+
 		if err != nil {
 			log.Println(err)
 		}
