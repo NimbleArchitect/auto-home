@@ -16,19 +16,29 @@ import (
 )
 
 type settings struct {
-	Token      string
-	FifoFile   string
-	ServerURL  string
-	Deviceid   string
-	DeviceName string
+	Token         string
+	FifoFile      string
+	ServerURL     string
+	Deviceid      string
+	DeviceName    string
+	Clientid      string
+	PropertyName  string
+	PropertyType  string
+	PropertyState string
 }
 
 func main() {
+	if len(os.Args) != 2 {
+		fmt.Println("you must provide the configuration filename as an argument")
+		os.Exit(1)
+	}
+	configFile := os.Args[1]
+
 	profile, err := os.UserConfigDir()
 	if err != nil {
 		log.Panic("unable to get users home folder", err)
 	}
-	configPath := path.Join(profile, "auto-home", "device.custom.json")
+	configPath := path.Join(profile, "auto-home", configFile)
 
 	jsonFile, err := os.Open(configPath)
 	if err != nil {
@@ -43,7 +53,7 @@ func main() {
 
 	os.Remove(conf.FifoFile)
 
-	client := homeClient.NewClient(conf.ServerURL, "device.front.door", conf.Token)
+	client := homeClient.NewClient(conf.ServerURL, conf.Clientid, conf.Token)
 
 	event, err := client.ListenEvents(conf.callback)
 	if err != nil {
@@ -52,7 +62,16 @@ func main() {
 
 	dev := homeClient.NewDevice(conf.DeviceName, conf.Deviceid)
 
-	dev.AddSwitch("state", "", "close", "RW")
+	switch conf.PropertyType {
+	case "switch":
+		dev.AddSwitch(conf.PropertyName, "", conf.PropertyState, "RW")
+	case "button":
+		if conf.PropertyState == "true" {
+			dev.AddButton(conf.PropertyName, "", true, true, "RW")
+		} else {
+			dev.AddButton(conf.PropertyName, "", false, false, "RW")
+		}
+	}
 
 	client.RegisterDevice(&dev)
 
@@ -61,16 +80,15 @@ func main() {
 		log.Println("unable to create fifo", conf.FifoFile)
 	}
 
-	// to open pipe to read
 	go func() {
 		for {
+			// to open pipe to read
 			file, err := os.OpenFile(conf.FifoFile, os.O_RDONLY, os.ModeNamedPipe)
 			if err != nil {
 				log.Println("unable to open file", err)
 			}
 
 			scanner := bufio.NewScanner(file)
-			// optionally, resize scanner's capacity for lines over 64K, see next example
 			for scanner.Scan() {
 				arrItem := strings.Split(scanner.Text(), "=")
 				evt := homeClient.NewEvent()
@@ -79,6 +97,12 @@ func main() {
 					evt.AddDial(arrItem[1], val)
 				} else if (arrItem[0]) == "switch" {
 					evt.AddSwitch(arrItem[1], arrItem[2])
+				} else if (arrItem[0]) == "button" {
+					if arrItem[2] == "true" {
+						evt.AddButton(arrItem[1], true)
+					} else {
+						evt.AddButton(arrItem[1], false)
+					}
 				}
 				client.SendEvent(conf.Deviceid, evt)
 				fmt.Println(">> event sent!")
