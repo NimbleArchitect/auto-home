@@ -133,7 +133,8 @@ func (d *Device) SetButtonValue(name string, value string) {
 		}
 		property.history.index++
 
-		property.data.Value.Set(value)
+		// we never write of save the button value as it should never change state
+		// property.data.Value.Set(value)
 		// copy the Id so we can unlock before we start the call back action, this means we dont have to
 		//  keep the lock open until the client has rwsponded
 
