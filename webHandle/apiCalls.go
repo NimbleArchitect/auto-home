@@ -160,6 +160,9 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 			}
 			h.processEvent(req, val.clientid)
 
+		case "device":
+			fmt.Println("/device")
+
 		default:
 			log.Println("unknown url:", req.Path)
 		}
@@ -190,8 +193,8 @@ func (h *Handler) isConnected(req requestInfoBlock) bool {
 
 func (h *Handler) doLogin(req requestInfoBlock) bool {
 	type userLogin struct {
-		User string
-		Pass string
+		User string `json:"user"`
+		Pass string `json:"pass"`
 	}
 	var login userLogin
 
@@ -236,7 +239,7 @@ func (h *Handler) doLogin(req requestInfoBlock) bool {
 		actionId:  newActionID,
 		timestamp: now.Add(24 * 60 * time.Minute),
 		InUse:     true,
-		Done:      make(chan bool),
+		Done:      make(chan bool, 2), // TODO: setting this to 1 causes a random lock up during shutdown need to work out why
 	}
 
 	req.Response.Header().Set("session", newSessionID)

@@ -1,12 +1,14 @@
 package globals
 
 import (
-	"fmt"
+	"server/logger"
 	"sync"
 	"time"
 
 	"github.com/dop251/goja"
 )
+
+var debugLevel int
 
 type Global struct {
 	lock   sync.Mutex
@@ -15,6 +17,8 @@ type Global struct {
 }
 
 func New() *Global {
+	debugLevel = logger.GetDebugLevel()
+
 	return &Global{
 		lock:   sync.Mutex{},
 		vars:   make(map[string]interface{}),
@@ -73,16 +77,12 @@ func (g *Global) SetVariable(name string, value interface{}) {
 	g.lock.Lock()
 	g.vars[name] = value
 	g.lock.Unlock()
-
-	fmt.Println("***", g.vars)
 }
 
 func (g *Global) GetVariable(name string) interface{} {
 	g.lock.Lock()
 	val, ok := g.vars[name]
 	g.lock.Unlock()
-
-	fmt.Println("***", g.vars)
 
 	if ok {
 		return val

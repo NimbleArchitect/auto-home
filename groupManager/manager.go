@@ -3,11 +3,13 @@ package groupManager
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"os"
 	"path"
+	"server/logger"
 	"sync"
 )
+
+var debugLevel int
 
 type Manager struct {
 	lock *sync.RWMutex
@@ -31,6 +33,8 @@ type onDiskGroup struct {
 }
 
 func New(configPath string) *Manager {
+	debugLevel = logger.GetDebugLevel()
+
 	return &Manager{
 		configPath: configPath,
 		lock:       &sync.RWMutex{},
@@ -40,7 +44,8 @@ func New(configPath string) *Manager {
 }
 
 func (m *Manager) Save() {
-	log.Println("saving groups")
+	log := logger.New("Save", &debugLevel)
+	log.Info("saving groups")
 
 	groupList := make(map[string]onDiskGroup)
 
@@ -57,17 +62,19 @@ func (m *Manager) Save() {
 	}
 	file, err := json.Marshal(groupList)
 	if err != nil {
-		log.Println("unable to serialize groups", err)
+		log.Error("unable to serialize groups", err)
 	}
 	err = os.WriteFile(path.Join(m.configPath, "groups.json"), file, 0640)
 	if err != nil {
-		log.Println("unable to write groups.json", err)
+		log.Error("unable to write groups.json", err)
 	}
 
 }
 
 func (m *Manager) Load() {
 	var groupList map[string]onDiskGroup
+
+	log := logger.New("Load", &debugLevel)
 
 	file, err := os.ReadFile(path.Join(m.configPath, "groups.json"))
 	if !errors.Is(err, os.ErrNotExist) {

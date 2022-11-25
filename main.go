@@ -2,9 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -13,6 +11,7 @@ import (
 	"runtime"
 	event "server/eventManager"
 	home "server/homeManager"
+	"server/logger"
 	webHandle "server/webHandle"
 	"syscall"
 	"time"
@@ -20,6 +19,8 @@ import (
 	"github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
 )
+
+var debugLevel int
 
 type settings struct {
 	HostAddress        string // servers address
@@ -35,9 +36,12 @@ type settings struct {
 }
 
 func main() {
+	debugLevel = logger.GetDebugLevel()
 
-	log.Println("starting with", runtime.NumCPU(), "CPUs")
-	done := make(chan bool, 2)
+	log := logger.New("main", &debugLevel)
+
+	log.Info("starting with", runtime.NumCPU(), "CPUs")
+	done := make(chan bool, 1)
 
 	// get users home folder
 	// "publicPath": "/home/rich/data/Projects/go/auto-home/public/",
@@ -55,7 +59,7 @@ func main() {
 
 	jsonFile, err := os.Open(configPath)
 	if err != nil {
-		log.Println(" unable to open", configPath, err)
+		log.Error("unable to open", configPath, err)
 	}
 	defer jsonFile.Close()
 
@@ -80,7 +84,7 @@ func main() {
 
 	go func() {
 		s := <-sigc
-		fmt.Println(" caught signal", s.String(), "closing connections, please wait")
+		log.Info(" caught signal", s.String(), "closing connections, please wait")
 
 		www.SaveSystem()
 		www.Shutdown()
@@ -141,6 +145,8 @@ func main() {
 // }
 
 func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
+	log := logger.New("StartServer", &debugLevel)
+
 	quicConf := &quic.Config{
 		KeepAlivePeriod: 500 * time.Second,
 		MaxIdleTimeout:  500 * time.Second,
@@ -152,12 +158,12 @@ func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 		QuicConfig: quicConf,
 	}
 
-	log.Println("Starting server")
+	log.Info("Starting server")
 
 	err := server.ListenAndServeTLS(path.Join(homeDir, "cert.crt"), path.Join(homeDir, "cert.key"))
 
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 	defer server.CloseGracefully(5 * time.Second)
 
@@ -165,18 +171,19 @@ func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 }
 
 func StartWebsite(handle *webHandle.Handler, homeDir string) {
+	log := logger.New("StartWebSite", &debugLevel)
 
 	server := &http.Server{
 		Handler: handle,
 		Addr:    handle.Address,
 	}
 
-	log.Println("Starting server")
+	log.Info("Starting server")
 
 	err := server.ListenAndServeTLS(path.Join(homeDir, "cert.crt"), path.Join(homeDir, "cert.key"))
 
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	// done <- true // used to close the program

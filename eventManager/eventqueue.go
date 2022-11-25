@@ -1,9 +1,11 @@
 package event
 
 import (
-	"log"
+	"server/logger"
 	"time"
 )
+
+var debugLevel int
 
 // event queue reads the event coming in on the channel
 // processes the event into its area,
@@ -35,6 +37,8 @@ type EventMsg struct {
 //	eventQueueLen length of the events array
 //	bufferLen number of events that can be spawned for concurrent processing
 func NewManager(eventQueueLen int, bufferLen int) *Manager {
+	debugLevel = logger.GetDebugLevel()
+
 	m := Manager{
 		events:            make([]EventMsg, eventQueueLen),
 		chAdd:             make(chan EventMsg),
@@ -47,19 +51,22 @@ func NewManager(eventQueueLen int, bufferLen int) *Manager {
 }
 
 func (e *Manager) Shutdown() {
+	log := logger.New("eventManager.Shutdown", &debugLevel)
+	log.Trace("start")
 	e.closeEventManager <- true
 	e.closeEventLoop <- true
+	log.Trace("stop")
 }
 
 func (e *Manager) EventManager() {
 	var eventCount, headPos int
-
-	log.Println("starting EventManager")
+	log := logger.New("EventManager", &debugLevel)
+	log.Info("starting EventManager")
 
 	for {
 		select {
 		case msg := <-e.chAdd:
-			log.Printf("add event (%d/%d/%d): %+v\n", headPos, eventCount, len(e.events), msg)
+			log.Infof("add event (%d/%d/%d): %+v\n", headPos, eventCount, len(e.events), msg)
 
 			if eventCount < len(e.events) {
 				e.events[headPos] = msg
@@ -70,15 +77,15 @@ func (e *Manager) EventManager() {
 					headPos = 0
 				}
 			} else {
-				log.Println("too many events to process")
+				log.Error("too many events to process")
 			}
 
 		case <-e.chRemove:
-			log.Printf("remove event (%d/%d/%d)\n", headPos, eventCount, len(e.events))
+			log.Infof("remove event (%d/%d/%d)\n", headPos, eventCount, len(e.events))
 			eventCount -= 1
 
 		case <-e.closeEventManager:
-			log.Println("stopping EventManager")
+			log.Info("stopping EventManager")
 			return
 		}
 	}
@@ -96,7 +103,9 @@ type EventLoop interface {
 }
 
 func (e *Manager) EventLoop(looper EventLoop) {
-	log.Println("starting EventLoop")
+	log := logger.New("EventLoop", &debugLevel)
+
+	log.Info("starting EventLoop")
 	loopId := 0
 
 	for {
@@ -104,7 +113,7 @@ func (e *Manager) EventLoop(looper EventLoop) {
 		case evtid := <-e.chCurrentEvent:
 			msg := e.events[evtid]
 
-			log.Println("processing event", msg.Id)
+			log.Info("processing event", msg.Id)
 
 			// this is where we actually do something with the event
 			//  we call the event trigger function and
@@ -115,7 +124,7 @@ func (e *Manager) EventLoop(looper EventLoop) {
 
 				err := looper.Trigger(id, msg.Id, msg.Timestamp, msg.Properties)
 				if err != nil {
-					log.Println("event error", err)
+					log.Error("event error", err)
 				}
 			}()
 
@@ -123,7 +132,7 @@ func (e *Manager) EventLoop(looper EventLoop) {
 			e.chRemove <- evtid
 
 		case <-e.closeEventLoop:
-			log.Println("stopping EventLoop")
+			log.Info("stopping EventLoop")
 			return
 		}
 		loopId++

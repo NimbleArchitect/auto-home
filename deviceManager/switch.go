@@ -2,8 +2,8 @@ package deviceManager
 
 import (
 	"fmt"
-	"log"
 	"server/booltype"
+	"server/logger"
 	"sync"
 	"time"
 )
@@ -65,10 +65,11 @@ func (d *Device) SwitchAsMap() map[string]SwitchProperty {
 }
 
 func (d *Device) SetSwitch(name string, property *SwitchProperty) {
+	log := logger.New("deviceManager.SetSwitch", &debugLevel)
 	prop, ok := d.PropertySwitch[name]
 	if !ok {
 		duration := d.repeatWindow[name]
-		log.Println("new switch", name, duration)
+		log.Info("new switch", name, duration)
 
 		swi := Switch{
 			lock:                 sync.RWMutex{},
@@ -80,7 +81,7 @@ func (d *Device) SetSwitch(name string, property *SwitchProperty) {
 		d.PropertySwitch[name] = &swi
 		d.SwitchNames = append(d.SwitchNames, name)
 	} else {
-		log.Println("overwriting switch", name)
+		log.Info("overwriting switch", name)
 		prop.lock.Lock()
 		prop.data = *property
 		prop.lock.Unlock()
@@ -101,7 +102,8 @@ func (d *Device) SwitchValue(name string) (booltype.BoolType, bool) {
 
 // updates the live device
 func (d *Device) WriteSwitchValue(name string, value string) {
-	fmt.Println("F:WriteSwitchValue:d.Id =", d.Id)
+	log := logger.New("WriteSwitchValue", &debugLevel)
+	log.Debug("d.Id =", d.Id)
 	if d.clientConnection != nil {
 		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
 			jsonOut := d.MakeAction(d.Id, name, SWITCH, fmt.Sprint(value))
@@ -172,13 +174,15 @@ func (d *Device) Map2Switch(props map[string]interface{}) (*SwitchProperty, erro
 	var prop SwitchProperty
 	var err error
 
-	log.Println("reading switch property")
+	log := logger.New("Map2Switch", &debugLevel)
+
+	log.Info("reading switch property")
 	if v, ok := props["name"]; !ok {
 		return nil, ErrMissingPropertyName
 	} else {
 		// TODO: clean the string
 		prop.Name = v.(string)
-		log.Println("name", prop.Name)
+		log.Info("name", prop.Name)
 	}
 
 	if v, ok := props["description"]; ok {
@@ -197,7 +201,7 @@ func (d *Device) Map2Switch(props map[string]interface{}) (*SwitchProperty, erro
 	} else {
 		prop.Mode, err = GetModeFromString(v.(string))
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 	}
 

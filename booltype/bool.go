@@ -2,7 +2,7 @@ package booltype
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"strings"
 )
 
@@ -120,7 +120,7 @@ func (b *BoolType) Set(v string) {
 		b.state = false
 
 	default:
-		log.Println("bool.Set: invalid state defaulting to", strFalse)
+		fmt.Println("bool.Set: invalid state defaulting to", strFalse)
 		b.kind = TRUEFALSE
 		b.state = false
 	}

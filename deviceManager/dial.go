@@ -2,7 +2,7 @@ package deviceManager
 
 import (
 	"fmt"
-	"log"
+	"server/logger"
 	"sync"
 	"time"
 )
@@ -66,10 +66,12 @@ func (d *Device) DialAsMap() map[string]DialProperty {
 }
 
 func (d *Device) SetDial(name string, property *DialProperty) {
+	log := logger.New("SetDial", &debugLevel)
+
 	prop, ok := d.PropertyDial[name]
 	if !ok {
 		duration := d.repeatWindow[name]
-		log.Println("new dial", name, duration)
+		log.Info("new dial", name, duration)
 
 		dial := Dial{
 			lock:                 sync.RWMutex{},
@@ -81,7 +83,7 @@ func (d *Device) SetDial(name string, property *DialProperty) {
 		d.PropertyDial[name] = &dial
 		d.DialNames = append(d.DialNames, name)
 	} else {
-		log.Println("overwriting dial", name)
+		log.Info("overwriting dial", name)
 		prop.lock.Lock()
 		prop.data = *property
 		prop.lock.Unlock()
@@ -102,7 +104,8 @@ func (d *Device) DialValue(name string) (int, bool) {
 
 // updates the live device
 func (d *Device) WriteDialValue(name string, value int) {
-	fmt.Println("F:WriteDialValue:d.Id =", d.Id)
+	log := logger.New("WriteDialValue", &debugLevel)
+	log.Debug("d.Id =", d.Id)
 
 	if d.clientConnection != nil {
 		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
@@ -114,7 +117,8 @@ func (d *Device) WriteDialValue(name string, value int) {
 
 // Was UpdateDial
 func (d *Device) SetDialValue(name string, value int) {
-	fmt.Println("set dial", name, value)
+	log := logger.New("SetDialValue", &debugLevel)
+	log.Info("set dial", name, value)
 
 	property, ok := d.PropertyDial[name]
 	if ok {
@@ -169,13 +173,15 @@ func (d *Device) Map2Dial(props map[string]interface{}) (*DialProperty, error) {
 	var prop DialProperty
 	var err error
 
-	log.Println("reading dial property")
+	log := logger.New("Map2Dial", &debugLevel)
+
+	log.Info("reading dial property")
 	if v, ok := props["name"]; !ok {
 		return nil, ErrMissingPropertyName
 	} else {
 		// TODO: clean the string
 		prop.Name = v.(string)
-		log.Println("name", prop.Name)
+		log.Info("name", prop.Name)
 	}
 
 	if v, ok := props["description"]; ok {
@@ -231,7 +237,7 @@ func (d *Device) Map2Dial(props map[string]interface{}) (*DialProperty, error) {
 	} else {
 		prop.Mode, err = GetModeFromString(v.(string))
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 	}
 

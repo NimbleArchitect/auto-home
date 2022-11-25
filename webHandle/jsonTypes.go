@@ -3,8 +3,8 @@ package webHandle
 import "encoding/json"
 
 type Generic struct {
-	Method *string
-	Data   *json.RawMessage
+	Method *string          `json:"methos"`
+	Data   *json.RawMessage `json:"data"`
 }
 
 type jsonPlugin struct {
@@ -21,21 +21,21 @@ type jsonConnector struct {
 }
 
 type jsonHub struct {
-	Name        string
-	Description string
-	Id          string
-	Help        string
-	Devices     []jsonDevice
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Id          string       `json:"id"`
+	Help        string       `json:"help"`
+	Devices     []jsonDevice `json:"devices"`
 }
 
 type jsonDevice struct {
-	Id          string
-	Name        string
-	Description string
-	Help        string
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Help        string `json:"help"`
 	// Groups      []jsonGroup
-	Properties []map[string]interface{}
-	Uploads    []jsonUpload
+	Properties []map[string]interface{} `json:"properties"`
+	Uploads    []jsonUpload             `json:"uploads"`
 	// Actions     []jsonAction
 }
 
@@ -44,8 +44,8 @@ type jsonGroup struct {
 }
 
 type jsonUpload struct {
-	Name  string
-	Alias []string
+	Name  string   `json:"name"`
+	Alias []string `json:"alias"`
 }
 
 type jsonAction struct {
@@ -53,14 +53,14 @@ type jsonAction struct {
 }
 
 type eventData struct {
-	Id         string
-	Properties []map[string]interface{}
-	Timestamp  string
+	Id         string                   `json:"id"`
+	Properties []map[string]interface{} `json:"properties"`
+	Timestamp  string                   `json:"timestamp"`
 }
 
 type JsonEvent struct {
-	Method string
-	Data   eventData
+	Method string    `json:"method"`
+	Data   eventData `json:"data"`
 }
 
 // func (g *Generic) GetMethod() string {

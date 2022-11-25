@@ -14,13 +14,15 @@ package deviceManager
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"os"
 	"path"
 	"server/homeManager/clientConnector"
+	"server/logger"
 	"strings"
 	"sync"
 )
+
+var debugLevel int
 
 type Manager struct {
 	lock *sync.RWMutex
@@ -39,15 +41,15 @@ type Manager struct {
 // type duration map[string]int64
 
 type onDiskDevice struct {
-	Id          string
-	Name        string
-	Description string
-	Help        string
-	ClientId    string
-	Switch      map[string]SwitchProperty
-	Dial        map[string]DialProperty
-	Button      map[string]ButtonProperty
-	Text        map[string]TextProperty
+	Id          string                    `json:"id"`
+	Name        string                    `json:"name"`
+	Description string                    `json:"description"`
+	Help        string                    `json:"help"`
+	ClientId    string                    `json:"clientid"`
+	Switch      map[string]SwitchProperty `json:"switch"`
+	Dial        map[string]DialProperty   `json:"dial"`
+	Button      map[string]ButtonProperty `json:"button"`
+	Text        map[string]TextProperty   `json:"text"`
 }
 
 // type onDiskWindow struct {
@@ -55,6 +57,8 @@ type onDiskDevice struct {
 // }
 
 func New(maxPropertyHistory int, configPath string, clientMgr *clientConnector.Manager) *Manager {
+	debugLevel = logger.GetDebugLevel()
+
 	return &Manager{
 		configPath:         configPath,
 		lock:               &sync.RWMutex{},
@@ -117,7 +121,8 @@ func (m *Manager) GetDeviceMatchClientID(clientId string) []*Device {
 }
 
 func (m *Manager) Save() {
-	log.Println("saving devices")
+	log := logger.New("deviceManager.Save", &debugLevel)
+	log.Debug("saving devices")
 
 	deviceList := make(map[string]onDiskDevice)
 
@@ -194,12 +199,12 @@ func (m *Manager) Save() {
 	}
 	file, err := json.Marshal(deviceList)
 	if err != nil {
-		log.Println("unable to serialize devices", err)
+		log.Error("unable to serialize devices", err)
 	}
 
 	err = os.WriteFile(path.Join(m.configPath, "devices.json"), file, 0640)
 	if err != nil {
-		log.Println("unable to write devices.json", err)
+		log.Error("unable to write devices.json", err)
 	}
 
 }
@@ -207,6 +212,7 @@ func (m *Manager) Save() {
 func (m *Manager) Load() {
 	var deviceList map[string]onDiskDevice
 	var virtList map[string]onDiskDevice
+	log := logger.New("deviceManager.Load", &debugLevel)
 
 	file, err := os.ReadFile(path.Join(m.configPath, "devices.json"))
 	if !errors.Is(err, os.ErrNotExist) {
@@ -230,7 +236,7 @@ func (m *Manager) Load() {
 		}
 		for n, v := range virtList {
 			if !strings.HasPrefix(n, "virtual-") {
-				log.Println("non virtual device found in virtual devices")
+				log.Info("non virtual device found in virtual devices")
 				continue
 			}
 			if _, ok := deviceList[n]; !ok {

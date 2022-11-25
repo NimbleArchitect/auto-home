@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"sync"
@@ -16,9 +15,12 @@ import (
 	"server/homeManager/clientConnector"
 	js "server/homeManager/js"
 	"server/homeManager/pluginManager"
+	"server/logger"
 
 	"github.com/dop251/goja"
 )
+
+var debugLevel int
 
 type Manager struct {
 	// homeManager
@@ -56,12 +58,16 @@ type Manager struct {
 // }
 
 type eventHistory struct {
-	Deviceid   string
-	Timestamp  time.Time
-	Properties []map[string]interface{}
+	Deviceid   string                   `json:"deviceid"`
+	Timestamp  time.Time                `json:"timestamp"`
+	Properties []map[string]interface{} `json:"properties"`
 }
 
 func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, maxPropertyHistory int, homePath string) *Manager {
+	debugLevel = logger.GetDebugLevel()
+
+	// log := logger.New("NewManager", &debugLevel)
+
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
 		max:  maxEventHistory,
@@ -124,28 +130,31 @@ func (m *Manager) DeviceWindow(deviceId string) map[string]int64 {
 }
 
 func (m *Manager) SaveSystem() {
+	log := logger.New("SaveSystem", &debugLevel)
+
 	// log.Println("saving system configuration")
 
 	m.devices.Save()
 
 	file, err := json.Marshal(m.hubs)
 	if err != nil {
-		log.Println("unable to serialize hubs", err)
+		log.Error("unable to serialize hubs", err)
 	}
 
 	err = os.WriteFile(path.Join(m.configPath, "hubs.json"), file, 0640)
 	if err != nil {
-		log.Println("unable to write jubs.json", err)
+		log.Error("unable to write jubs.json", err)
 	}
 
 	m.groups.Save()
-
+	fmt.Println("F:homeManager.SaveSystem:stop")
 }
 
 func (m *Manager) LoadSystem() {
 	// var window map[string]map[string]int64
+	log := logger.New("LoadSystem", &debugLevel)
 
-	log.Println("loading system configuration")
+	log.Info("loading system configuration")
 
 	m.devices.Load()
 
@@ -186,6 +195,8 @@ func (m *Manager) LoadSystem() {
 }
 
 func (m *Manager) initVMs(plugs *pluginManager.Plugin) {
+	log := logger.New("initVMs", &debugLevel)
+
 	m.compiledScripts = js.LoadAllScripts(m.scriptPath)
 
 	for i := 0; i < m.MaxVMCount; i++ {
@@ -206,14 +217,15 @@ func (m *Manager) initVMs(plugs *pluginManager.Plugin) {
 	}
 
 	if len(m.activeVMs) != m.MaxVMCount {
-		log.Println("error unable to start enough javascript instances")
+		log.Error("error unable to start enough javascript instances")
 	}
 
 }
 
 func (m *Manager) ReloadVMs() {
+	log := logger.New("ReloadVMs", &debugLevel)
 
-	log.Println("reloading javascript VMs, please wait")
+	log.Info("reloading javascript VMs, please wait")
 	for {
 		count := 0
 		for _, v := range m.activeVMs {
@@ -234,16 +246,19 @@ func (m *Manager) ReloadVMs() {
 
 	m.initVMs(m.plugins)
 
-	log.Println("reload complete")
+	log.Info("reload complete")
 
 }
 
 func (m *Manager) PushVMID(id int) {
-	log.Println("release VM id:", id)
+	log := logger.New("PushVMID", &debugLevel)
+	log.Info("release VM id:", id)
 	m.chActiveVM <- id
 }
 
 func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
+	log := logger.New("GetNextVM", &debugLevel)
+
 	tryagain := true
 
 	hastried := 0
@@ -252,13 +267,13 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 		select {
 		case id := <-m.chActiveVM:
 			if len(m.activeVMs) >= id {
-				log.Printf("selected javascript VM #%d", id)
+				log.Infof("selected javascript VM #%d", id)
 				return m.activeVMs[id], id
 			}
 			tryagain = false
 		case <-time.After(time.Second * 5):
 			// TODO: this warning needs to be visible in the UI
-			log.Println("WARN: not enough javascript VMs avaliable for use")
+			log.Warning("WARN: not enough javascript VMs avaliable for use")
 			tryagain = true
 			hastried++
 		}
@@ -272,7 +287,9 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 
 // Trigger is called one at a time with the deviceid
 func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}) error {
-	log.Println("start Trigger:", id)
+	log := logger.New("Trigger", &debugLevel)
+
+	log.Info("start Trigger:", id)
 
 	//get next avaliable vm
 	vm, id := m.GetNextVM()
@@ -280,10 +297,10 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 	defer m.PushVMID(id)
 
 	if vm == nil {
-		log.Println("invalid javascript vm")
+		log.Error("invalid javascript vm")
 	} else {
 		// TODO: somewhere I need to validate the properties so I only save valid states
-		log.Println("state:", m.devices)
+		log.Debug("state:", m.devices)
 
 		// save the current state of all devices
 		vm.SaveDeviceState(m.devices)
@@ -316,19 +333,19 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 			// save history to file, we do this after processing the event so we have a quicker response to the event
 			fileData, err := json.Marshal(event)
 			if err != nil {
-				log.Println("unable to serialize event", err)
+				log.Error("unable to serialize event", err)
 			}
 			var f *os.File
 
 			if f, err = os.OpenFile(path.Join(m.configPath, "history.json"), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0640); err != nil {
-				log.Println("unable to open file", err)
+				log.Error("unable to open file", err)
 			} else {
 				defer f.Close()
 			}
 
 			_, err = f.Write(append(fileData, []byte("\n")...))
 			if err != nil {
-				log.Println("unable to write history.json", err)
+				log.Error("unable to write history.json", err)
 			}
 
 		}
@@ -340,6 +357,8 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 }
 
 func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props []map[string]interface{}) js.JSPropsList {
+	log := logger.New("verifyMap2jsDevice", &debugLevel)
+
 	newdev := js.NewJSDevice()
 
 	dev, ok := m.devices.Device(deviceid)
@@ -350,17 +369,17 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 	for _, prop := range props {
 		rawName, ok := prop["name"]
 		if !ok {
-			log.Println("recieved property without a name")
+			log.Error("recieved property without a name")
 			continue
 		}
 		name := rawName.(string)
 		if val, ok := prop["type"]; ok {
-			log.Printf("processing %s property: %s", val.(string), name)
+			log.Infof("processing %s property: %s", val.(string), name)
 			switch val.(string) {
 			case "switch":
 				swi, err := js.MapToJsSwitch(prop)
 				if err != nil {
-					log.Println("map error", err)
+					log.Error("map error", err)
 					continue
 				}
 				newdev.AddSwitch(name, swi)
@@ -368,7 +387,7 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 			case "dial":
 				dial, err := js.MapToJsDial(prop)
 				if err != nil {
-					log.Println("map error", err)
+					log.Error("map error", err)
 					continue
 				}
 
@@ -392,7 +411,7 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 			case "button":
 				button, err := js.MapToJsButton(prop)
 				if err != nil {
-					log.Println("map error", err)
+					log.Error("map error", err)
 					continue
 				}
 				newdev.AddButton(name, button)
@@ -400,13 +419,13 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 			case "text":
 				text, err := js.MapToJsText(prop)
 				if err != nil {
-					log.Println("map error", err)
+					log.Error("map error", err)
 					continue
 				}
 				newdev.AddText(name, text)
 
 			default:
-				log.Println("unknown property type")
+				log.Error("unknown property type")
 			}
 		}
 	}
@@ -415,9 +434,11 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 }
 
 func (m *Manager) Shutdown() {
+	fmt.Println("F:homeManager.Shutdown:start")
 	m.clientConnection.CloseAll()
 
 	time.Sleep(1 * time.Second)
+	fmt.Println("F:homeManager.Shutdown:stop")
 }
 
 func (m *Manager) runStartScript() {

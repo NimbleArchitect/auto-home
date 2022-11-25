@@ -2,8 +2,8 @@ package deviceManager
 
 import (
 	"fmt"
-	"log"
 	"server/booltype"
+	"server/logger"
 	"sync"
 	"time"
 )
@@ -71,10 +71,12 @@ func (d *Device) ButtonHistory(name string, value int) (ButtonProperty, bool) {
 }
 
 func (d *Device) SetButton(name string, property *ButtonProperty) {
+	log := logger.New("SetButton", &debugLevel)
+
 	prop, ok := d.PropertyButton[name]
 	if !ok {
 		duration := d.repeatWindow[name]
-		log.Println("new button", name, duration)
+		log.Info("new button", name, duration)
 
 		button := Button{
 			lock:                 sync.RWMutex{},
@@ -86,7 +88,7 @@ func (d *Device) SetButton(name string, property *ButtonProperty) {
 		d.PropertyButton[name] = &button
 		d.ButtonNames = append(d.ButtonNames, name)
 	} else {
-		log.Println("overwriting button", name)
+		log.Info("overwriting button", name)
 		prop.lock.Lock()
 		prop.data = *property
 		prop.lock.Unlock()
@@ -107,7 +109,8 @@ func (d *Device) ButtonValue(name string) (booltype.BoolType, bool) {
 
 // updates the live device
 func (d *Device) WriteButtonValue(name string, value string) {
-	fmt.Println("F:WriteButtonValue:d.Id =", d.Id)
+	log := logger.New("deviceManager.WriteButtonValue", &debugLevel)
+	log.Debug("d.Id =", d.Id)
 
 	if d.clientConnection != nil {
 		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
@@ -174,13 +177,15 @@ func (d *Device) Map2Button(props map[string]interface{}) (*ButtonProperty, erro
 	var prop ButtonProperty
 	var err error
 
-	log.Println("reading button property")
+	log := logger.New("Map2Button", &debugLevel)
+
+	log.Info("reading button property")
 	if v, ok := props["name"]; !ok {
 		return nil, ErrMissingPropertyName
 	} else {
 		// TODO: clean the string
 		prop.Name = v.(string)
-		log.Println("name", prop.Name)
+		log.Info("name", prop.Name)
 	}
 
 	if v, ok := props["description"]; ok {
@@ -189,7 +194,7 @@ func (d *Device) Map2Button(props map[string]interface{}) (*ButtonProperty, erro
 	}
 
 	if v, ok := props["value"]; !ok {
-		fmt.Println("error missing value")
+		log.Error("error missing value")
 		return nil, ErrMissingPropertyValue
 	} else {
 		prop.Value.SetBool(v.(bool))
@@ -197,13 +202,13 @@ func (d *Device) Map2Button(props map[string]interface{}) (*ButtonProperty, erro
 	}
 
 	if v, ok := props["mode"]; !ok {
-		fmt.Println("error mssing mode")
+		log.Error("error mssing mode")
 		return nil, ErrMissingPropertyMode
 	} else {
 		prop.Mode, err = GetModeFromString(v.(string))
 
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 	}
 

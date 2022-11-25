@@ -2,7 +2,7 @@ package deviceManager
 
 import (
 	"fmt"
-	"log"
+	"server/logger"
 	"sync"
 	"time"
 )
@@ -64,10 +64,12 @@ func (d *Device) TextAsMap() map[string]TextProperty {
 }
 
 func (d *Device) SetText(name string, property *TextProperty) {
+	log := logger.New("SetText", &debugLevel)
+
 	prop, ok := d.PropertyText[name]
 	if !ok {
 		duration := d.repeatWindow[name]
-		log.Println("new text", name, duration)
+		log.Info("new text", name, duration)
 
 		text := Text{
 			lock:                 sync.RWMutex{},
@@ -79,7 +81,7 @@ func (d *Device) SetText(name string, property *TextProperty) {
 		d.PropertyText[name] = &text
 		d.TextNames = append(d.TextNames, name)
 	} else {
-		log.Println("overwriting text", name)
+		log.Info("overwriting text", name)
 		prop.lock.Lock()
 		prop.data = *property
 		prop.lock.Unlock()
@@ -100,7 +102,8 @@ func (d *Device) TextValue(name string) (string, bool) {
 
 // updates the live device
 func (d *Device) WriteTextValue(name string, value string) {
-	fmt.Println("F:WriteTextValue:d.Id =", d.Id)
+	log := logger.New("WriteTextValue", &debugLevel)
+	log.Debug("d.Id =", d.Id)
 
 	if d.clientConnection != nil {
 		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
@@ -112,7 +115,8 @@ func (d *Device) WriteTextValue(name string, value string) {
 
 // Was UpdateText
 func (d *Device) SetTextValue(name string, value string) {
-	fmt.Println("set text", name, value)
+	log := logger.New("SetTextValue", &debugLevel)
+	log.Info("set text", name, value)
 	property, ok := d.PropertyText[name]
 	if ok {
 		property.lock.Lock()
@@ -166,14 +170,15 @@ func (d *Device) SetTextWindow(name string, duration int64) {
 func (d *Device) Map2Text(props map[string]interface{}) (*TextProperty, error) {
 	var prop TextProperty
 	var err error
+	log := logger.New("Map2Text", &debugLevel)
 
-	log.Println("reading text property")
+	log.Info("reading text property")
 	if v, ok := props["name"]; !ok {
 		return nil, ErrMissingPropertyName
 	} else {
 		// TODO: clean the string
 		prop.Name = v.(string)
-		log.Println("name", prop.Name)
+		log.Info("name", prop.Name)
 	}
 
 	if v, ok := props["description"]; ok {
@@ -192,7 +197,7 @@ func (d *Device) Map2Text(props map[string]interface{}) (*TextProperty, error) {
 	} else {
 		prop.Mode, err = GetModeFromString(v.(string))
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 	}
 

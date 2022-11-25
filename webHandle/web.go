@@ -22,8 +22,8 @@ type requestInfoBlock struct {
 }
 
 type clientItem struct {
-	ClientId string
-	AuthKey  string
+	ClientId string `json:"clientid"`
+	AuthKey  string `json:"authkey"`
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
