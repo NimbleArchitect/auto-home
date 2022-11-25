@@ -4,15 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
+	"log"
 )
 
-func (h *Handler) showPage(w http.ResponseWriter, r *http.Request, elements []string) {
-	switch elements[1] {
+func (h *Handler) showPage(req requestInfoBlock) {
+	fmt.Println(">>", req.Components[0])
+
+	switch req.Components[0] {
 	case "public":
 		// fmt.Println("fs>>", h.PublicPath)
 		// h.fsHandle = http.FileServer(http.Dir(h.PublicPath))
-		h.FsHandle.ServeHTTP(w, r)
+		h.FsHandle.ServeHTTP(req.Response, req.Request)
 		// fmt.Println(".>>")
 		// h.streamFile(w, r, elements)
 	case "reload":
@@ -20,22 +22,36 @@ func (h *Handler) showPage(w http.ResponseWriter, r *http.Request, elements []st
 		h.HomeManager.ReloadVMs()
 
 	case "plugin":
-		if r.Method == "POST" {
+		fmt.Println("/plugin")
+		if req.Request.Method == "POST" {
 			var jsonData map[string]interface{}
 
-			err := json.NewDecoder(r.Body).Decode(&jsonData)
+			if len(req.Body) == 0 {
+				log.Println("no data recieved")
+				return
+			}
+
+			// rawMsg, err := req.JsonMessage.Data.MarshalJSON()
+			// if err != nil {
+			// 	log.Println("unable to convert json string", err)
+			// 	return
+			// }
+
+			err := json.Unmarshal(req.Body, &jsonData)
+
+			// err = json.Unmarshal(rawMsg, &jsonData)
 			if err != nil && err != io.EOF {
 				fmt.Println("json decode error:", err)
 				// TODO: need to return a proper error
-				w.Write([]byte("decode error"))
+				writeFlush(req.Response, "decode error")
 				return
 			}
-			callRet := h.makePluginCall(elements[2:], jsonData)
-			w.Write(callRet)
+			callRet := h.makePluginCall(req.Components[1:], jsonData)
+			writeFlush(req.Response, string(callRet))
 		}
 
 	default:
-		w.Write([]byte("index page"))
+		writeFlush(req.Response, "index page")
 	}
 }
 

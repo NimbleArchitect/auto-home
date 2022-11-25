@@ -115,6 +115,8 @@ func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 
 func (h *Handler) callV1api(req requestInfoBlock) {
 
+	fmt.Println("req.Components[1] =", req.Components[1])
+
 	// is the user logged in
 	if !h.isConnected(req) {
 		// not logged in
@@ -249,6 +251,7 @@ func (h *Handler) doLogin(req requestInfoBlock) bool {
 	return true
 }
 
+// doAction checks the sessionid and actionid in the requestInfoBlock and returns a matching sessionState and a success bool
 func (h *Handler) doActions(req requestInfoBlock) (sessionState, bool) {
 	val, ok := h.session[req.Session]
 	if !ok {

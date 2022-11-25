@@ -120,8 +120,8 @@ func (s *settings) listenEvents() {
 
 	for {
 		isConnected := false
-		// Get resource (lights, switches, temps, groups, scenes, dynamic scenes)
-		// /eventstream/clip/v2/lights ... maybe??
+		// to get a list of resources (lights, switches, temps, groups, scenes, dynamic scenes)
+		// use /clip/v2/resource
 		req, err := http.NewRequest(http.MethodGet, s.HubAddress+"/eventstream/clip/v2", bytes.NewBuffer([]byte{}))
 		if err != nil {
 			fmt.Println("eventstream read error:", err)
@@ -184,6 +184,7 @@ type hueData struct {
 		Color            []hueColor
 		Color_temprature []hueColorTemperature
 	}
+	Color *hueColor
 	Id    string
 	Id_v1 string
 	Owner map[string]string
@@ -264,6 +265,10 @@ func (s *settings) eventDecode(data string) {
 								evt.AddSwitch("state", val)
 								hasSet = true
 							}
+						}
+						if val := event.Color; val != nil {
+							fmt.Println("set Colour")
+							// val.Xy.X
 						}
 
 						if hasSet {

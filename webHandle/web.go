@@ -39,7 +39,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Components = strings.Split(req.Path, "/")[1:]
 
-	if r.Method == "GET" {
+	if r.Method == "GET" && len(req.Components) == 2 {
 		if req.Components[1] == "ping" {
 			w.WriteHeader(200)
 			writeFlush(req.Response, "")
@@ -63,7 +63,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("is V1")
 		h.callV1api(req)
 	} else {
-		h.showPage(w, r, req.Components)
+		h.showPage(req)
 	}
 
 }

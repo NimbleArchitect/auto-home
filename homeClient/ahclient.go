@@ -317,15 +317,15 @@ func (c *AhClient) startListener(ready *chan bool, eventAction chan int, callbac
 			break
 		}
 		if ready != nil {
-			fmt.Println("send ready true over channel")
+			// fmt.Println("send ready true over channel")
 			*ready <- true
-			fmt.Println("channel send complete")
+			// fmt.Println("channel send complete")
 			ready = nil
 		}
 
+		// on a read error this for loop breaks out
 		for scanner.Scan() {
-			// on a read error this loop breaks out
-
+			// TODO: I think the server is sending an empty line after recieving a connection to /actions/uuid
 			ln := scanner.Text()
 			if len(ln) == 0 {
 				//recieved empty line from the server

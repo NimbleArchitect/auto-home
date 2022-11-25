@@ -76,9 +76,11 @@ func (h *Handler) regDeviceList(d jsonDevice, clientId string) error {
 						n.SetButton(prop.Name, prop)
 						n.SetButtonWindow(prop.Name, window[prop.Name])
 					} else {
+						log.Println("duplicate property name detected, peoperty " + prop.Name + " is already in use")
 						return errors.New("duplicate property name detected, peoperty " + prop.Name + " is already in use")
 					}
 				} else {
+					log.Println(err)
 					return err
 				}
 
