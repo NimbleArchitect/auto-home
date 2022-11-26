@@ -1,12 +1,14 @@
 package home
 
 import (
-	"log"
 	"server/deviceManager"
+	"server/logger"
 )
 
 func (m *Manager) AddHub(h Hub) error {
-	log.Println("adding Hub:", h.Id)
+	log := logger.New("AddHub", &debugLevel)
+
+	log.Info("adding Hub:", h.Id)
 
 	if len(m.hubs) == 0 {
 		m.hubs = make(map[string]Hub)
@@ -35,8 +37,10 @@ func (m *Manager) DeviceExistsWithClientId(deviceId string, clientId string) boo
 }
 
 func (m *Manager) AddDevice(d *deviceManager.Device, clientId string) error {
+	log := logger.New("AddDevice", &debugLevel)
+
 	// TODO: this needs to be merged with NewDevice
-	log.Println("adding device:", d.Id)
+	log.Info("adding device:", d.Id)
 	// if len(m.devices) == 0 {
 	// 	m.devices = make(map[string]Device)
 	// }
@@ -47,7 +51,7 @@ func (m *Manager) AddDevice(d *deviceManager.Device, clientId string) error {
 	// if updated, ok := m.devices.Device(d.Id); ok {
 	if m.devices.HasDevice(d.Id) {
 		// device already exists, so check/update the properties
-		log.Println("device exists... updating")
+		log.Info("device exists... updating")
 
 		//TODO: need to find a way to authorize the actionid update as rouge clients could reregister and take over the device from teh servers point of view
 		// updated.ClientId = d.ClientId

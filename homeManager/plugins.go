@@ -3,11 +3,12 @@ package home
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+
 	"os"
 	"os/exec"
 	"path"
 	"server/homeManager/pluginManager"
+	"server/logger"
 	"sync"
 
 	"github.com/dop251/goja"
@@ -21,9 +22,10 @@ type Result struct {
 }
 
 func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
+	log := logger.New("startPlugin", &debugLevel)
 	// var pluginsStarted int
 
-	log.Println("starting plugin", pluginName)
+	log.Info("starting plugin", pluginName)
 
 	pluginExec := path.Join(m.pluginPath, pluginName, pluginName)
 
@@ -37,10 +39,10 @@ func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 	// TODO: when plugins crash the server dosent recover, needs fixing
 	if err != nil {
 		wg.Done()
-		log.Println("startPlugin error:", err)
+		log.Error("startPlugin error:", err)
 	} else {
 		cmd.Wait()
-		log.Printf("just finished %s (%d)\n", pluginName, cmd.Process.Pid)
+		log.Infof("just finished %s (%d)\n", pluginName, cmd.Process.Pid)
 	}
 
 }
@@ -48,6 +50,8 @@ func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 // StartPlugins starts the plugin manager and all the named plugins
 func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 	var pluginList []string
+
+	log := logger.New("StartPlugins", &debugLevel)
 
 	// TODO: need to dynamically build this list of plugins
 	// pluginList = append(pluginList, "telegram", "solar", "calendar")
@@ -70,19 +74,21 @@ func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 		go m.startPlugin(pluginList[i], &wg)
 	}
 
-	log.Println("plugins started")
+	log.Info("plugins started")
 	wg.Done()
 	wg.Wait()
 
 	m.plugins = plug
 	m.chStartupComplete <- true
 	pluginMgr.WaitGroup = nil
-	log.Println("startup complete")
+	log.Info("startup complete")
 }
 
 // callPluginObject is the call back function for when a plugin wants to fire an event
 func (m *Manager) callPluginObject(pluginName string, call string, obj map[string]interface{}) {
-	log.Println("plugin triggered", pluginName, call)
+	log := logger.New("callPluginObject", &debugLevel)
+
+	log.Info("plugin triggered", pluginName, call)
 	//TODO: call client on trigger, need to work out the client script to run
 
 	// if vm := m.actions[deviceid].jsvm; vm == nil {
@@ -93,10 +99,10 @@ func (m *Manager) callPluginObject(pluginName string, call string, obj map[strin
 	defer m.PushVMID(id)
 
 	if vm == nil {
-		log.Println("invalid javascript vm")
+		log.Error("invalid javascript vm")
 	} else {
 		// TODO: somewhere I need to validate the properties so I only save valid states
-		log.Println("state:", m.devices)
+		log.Debug("state:", m.devices)
 
 		// save the current state of all devices
 		vm.SaveDeviceState(m.devices)
@@ -110,7 +116,7 @@ func (m *Manager) callPluginObject(pluginName string, call string, obj map[strin
 		vm.RunJSPlugin(pluginName, call, obj)
 	}
 
-	log.Println("event finished")
+	log.Info("event finished")
 }
 
 // WebCallPlugin calls the function callNAme of the plugin named pluginName using the postData as the arguments,

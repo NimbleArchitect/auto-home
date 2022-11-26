@@ -1,9 +1,9 @@
 package js
 
 import (
-	"log"
 	"server/booltype"
 	"server/deviceManager"
+	"server/logger"
 	"strconv"
 
 	"github.com/dop251/goja"
@@ -177,11 +177,13 @@ func (d *jsDevice) Get(name string) interface{} {
 }
 
 func (d *jsDevice) Set(name string, value string) {
+	log := logger.New("Set", &debugLevel)
+
 	for _, v := range d.propDial {
 		if v.Name == name {
 			i, err := strconv.Atoi(value)
 			if err != nil {
-				log.Println("Not a valid number")
+				log.Error("Not a valid number")
 				continue
 			}
 			d.liveDevice.SetDialValue(name, i)

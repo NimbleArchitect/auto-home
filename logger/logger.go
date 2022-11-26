@@ -25,20 +25,24 @@ func GetDebugLevel() int {
 }
 
 func (l *logger) Info(msg ...interface{}) {
-	l.write("", msg...)
+	l.write("[INFO] ", msg...)
 }
 
 func (l *logger) Infof(msg string, any ...interface{}) {
-	l.writef("", msg, any...)
+	l.writef("[INFO] ", msg, any...)
 }
 
 func (l *logger) Panic(msg ...interface{}) {
-	l.write("", msg...)
+	l.write("[PANIC] ", msg...)
 	panic(msg)
 }
 
 func (l *logger) Error(msg ...interface{}) {
 	l.write("[ERROR] ", msg...)
+}
+
+func (l *logger) Errorf(msg string, any ...interface{}) {
+	l.writef("[ERROR] ", msg, any...)
 }
 
 func (l *logger) Warning(msg ...interface{}) {

@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path"
 	event "server/eventManager"
 	home "server/homeManager"
+	"server/logger"
 	"sync"
 )
+
+var debugLevel int
 
 type Handler struct {
 	ConfigPath string
@@ -47,7 +49,12 @@ type Handler struct {
 // }
 
 func (h *Handler) Shutdown() {
+	log := logger.New("Shutdown", &debugLevel)
+
+	log.Debug("lock start")
 	h.lockActionList.Lock()
+	log.Debug("lock end")
+
 	for _, v := range h.session {
 		if v.InUse {
 			v.Done <- true
@@ -58,6 +65,7 @@ func (h *Handler) Shutdown() {
 }
 
 func New(path string, publicPath string, evtMgr *event.Manager, homeMgr *home.Manager, hostAddress string) *Handler {
+	debugLevel = logger.GetDebugLevel()
 
 	return &Handler{
 		ConfigPath:   path,
@@ -73,20 +81,25 @@ func New(path string, publicPath string, evtMgr *event.Manager, homeMgr *home.Ma
 }
 
 func (h *Handler) SaveSystem() {
-	log.Println("saving web configuration")
+	log := logger.New("SaveSystem", &debugLevel)
+
+	log.Info("saving web configuration")
 
 	file, err := json.Marshal(h.userInfo)
 	if err != nil {
-		log.Println("unable to serialize clients", err)
+		log.Error("unable to serialize clients", err)
 	}
 	err = ioutil.WriteFile(path.Join(h.ConfigPath, "clients.json"), file, 0640)
 	if err != nil {
-		log.Println("unable to write clients.json", err)
+		log.Error("unable to write clients.json", err)
 	}
+
 }
 
 func (h *Handler) LoadSystem() {
-	log.Println("loading web configuration")
+	log := logger.New("LoadSystem", &debugLevel)
+
+	log.Info("loading web configuration")
 
 	file, err := ioutil.ReadFile(path.Join(h.ConfigPath, "clients.json"))
 	if !errors.Is(err, os.ErrNotExist) {

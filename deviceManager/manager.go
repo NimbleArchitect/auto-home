@@ -121,7 +121,7 @@ func (m *Manager) GetDeviceMatchClientID(clientId string) []*Device {
 }
 
 func (m *Manager) Save() {
-	log := logger.New("deviceManager.Save", &debugLevel)
+	log := logger.New("Save", &debugLevel)
 	log.Debug("saving devices")
 
 	deviceList := make(map[string]onDiskDevice)
@@ -212,7 +212,7 @@ func (m *Manager) Save() {
 func (m *Manager) Load() {
 	var deviceList map[string]onDiskDevice
 	var virtList map[string]onDiskDevice
-	log := logger.New("deviceManager.Load", &debugLevel)
+	log := logger.New("Load", &debugLevel)
 
 	file, err := os.ReadFile(path.Join(m.configPath, "devices.json"))
 	if !errors.Is(err, os.ErrNotExist) {

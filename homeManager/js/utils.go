@@ -2,8 +2,9 @@ package js
 
 import (
 	"errors"
-	"log"
+
 	"server/booltype"
+	"server/logger"
 	"strconv"
 	"strings"
 
@@ -31,6 +32,8 @@ func BuildOnAction(values ...string) string {
 
 // runAsThread runs the js function as a new thread, this could be dangerous/not thread safe
 func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
+	log := logger.New("runAsThread", &debugLevel)
+
 	go func() {
 		var ok bool
 
@@ -48,7 +51,7 @@ func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
 				call(goja.Undefined(), value)
 			}
 		} else {
-			log.Println("thread call not a function")
+			log.Error("thread call not a function")
 		}
 	}()
 }

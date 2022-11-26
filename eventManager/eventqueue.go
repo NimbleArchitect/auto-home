@@ -51,7 +51,7 @@ func NewManager(eventQueueLen int, bufferLen int) *Manager {
 }
 
 func (e *Manager) Shutdown() {
-	log := logger.New("eventManager.Shutdown", &debugLevel)
+	log := logger.New("Shutdown", &debugLevel)
 	log.Trace("start")
 	e.closeEventManager <- true
 	e.closeEventLoop <- true

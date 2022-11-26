@@ -3,9 +3,10 @@ package webHandle
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+
 	"net/http"
 	event "server/eventManager"
+	"server/logger"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,31 +20,37 @@ type sessionState struct {
 	Done      chan bool
 }
 
+type userLogin struct {
+	User string `json:"user"`
+	Pass string `json:"pass"`
+}
+
 func (h *Handler) register(req requestInfoBlock) {
 	var tmp Generic
 	var hub jsonHub
 	var device jsonDevice
+	log := logger.New("register", &debugLevel)
 
 	err := json.Unmarshal(req.Body, &tmp)
 	if err != nil {
-		log.Printf("error reading body for %s: %s\n", req.Path, err.Error())
+		log.Errorf("error reading body for %s: %s\n", req.Path, err.Error())
 	}
 
 	// TODO: lookup client id from session id
 	state, ok := h.session[req.Session]
 	if !ok {
-		log.Println("error invalid session id")
+		log.Error("error invalid session id")
 		return
 	}
 
 	if *tmp.Method == "hub" {
 		raw, _ := tmp.Data.MarshalJSON()
 		json.Unmarshal(raw, &hub)
-		log.Println("registration for hub", hub.Name)
+		log.Info("registration for hub", hub.Name)
 		// build device list
 		err = h.regHubList(hub, state.clientid)
 		if err != nil {
-			log.Println("Error:", err)
+			log.Error(err)
 			req.Response.WriteHeader(http.StatusInternalServerError)
 			writeFlush(req.Response, "Error: unable to add hub")
 			return
@@ -53,11 +60,11 @@ func (h *Handler) register(req requestInfoBlock) {
 	if *tmp.Method == "device" {
 		raw, _ := tmp.Data.MarshalJSON()
 		json.Unmarshal(raw, &device)
-		log.Printf("registration for device \"%s\" (id: %s)", device.Name, device.Id)
+		log.Infof("registration for device \"%s\" (id: %s)", device.Name, device.Id)
 
 		err := h.regDeviceList(device, state.clientid)
 		if err != nil {
-			log.Println("Error:", err)
+			log.Error(err)
 			req.Response.WriteHeader(http.StatusInternalServerError)
 			writeFlush(req.Response, "Error: unable to add device")
 			return
@@ -65,7 +72,7 @@ func (h *Handler) register(req requestInfoBlock) {
 	}
 
 	// h.addDeviceActionList(newUuid)
-	log.Println("registration successful")
+	log.Info("registration successful")
 	writeFlush(req.Response, `{"result": {"status":"ok","msg":""}}\n`)
 
 }
@@ -74,17 +81,19 @@ func (h *Handler) register(req requestInfoBlock) {
 func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 	var jEvent JsonEvent
 
+	log := logger.New("processEvent", &debugLevel)
+
 	// scanner := bufio.NewScanner(r.Body)
 	// for scanner.Scan() {
 	// 	ln := scanner.Text()
 	// 	log.Println("scanner recieved", ln)
 	// }
 
-	fmt.Println(">> jsonMessage:", string(req.Body))
+	log.Info(">> jsonMessage:", string(req.Body))
 	// err := json.NewDecoder(req.Request.Body).Decode(&jEvent)
 	err := json.Unmarshal(req.Body, &jEvent)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	switch jEvent.Method {
@@ -92,7 +101,7 @@ func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 		// make sure the client id has ownership of the device id
 		// and verify device exists
 		if !h.HomeManager.DeviceExistsWithClientId(jEvent.Data.Id, clientId) {
-			log.Println("Error: invalid device id")
+			log.Error("invalid device id")
 			req.Response.WriteHeader(http.StatusBadRequest)
 			writeFlush(req.Response, "Error: incorrect device id")
 			return
@@ -114,20 +123,21 @@ func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 }
 
 func (h *Handler) callV1api(req requestInfoBlock) {
+	log := logger.New("callV1api", &debugLevel)
 
-	fmt.Println("req.Components[1] =", req.Components[1])
+	log.Debug("req.Components[1] =", req.Components[1])
 
 	// is the user logged in
 	if !h.isConnected(req) {
 		// not logged in
 		switch req.Components[1] {
 		case "connect":
-			fmt.Println("/connect") // api login
+			log.Info("/connect") // api login
 			if req.Request.Method == "POST" {
 				h.doLogin(req)
 			}
 		default:
-			log.Println("not logged in")
+			log.Info("not logged in")
 			writeFlush(req.Response, "not logged in")
 			return
 		}
@@ -136,11 +146,11 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 		// all ok
 		switch req.Components[1] {
 		case "register":
-			fmt.Println("/register")
+			log.Info("/register")
 			h.register(req)
 
 		case "actions":
-			fmt.Println("/actions")
+			log.Info("/actions")
 			if client, ok := h.doActions(req); ok {
 				h.HomeManager.SetClient(client.clientid, req.Response, req.Request)
 				ctx := req.Request.Context()
@@ -148,23 +158,23 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 				case <-ctx.Done():
 				case <-client.Done:
 				}
-				log.Println("finished /actions")
+				log.Info("finished /actions")
 			}
 
 		case "event":
-			fmt.Println("/event")
+			log.Info("/event")
 			val, ok := h.session[req.Session]
 			if !ok {
-				log.Println("invalid session")
+				log.Error("invalid session")
 				return
 			}
 			h.processEvent(req, val.clientid)
 
 		case "device":
-			fmt.Println("/device")
+			log.Info("/device")
 
 		default:
-			log.Println("unknown url:", req.Path)
+			log.Error("unknown url:", req.Path)
 		}
 
 	}
@@ -173,7 +183,9 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 }
 
 func (h *Handler) isConnected(req requestInfoBlock) bool {
-	log.Println("header:", req.Request.Header)
+	log := logger.New("isConnected", &debugLevel)
+
+	log.Debug("header:", req.Request.Header)
 
 	if len(req.Session) <= 0 {
 		return false
@@ -192,34 +204,32 @@ func (h *Handler) isConnected(req requestInfoBlock) bool {
 }
 
 func (h *Handler) doLogin(req requestInfoBlock) bool {
-	type userLogin struct {
-		User string `json:"user"`
-		Pass string `json:"pass"`
-	}
 	var login userLogin
+
+	log := logger.New("doLogin", &debugLevel)
 
 	now := time.Now()
 
 	rawMsg, err := req.JsonMessage.Data.MarshalJSON()
 	if err != nil {
-		log.Println("unable to retrieve bytes from generic:", err)
+		log.Error("unable to retrieve bytes from generic:", err)
 		return false
 	}
 
 	err = json.Unmarshal(rawMsg, &login)
 	if err != nil {
-		log.Println("unable to convert json string", err)
+		log.Error("unable to convert json string", err)
 		return false
 	}
 
 	val, ok := h.userInfo[login.User]
 	if !ok {
-		log.Println("username not found")
+		log.Error("username not found")
 		return false
 	}
 
 	if login.Pass != val.AuthKey {
-		log.Println("invalid authKey")
+		log.Error("invalid authKey")
 		return false
 	}
 
@@ -256,20 +266,22 @@ func (h *Handler) doLogin(req requestInfoBlock) bool {
 
 // doAction checks the sessionid and actionid in the requestInfoBlock and returns a matching sessionState and a success bool
 func (h *Handler) doActions(req requestInfoBlock) (sessionState, bool) {
+	log := logger.New("doActions", &debugLevel)
+
 	val, ok := h.session[req.Session]
 	if !ok {
-		log.Println("invalid session")
+		log.Error("invalid session")
 		return sessionState{}, false
 	}
 
 	actionid := req.Components[2]
 	if len(actionid) == 0 {
-		log.Println("empty action id")
+		log.Error("empty action id")
 		return sessionState{}, false
 	}
 
 	if val.actionId != actionid {
-		log.Println("invalid action id")
+		log.Error("invalid action id")
 		return sessionState{}, false
 	}
 

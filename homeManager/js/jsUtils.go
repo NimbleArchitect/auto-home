@@ -1,9 +1,8 @@
 package js
 
 import (
-	"fmt"
-	"log"
 	"server/deviceManager"
+	"server/logger"
 	"strings"
 	"time"
 
@@ -34,9 +33,11 @@ func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
 //
 // dev is then updated with the new properties and values
 func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props JSPropsList, dev *jsDevice) {
+	log := logger.New("processOnTrigger", &debugLevel)
+
 	_, ok := r.deviceState[deviceid]
 	if !ok {
-		log.Println("processTrigger device not found", deviceid)
+		log.Error("processTrigger device not found", deviceid)
 		return
 	}
 
@@ -44,7 +45,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 		oldValue := r.deviceState[deviceid].propSwitch[name].state
 		val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(swi.Value))
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		} else {
 			if val != nil {
 				swi.flag.Set(r.runtime.ToValue(val).ToInteger())
@@ -69,7 +70,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 		}
 		val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(dial.Value))
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		} else {
 			if val != nil {
 				dial.flag.Set(r.runtime.ToValue(val).ToInteger())
@@ -87,7 +88,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 
 		val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(button.Value))
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		} else {
 			if val != nil {
 				button.flag.Set(r.runtime.ToValue(val).ToInteger())
@@ -105,7 +106,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 
 		_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(text.Value))
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 
 		if oldValue != text.Value {
@@ -120,6 +121,9 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 // once _onchange has been called the changed value is sent to Updater.Update*
 func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int) {
 	var liveDevice *deviceManager.Device
+
+	log := logger.New("processOnChange", &debugLevel)
+
 	tmp, ok := r.deviceState[deviceid]
 	if ok {
 		liveDevice = tmp.liveDevice
@@ -137,7 +141,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 			// all state props have been updated for the device so we call onchange with the property that was changed
 			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(swi.Value))
 			if err != nil {
-				log.Println(err)
+				log.Error(err)
 			} else {
 				if val != nil {
 					swi.flag.Set(r.runtime.ToValue(val).ToInteger())
@@ -155,7 +159,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 		if FLAG != FLAG_STOPPROCESSING {
 			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(dial.Value))
 			if err != nil {
-				log.Println(err)
+				log.Error(err)
 			} else {
 				if val != nil {
 					dial.flag.Set(r.runtime.ToValue(val).ToInteger())
@@ -175,7 +179,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 			// all state props have been updated for the device so we call onchange with the property that was changed
 			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(button.Value))
 			if err != nil {
-				log.Println(err)
+				log.Error(err)
 			} else {
 				if val != nil {
 					button.flag.Set(r.runtime.ToValue(val).ToInteger())
@@ -195,7 +199,7 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 			// all state props have been updated for the device so we call onchange with the property that was changed
 			val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnChange), r.runtime.ToValue(txt.Value))
 			if err != nil {
-				log.Println(err)
+				log.Error(err)
 			} else {
 				if val != nil {
 					txt.flag.Set(r.runtime.ToValue(val).ToInteger())
@@ -208,6 +212,8 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) int {
 	var finishAfterGroups bool
 	var searchList []jsGroup
+
+	log := logger.New("processGroupChange", &debugLevel)
 
 	// first get a list of groups that have our device as a member
 	for _, group := range r.groups {
@@ -260,7 +266,7 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 
 		continueFlag, err := r.RunJSGroup(group.Id, props)
 		if err != nil {
-			log.Println("group error", err)
+			log.Error("group error", err)
 			continue
 		}
 
@@ -299,6 +305,7 @@ func (r *JavascriptVM) ParentsOf(name string) map[string]jsGroup {
 //
 //	change so need loading everytime the vm is called, currently sets up home and plugin obects
 func (r *JavascriptVM) setJsGlobal() jsHome {
+	log := logger.New("selobal", &debugLevel)
 
 	home := jsHome{
 		vm:      r,
@@ -311,10 +318,10 @@ func (r *JavascriptVM) setJsGlobal() jsHome {
 	}
 
 	if err := r.runtime.Set("plugin", r.plugins); err != nil {
-		fmt.Println("unable to attach plugin object to javascript vm:", err)
+		log.Error("unable to attach plugin object to javascript vm:", err)
 	}
 	if err := r.runtime.Set("home", home); err != nil {
-		fmt.Println("unable to attach plugin object to javascript vm:", err)
+		log.Error("unable to attach plugin object to javascript vm:", err)
 	}
 
 	return home

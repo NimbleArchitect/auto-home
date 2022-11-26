@@ -2,13 +2,14 @@ package webHandle
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
+	"server/logger"
 )
 
 func (h *Handler) showPage(req requestInfoBlock) {
-	fmt.Println(">>", req.Components[0])
+	log := logger.New("showPage", &debugLevel)
+
+	log.Debug(req.Components[0])
 
 	switch req.Components[0] {
 	case "public":
@@ -22,12 +23,12 @@ func (h *Handler) showPage(req requestInfoBlock) {
 		h.HomeManager.ReloadVMs()
 
 	case "plugin":
-		fmt.Println("/plugin")
+		log.Info("/plugin")
 		if req.Request.Method == "POST" {
 			var jsonData map[string]interface{}
 
 			if len(req.Body) == 0 {
-				log.Println("no data recieved")
+				log.Error("no data recieved")
 				return
 			}
 
@@ -41,7 +42,7 @@ func (h *Handler) showPage(req requestInfoBlock) {
 
 			// err = json.Unmarshal(rawMsg, &jsonData)
 			if err != nil && err != io.EOF {
-				fmt.Println("json decode error:", err)
+				log.Error("json decode error:", err)
 				// TODO: need to return a proper error
 				writeFlush(req.Response, "decode error")
 				return

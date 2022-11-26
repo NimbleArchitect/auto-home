@@ -1,8 +1,8 @@
 package webHandle
 
 import (
-	"log"
 	"net/http"
+	"server/logger"
 )
 
 func cleanPath(rawPath string) string {
@@ -30,8 +30,10 @@ func cleanPath(rawPath string) string {
 
 // writeFlush attempts an immediate flush of the buffers after sending text
 func writeFlush(w http.ResponseWriter, text string) (int, error) {
+	log := logger.New("writeFlush", &debugLevel)
+
 	if len(text) > 0 {
-		log.Println(">> writeFlush:", text)
+		log.Debug("text", text)
 	}
 
 	bytesOut, err := w.Write([]byte(text + "\n"))
@@ -40,7 +42,7 @@ func writeFlush(w http.ResponseWriter, text string) (int, error) {
 	if canFlush {
 		f.Flush()
 	} else {
-		log.Print("Damn, no flush")
+		log.Info("Damn, no flush")
 	}
 	return bytesOut, err
 }

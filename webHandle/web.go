@@ -2,11 +2,10 @@ package webHandle
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
+	"server/logger"
 	"strings"
 )
 
@@ -30,6 +29,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Actual web connection start
 	var err error
 
+	log := logger.New("ServeHTTP", &debugLevel)
+
 	req := requestInfoBlock{
 		Path:     cleanPath(r.URL.Path),
 		Query:    r.URL.Query(),
@@ -49,18 +50,17 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	req.Body, err = io.ReadAll(r.Body)
 	if err != nil {
-		log.Println("http body read error:", err)
+		log.Error("http body read error:", err)
 	}
 
 	json.Unmarshal(req.Body, &req.JsonMessage)
 
-	fmt.Println("| path:", req.Path)
-	fmt.Println("| sessionid:", req.Session)
-	fmt.Println("| query:", req.Query)
-	fmt.Println("| body:", string(req.Body))
+	log.Debug("| path:", req.Path)
+	log.Debug("| sessionid:", req.Session)
+	log.Debug("| query:", req.Query)
+	log.Debug("| body:", string(req.Body))
 
 	if req.Components[0] == "v1" {
-		fmt.Println("is V1")
 		h.callV1api(req)
 	} else {
 		h.showPage(req)

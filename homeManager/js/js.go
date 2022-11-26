@@ -1,10 +1,10 @@
 package js
 
 import (
-	"log"
 	"server/deviceManager"
 	"server/globals"
 	"server/homeManager/pluginManager"
+	"server/logger"
 	"strings"
 	"sync"
 	"time"
@@ -12,6 +12,8 @@ import (
 
 	"github.com/dop251/goja"
 )
+
+var debugLevel int
 
 type JavascriptVM struct {
 	waitGroup   sync.Mutex
@@ -44,6 +46,8 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	var val *goja.Object
 	var ok bool
 
+	log := logger.New("RunJS", &debugLevel)
+
 	if r.runtime == nil {
 		return nil, nil
 	}
@@ -72,21 +76,21 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	call, ok := goja.AssertFunction(jsFunction)
 	if !ok || call == nil {
 		// slient ignore as the function dosent exist in javascript
-		log.Printf("function %s doesn't exist for %s, skipping", fName, deviceid)
+		log.Infof("function %s doesn't exist for %s, skipping", fName, deviceid)
 		return nil, nil
 	}
 
 	r.setJsGlobal()
 
 	if props == nil {
-		log.Printf("calling %s/%s with no arguments\n", deviceid, fName)
+		log.Infof("calling %s/%s with no arguments\n", deviceid, fName)
 		result, err = call(goja.Undefined())
 	} else {
-		log.Printf("calling %s/%s with one argument\n", deviceid, fName)
+		log.Infof("calling %s/%s with one argument\n", deviceid, fName)
 		result, err = call(goja.Undefined(), props)
 	}
 	if err != nil {
-		log.Println("err", err)
+		log.Error(err)
 	}
 
 	return result, err
@@ -130,7 +134,9 @@ func (r *JavascriptVM) RunJSPlugin(pluginName string, fName string, args map[str
 func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList) {
 	var dev jsDevice
 
-	log.Println("process triggered")
+	log := logger.New("Process", &debugLevel)
+
+	log.Info("process triggered")
 
 	dev.propSwitch = make(map[string]jsSwitch)
 	dev.propDial = make(map[string]jsDial)

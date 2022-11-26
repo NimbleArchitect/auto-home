@@ -1,10 +1,10 @@
 package js
 
 import (
-	"log"
 	"os"
 	"server/globals"
 	"server/homeManager/pluginManager"
+	"server/logger"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -18,9 +18,11 @@ func loadScript(filename string) *goja.Program {
 	var prog *goja.Program
 	var err error
 
+	log := logger.New("loadScript", &debugLevel)
+
 	cfile, err := os.ReadFile(filename)
 	if err != nil {
-		log.Println("unable to read file:", err)
+		log.Error("unable to read file:", err)
 	}
 
 	if strings.HasSuffix(filename, "/common.js") {
@@ -31,7 +33,7 @@ func loadScript(filename string) *goja.Program {
 
 	// prog, err := goja.Compile(filename, string(cfile), true)
 	if err != nil {
-		log.Println("unable to compile script", err)
+		log.Error("unable to compile script", err)
 	}
 
 	return prog
@@ -40,6 +42,8 @@ func loadScript(filename string) *goja.Program {
 // func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM, error) {
 func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *globals.Global) (*JavascriptVM, error) {
 	var console jsConsole
+
+	log := logger.New("NewVM", &debugLevel)
 
 	runtime := goja.New()
 	runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
@@ -80,13 +84,13 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *global
 		// run the script module
 		module, err := runtime.RunProgram(code)
 		if err != nil {
-			log.Println("error running script", scriptName, err)
+			log.Error("error running script", scriptName, err)
 		} else {
 			call, ok := goja.AssertFunction(module)
 			if ok {
 				_, err := call(goja.Undefined())
 				if err != nil {
-					log.Println("script error", err)
+					log.Error("script error", err)
 				}
 			} else {
 				// TODO: should this be enabled?
@@ -99,6 +103,10 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *global
 }
 
 func LoadAllScripts(path string) CompiledScripts {
+	debugLevel = logger.GetDebugLevel()
+
+	log := logger.New("LoadAllScripts", &debugLevel)
+
 	compiled := make(map[string]*goja.Program)
 
 	sep := string(os.PathSeparator)
@@ -112,7 +120,7 @@ func LoadAllScripts(path string) CompiledScripts {
 	for _, item := range entires {
 		if !item.IsDir() {
 			fullname := pathname + sep + item.Name()
-			log.Println("loading script", fullname)
+			log.Info("loading script", fullname)
 			p := loadScript(fullname)
 			if p != nil {
 				compiled[item.Name()] = p

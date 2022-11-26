@@ -2,9 +2,9 @@ package webHandle
 
 import (
 	"errors"
-	"log"
 	"server/deviceManager"
 	home "server/homeManager"
+	"server/logger"
 	"strings"
 )
 
@@ -30,6 +30,8 @@ func (h *Handler) regHubList(d jsonHub, clientId string) error {
 }
 
 func (h *Handler) regDeviceList(d jsonDevice, clientId string) error {
+	log := logger.New("regDeviceList", &debugLevel)
+
 	n := deviceManager.NewDevice(h.HomeManager.MaxPropertyHistory)
 	n.Description = d.Description
 	n.Id = d.Id
@@ -46,54 +48,57 @@ func (h *Handler) regDeviceList(d jsonDevice, clientId string) error {
 			case "switch":
 				if prop, err := n.Map2Switch(v); err == nil {
 					if _, ok := n.PropertySwitch[prop.Name]; !ok {
-						log.Println("adding property", prop.Name)
+						log.Info("adding property", prop.Name)
 						n.SetSwitch(prop.Name, prop)
 						n.SetSwitchWindow(prop.Name, window[prop.Name])
 					} else {
 						return errors.New("duplicate property name detected, peoperty " + prop.Name + " is already in use")
 					}
 				} else {
+					log.Error(err)
 					return err
 				}
 
 			case "dial":
 				if prop, err := n.Map2Dial(v); err == nil {
 					if _, ok := n.PropertyDial[prop.Name]; !ok {
-						log.Println("adding property", prop.Name)
+						log.Info("adding property", prop.Name)
 						n.SetDial(prop.Name, prop)
 						n.SetDialWindow(prop.Name, window[prop.Name])
 					} else {
 						return errors.New("duplicate property name detected, peoperty " + prop.Name + " is already in use")
 					}
 				} else {
+					log.Error(err)
 					return err
 				}
 
 			case "button":
 				if prop, err := n.Map2Button(v); err == nil {
 					if _, ok := n.PropertyButton[prop.Name]; !ok {
-						log.Println("adding property", prop.Name)
+						log.Info("adding property", prop.Name)
 						n.SetButton(prop.Name, prop)
 						n.SetButtonWindow(prop.Name, window[prop.Name])
 					} else {
-						log.Println("duplicate property name detected, peoperty " + prop.Name + " is already in use")
+						log.Info("duplicate property name detected, peoperty " + prop.Name + " is already in use")
 						return errors.New("duplicate property name detected, peoperty " + prop.Name + " is already in use")
 					}
 				} else {
-					log.Println(err)
+					log.Error(err)
 					return err
 				}
 
 			case "text":
 				if prop, err := n.Map2Text(v); err == nil {
 					if _, ok := n.PropertyText[prop.Name]; !ok {
-						log.Println("adding property", prop.Name)
+						log.Info("adding property", prop.Name)
 						n.SetText(prop.Name, prop)
 						n.SetTextWindow(prop.Name, window[prop.Name])
 					} else {
 						return errors.New("duplicate property name detected, peoperty " + prop.Name + " is already in use")
 					}
 				} else {
+					log.Error(err)
 					return err
 				}
 

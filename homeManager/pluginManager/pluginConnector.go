@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"server/logger"
+
 	"io"
-	"log"
+
 	"net"
 	"strings"
 	"sync"
@@ -125,6 +128,8 @@ func (c *PluginConnector) writeB(b []byte) {
 func (c *PluginConnector) handle() {
 	var buf []byte
 
+	log := logger.New("handle", &debugLevel)
+
 	defer c.c.Close()
 	chError := make(chan error)
 
@@ -148,7 +153,7 @@ func (c *PluginConnector) handle() {
 					last := 0
 					for i := 1; i < len(buf); i++ {
 						if buf[i-1] == 10 && buf[i] == 10 {
-							fmt.Println("Mgr -<< recieved", string(buf[last:i-2]))
+							log.Debug("Mgr -<< recieved", string(buf[last:i-2]))
 							go c.decode(buf[last:i])
 							last = i
 						}
@@ -167,7 +172,7 @@ func (c *PluginConnector) handle() {
 				if len(buf) > 0 {
 					c.decode(buf)
 				}
-				log.Println(c.name, "dropped connection", err)
+				log.Error(c.name, "dropped connection", err)
 				return
 			}
 		case <-time.After(1 * time.Minute):
@@ -179,9 +184,11 @@ func (c *PluginConnector) handle() {
 func (c *PluginConnector) decode(buf []byte) {
 	var generic Generic
 
+	log := logger.New("decode", &debugLevel)
+
 	err := json.Unmarshal(buf, &generic)
 	if err != nil {
-		log.Println("decode error", err)
+		log.Error("decode error", err)
 		resp := makeError(generic.Id, err)
 		c.writeB(resp)
 	} else {
@@ -192,6 +199,8 @@ func (c *PluginConnector) decode(buf []byte) {
 }
 
 func (c *PluginConnector) processMessage(obj Generic) error {
+	log := logger.New("processMessage", &debugLevel)
+
 	// runtime := goja.New()
 	// runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
@@ -212,7 +221,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 			c.jsCallBack(m.Name, m.Call, field)
 		default:
 			errMsg := fmt.Sprintf("I don't know about type %T!\n", field)
-			log.Println("trigger error:", errMsg)
+			log.Error("trigger error:", errMsg)
 			return errors.New(errMsg)
 		}
 
@@ -224,7 +233,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 		var m result
 		err := json.Unmarshal(raw, &m)
 		if err != nil {
-			fmt.Println("err:", err)
+			log.Error("err:", err)
 		}
 
 		// proceess the response from the client trigger?
@@ -264,7 +273,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 		}
 		c.WaitDone(obj.Id, nil, nil)
 		c.writeB(out)
-		log.Printf("plugin \"%s\" registered: %s\n", m.Name, strings.Join(callList, ", "))
+		log.Infof("plugin \"%s\" registered: %s\n", m.Name, strings.Join(callList, ", "))
 	}
 
 	return nil

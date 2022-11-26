@@ -109,7 +109,7 @@ func (d *Device) ButtonValue(name string) (booltype.BoolType, bool) {
 
 // updates the live device
 func (d *Device) WriteButtonValue(name string, value string) {
-	log := logger.New("deviceManager.WriteButtonValue", &debugLevel)
+	log := logger.New("WriteButtonValue", &debugLevel)
 	log.Debug("d.Id =", d.Id)
 
 	if d.clientConnection != nil {

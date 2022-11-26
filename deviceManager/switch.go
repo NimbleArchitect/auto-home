@@ -65,7 +65,7 @@ func (d *Device) SwitchAsMap() map[string]SwitchProperty {
 }
 
 func (d *Device) SetSwitch(name string, property *SwitchProperty) {
-	log := logger.New("deviceManager.SetSwitch", &debugLevel)
+	log := logger.New("SetSwitch", &debugLevel)
 	prop, ok := d.PropertySwitch[name]
 	if !ok {
 		duration := d.repeatWindow[name]
@@ -116,7 +116,9 @@ func (d *Device) WriteSwitchValue(name string, value string) {
 
 // SetSwitchValue updates the internal value and calls the writer to send the updated value back to the cient
 func (d *Device) SetSwitchValue(name string, value string) {
-	fmt.Println("set switch", name, value)
+	log := logger.New("SetSwitchValue", &debugLevel)
+
+	log.Info("set switch", name, value)
 
 	property, ok := d.PropertySwitch[name]
 	if ok {

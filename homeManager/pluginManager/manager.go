@@ -2,12 +2,14 @@ package pluginManager
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+	"server/logger"
+
 	"net"
 	"os"
 	"sync"
 )
+
+var debugLevel int
 
 type response struct {
 	Method string
@@ -22,19 +24,25 @@ type Manager struct {
 }
 
 func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{})) {
+	debugLevel = logger.GetDebugLevel()
+
+	log := logger.New("Start", &debugLevel)
+
 	if err := os.RemoveAll(m.SockAddr); err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		os.Exit(1)
 	}
 
 	l, e := net.Listen("unix", m.SockAddr)
 	if e != nil {
-		log.Fatal("listen error:", e)
+		log.Error("listen error:", e)
+		os.Exit(1)
 	}
 
 	for {
 		incoming, err := l.Accept()
 		if err != nil {
-			fmt.Println("unable to accept connection:", err)
+			log.Error("unable to accept connection:", err)
 		}
 
 		con := PluginConnector{
@@ -59,6 +67,8 @@ func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{}))
 func makeError(id int, err error) []byte {
 	var msg string
 
+	log := logger.New("makeError", &debugLevel)
+
 	ok := false
 	if err == nil {
 		ok = true
@@ -77,13 +87,15 @@ func makeError(id int, err error) []byte {
 
 	data, err := json.Marshal(resp)
 	if err != nil {
-		log.Println("json error", err)
+		log.Error("json error", err)
 	}
 
 	return data
 }
 
 func makeResponse(id int, singleArg interface{}) []byte {
+	log := logger.New("makeResponse", &debugLevel)
+
 	arg := make(map[string]interface{})
 	arg["0"] = singleArg
 
@@ -98,7 +110,7 @@ func makeResponse(id int, singleArg interface{}) []byte {
 
 	data, err := json.Marshal(resp)
 	if err != nil {
-		log.Println("json error", err)
+		log.Error("json error", err)
 	}
 
 	return data

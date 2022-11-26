@@ -3,7 +3,6 @@ package home
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"path"
 	"sync"
@@ -147,7 +146,6 @@ func (m *Manager) SaveSystem() {
 	}
 
 	m.groups.Save()
-	fmt.Println("F:homeManager.SaveSystem:stop")
 }
 
 func (m *Manager) LoadSystem() {
@@ -434,14 +432,12 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 }
 
 func (m *Manager) Shutdown() {
-	fmt.Println("F:homeManager.Shutdown:start")
 	m.clientConnection.CloseAll()
-
 	time.Sleep(1 * time.Second)
-	fmt.Println("F:homeManager.Shutdown:stop")
 }
 
 func (m *Manager) runStartScript() {
+	log := logger.New("runStartScript", &debugLevel)
 	// called during startup to run the server onstart function
 
 	vm, id := m.GetNextVM()
@@ -450,6 +446,6 @@ func (m *Manager) runStartScript() {
 	svr := "homeserver"
 	_, err := vm.RunJS(svr, js.StrOnStart, goja.Undefined())
 	if err != nil {
-		fmt.Println("21>>", err)
+		log.Error(err)
 	}
 }
