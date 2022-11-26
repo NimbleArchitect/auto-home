@@ -23,13 +23,13 @@ type Manager struct {
 }
 
 type onDiskGroup struct {
-	Id           string
-	Name         string
-	Description  string
-	Devices      []string
-	Groups       []string
-	Users        []string
-	RepeatWindow int64
+	Id           string   `json:"id"`
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Devices      []string `json:"devices"`
+	Groups       []string `json:"groups"`
+	Users        []string `json:"users"`
+	RepeatWindow int64    `json:"repeatwindow"`
 }
 
 func New(configPath string) *Manager {

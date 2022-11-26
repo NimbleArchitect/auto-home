@@ -19,14 +19,14 @@ type Dial struct {
 	repeatWindowDuration  time.Duration
 }
 type DialProperty struct {
-	Id          string
-	Name        string
-	Description string
-	Min         int
-	Max         int
-	Value       int
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Min         int    `json:"min"`
+	Max         int    `json:"max"`
+	Value       int    `json:"value"`
+	Mode        uint   `json:"mode"`
 	// Previous              int
-	Mode uint
 }
 
 // func (d *Device) NewDial(maxHistory int) *Dial {

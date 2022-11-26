@@ -20,12 +20,12 @@ type Switch struct {
 	repeatWindowDuration  time.Duration
 }
 type SwitchProperty struct {
-	Id          string
-	Name        string
-	Description string
-	Value       booltype.BoolType
+	Id          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Value       booltype.BoolType `json:"value"`
+	Mode        uint              `json:"mode"`
 	// Previous              booltype.BoolType
-	Mode uint
 }
 
 // func (d *Device) NewSwitch() *Switch {

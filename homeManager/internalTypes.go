@@ -1,12 +1,12 @@
 package home
 
 type Hub struct {
-	Id          string
-	Name        string
-	Description string
-	ClientId    string
-	Help        string
-	Devices     []string
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	ClientId    string   `json:"clientid"`
+	Help        string   `json:"help"`
+	Devices     []string `json:"devices"`
 }
 
 // type group struct {

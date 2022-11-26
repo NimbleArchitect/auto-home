@@ -3,7 +3,7 @@ package webHandle
 import "encoding/json"
 
 type Generic struct {
-	Method *string          `json:"methos"`
+	Method *string          `json:"method"`
 	Data   *json.RawMessage `json:"data"`
 }
 

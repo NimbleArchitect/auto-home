@@ -33,13 +33,13 @@ const (
 )
 
 type Result struct {
-	Result jsonStatus
-	Data   map[string]string
+	Result jsonStatus        `json:"result"`
+	Data   map[string]string `json:"data"`
 }
 
 type jsonStatus struct {
-	Status string
-	Msg    string
+	Status string `json:"status"`
+	Msg    string `json:"msg"`
 }
 
 type actionResult struct {

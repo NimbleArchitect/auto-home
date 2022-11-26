@@ -19,12 +19,12 @@ type Text struct {
 	repeatWindowDuration  time.Duration
 }
 type TextProperty struct {
-	Id          string
-	Name        string
-	Description string
-	Value       string
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Value       string `json:"value"`
+	Mode        uint   `json:"mode"`
 	// Previous              string
-	Mode uint
 }
 
 // func (d *Device) NewText() *Text {
