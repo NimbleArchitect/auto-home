@@ -145,6 +145,12 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 	} else {
 		// all ok
 		switch req.Components[1] {
+		case "connect":
+			log.Info("/connect") // api login
+			if req.Request.Method == "POST" {
+				h.doLogin(req)
+			}
+
 		case "register":
 			log.Info("/register")
 			h.register(req)
