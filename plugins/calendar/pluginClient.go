@@ -128,6 +128,7 @@ func (p *plugin) Register(name string, obj interface{}) {
 
 }
 
+// Done wait untile the server tells the plugin to exit
 func (p *plugin) Done() error {
 	err := <-p.isFinished
 	return err

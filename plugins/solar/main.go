@@ -60,6 +60,24 @@ func main() {
 
 	p.Register("solar", cal)
 
+	go func() {
+		currentLight := cal.IsLight()
+		for {
+			time.Sleep(1 * time.Second)
+			newLight := cal.IsLight()
+			if currentLight != newLight {
+				currentLight = newLight
+				if newLight {
+					fmt.Println("onSunrise")
+					p.Call("onSunrise", nil)
+				} else {
+					fmt.Println("onSunset")
+					p.Call("onSunset", nil)
+				}
+			}
+		}
+	}()
+
 	err = p.Done()
 	if err != nil {
 		fmt.Println(err)

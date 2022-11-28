@@ -13,8 +13,6 @@ import (
 	"unicode"
 )
 
-const SockAddr = "/tmp/rpc.sock"
-
 type Generic struct {
 	Method string
 	Id     int
@@ -130,13 +128,18 @@ func (p *plugin) Register(name string, obj interface{}) {
 
 }
 
+// Done wait untile the server tells the plugin to exit
 func (p *plugin) Done() error {
 	err := <-p.isFinished
 	return err
 }
 
 func Connect() *plugin {
-	addr := os.Getenv("autohome_sockaddr")
+	addr, ok := os.LookupEnv("autohome_sockaddr")
+	if !ok {
+		log.Println("unable to get host address, are you running from within auto-home")
+		os.Exit(1)
+	}
 
 	conn, err := net.Dial("unix", addr)
 	if err != nil {
@@ -242,7 +245,6 @@ func (p *plugin) processMessage(obj Generic) error {
 		p.c.WaitDone(obj.Id, nil, nil)
 		json.Unmarshal(raw, &m)
 
-	// TODO: plugins still dont work, multi calls seem to break
 	case "trigger":
 		// call the methods that where regestered from the object
 		var m action
@@ -252,6 +254,8 @@ func (p *plugin) processMessage(obj Generic) error {
 		if err != nil {
 			return err
 		}
+
+		fmt.Println("raw:", string(raw))
 
 		var callArgs []reflect.Value
 		var response []reflect.Value
