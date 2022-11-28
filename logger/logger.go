@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -94,17 +93,11 @@ func writef(logPrefix string, message string, any ...interface{}) {
 func print(level int, logPrefix string, msg string) {
 	var prefix string
 	if level > 0 {
-		pc := make([]uintptr, 2)
-		runtime.Callers(3, pc)
-		f := runtime.FuncForPC(pc[0])
-		location := f.Name()
-		if location == "server/logger.(*logger).Debug" {
-			f := runtime.FuncForPC(pc[1])
-			location = f.Name()
-		}
+		pc := make([]uintptr, 5)
+		runtime.Callers(0, pc)
 
-		path := strings.Split(location, "/")
-		location = path[len(path)-1]
+		f := runtime.FuncForPC(pc[4])
+		location := f.Name()
 
 		prefix = logPrefix + "F:" + location + ":"
 	} else {
