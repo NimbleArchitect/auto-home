@@ -4,8 +4,8 @@ import "log"
 
 type jsButton struct {
 	Name     string
-	Value    string //new .state, old .label
-	state    bool   //old .Value
+	Value    string
+	state    bool
 	previous string
 	flag     jsFlag
 }

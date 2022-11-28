@@ -29,10 +29,6 @@ func (d *jsText) Type() string {
 	return "text"
 }
 
-func (d *jsText) AsBool(name string) string {
-	return d.Value
-}
-
 func (d *jsText) Last(x int) interface{} {
 	log.Println("TODO: not implemented")
 	return nil

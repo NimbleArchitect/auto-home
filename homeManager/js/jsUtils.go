@@ -305,7 +305,7 @@ func (r *JavascriptVM) ParentsOf(name string) map[string]jsGroup {
 //
 //	change so need loading everytime the vm is called, currently sets up home and plugin obects
 func (r *JavascriptVM) setJsGlobal() jsHome {
-	log := logger.New("selobal", &debugLevel)
+	log := logger.New("setJsGlobal", &debugLevel)
 
 	home := jsHome{
 		vm:      r,

@@ -18,10 +18,10 @@ func (d *jsDial) IsDial() bool {
 	return true
 }
 func (d *jsDial) IsButton() bool {
-	return true
+	return false
 }
 func (d *jsDial) IsText() bool {
-	return true
+	return false
 }
 
 func (d *jsDial) Type() string {
