@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"server/booltype"
-	"server/logger"
+	log "server/logger"
 	"strconv"
 	"strings"
 
@@ -32,7 +32,6 @@ func BuildOnAction(values ...string) string {
 
 // runAsThread runs the js function as a new thread, this could be dangerous/not thread safe
 func (r *JavascriptVM) runAsThread(function goja.Value, value goja.Value) {
-	log := logger.New(&debugLevel)
 
 	go func() {
 		var ok bool

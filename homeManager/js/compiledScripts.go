@@ -4,7 +4,7 @@ import (
 	"os"
 	"server/globals"
 	"server/homeManager/pluginManager"
-	"server/logger"
+	log "server/logger"
 	"strings"
 
 	"github.com/dop251/goja"
@@ -17,8 +17,6 @@ type CompiledScripts struct {
 func loadScript(filename string) *goja.Program {
 	var prog *goja.Program
 	var err error
-
-	log := logger.New(&debugLevel)
 
 	cfile, err := os.ReadFile(filename)
 	if err != nil {
@@ -42,8 +40,6 @@ func loadScript(filename string) *goja.Program {
 // func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin) (*JavascriptVM, error) {
 func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *globals.Global) (*JavascriptVM, error) {
 	var console jsConsole
-
-	log := logger.New(&debugLevel)
 
 	runtime := goja.New()
 	runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
@@ -103,9 +99,6 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *global
 }
 
 func LoadAllScripts(path string) CompiledScripts {
-	debugLevel = logger.GetDebugLevel()
-
-	log := logger.New(&debugLevel)
 
 	compiled := make(map[string]*goja.Program)
 

@@ -3,7 +3,7 @@ package deviceManager
 import (
 	"fmt"
 	"server/booltype"
-	"server/logger"
+	log "server/logger"
 	"sync"
 	"time"
 )
@@ -71,7 +71,6 @@ func (d *Device) ButtonHistory(name string, value int) (ButtonProperty, bool) {
 }
 
 func (d *Device) SetButton(name string, property *ButtonProperty) {
-	log := logger.New(&debugLevel)
 
 	prop, ok := d.PropertyButton[name]
 	if !ok {
@@ -109,7 +108,7 @@ func (d *Device) ButtonValue(name string) (booltype.BoolType, bool) {
 
 // updates the live device
 func (d *Device) WriteButtonValue(name string, value string) {
-	log := logger.New(&debugLevel)
+
 	log.Debug("d.Id =", d.Id)
 
 	if d.clientConnection != nil {
@@ -176,8 +175,6 @@ func (d *Device) SetButtonWindow(name string, duration int64) {
 func (d *Device) Map2Button(props map[string]interface{}) (*ButtonProperty, error) {
 	var prop ButtonProperty
 	var err error
-
-	log := logger.New(&debugLevel)
 
 	log.Info("reading button property")
 	if v, ok := props["name"]; !ok {

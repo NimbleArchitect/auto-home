@@ -1,11 +1,9 @@
 package event
 
 import (
-	"server/logger"
+	log "server/logger"
 	"time"
 )
-
-var debugLevel int
 
 // event queue reads the event coming in on the channel
 // processes the event into its area,
@@ -37,7 +35,6 @@ type EventMsg struct {
 //	eventQueueLen length of the events array
 //	bufferLen number of events that can be spawned for concurrent processing
 func NewManager(eventQueueLen int, bufferLen int) *Manager {
-	debugLevel = logger.GetDebugLevel()
 
 	m := Manager{
 		events:            make([]EventMsg, eventQueueLen),
@@ -51,7 +48,7 @@ func NewManager(eventQueueLen int, bufferLen int) *Manager {
 }
 
 func (e *Manager) Shutdown() {
-	log := logger.New(&debugLevel)
+
 	log.Trace("start")
 	e.closeEventManager <- true
 	e.closeEventLoop <- true
@@ -60,7 +57,7 @@ func (e *Manager) Shutdown() {
 
 func (e *Manager) EventManager() {
 	var eventCount, headPos int
-	log := logger.New(&debugLevel)
+
 	log.Info("starting EventManager")
 
 	for {
@@ -103,7 +100,6 @@ type EventLoop interface {
 }
 
 func (e *Manager) EventLoop(looper EventLoop) {
-	log := logger.New(&debugLevel)
 
 	log.Info("starting EventLoop")
 	loopId := 0

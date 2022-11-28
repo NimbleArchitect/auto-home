@@ -2,7 +2,7 @@ package deviceManager
 
 import (
 	"fmt"
-	"server/logger"
+	log "server/logger"
 	"sync"
 	"time"
 )
@@ -64,7 +64,6 @@ func (d *Device) TextAsMap() map[string]TextProperty {
 }
 
 func (d *Device) SetText(name string, property *TextProperty) {
-	log := logger.New(&debugLevel)
 
 	prop, ok := d.PropertyText[name]
 	if !ok {
@@ -102,7 +101,7 @@ func (d *Device) TextValue(name string) (string, bool) {
 
 // updates the live device
 func (d *Device) WriteTextValue(name string, value string) {
-	log := logger.New(&debugLevel)
+
 	log.Debug("d.Id =", d.Id)
 
 	if d.clientConnection != nil {
@@ -115,7 +114,7 @@ func (d *Device) WriteTextValue(name string, value string) {
 
 // Was UpdateText
 func (d *Device) SetTextValue(name string, value string) {
-	log := logger.New(&debugLevel)
+
 	log.Info("set text", name, value)
 	property, ok := d.PropertyText[name]
 	if ok {
@@ -170,7 +169,6 @@ func (d *Device) SetTextWindow(name string, duration int64) {
 func (d *Device) Map2Text(props map[string]interface{}) (*TextProperty, error) {
 	var prop TextProperty
 	var err error
-	log := logger.New(&debugLevel)
 
 	log.Info("reading text property")
 	if v, ok := props["name"]; !ok {

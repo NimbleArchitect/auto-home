@@ -3,12 +3,11 @@ package home
 import (
 	"encoding/json"
 	"fmt"
-
 	"os"
 	"os/exec"
 	"path"
 	"server/homeManager/pluginManager"
-	"server/logger"
+	log "server/logger"
 	"sync"
 
 	"github.com/dop251/goja"
@@ -22,7 +21,7 @@ type Result struct {
 }
 
 func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
-	log := logger.New(&debugLevel)
+
 	// var pluginsStarted int
 
 	log.Info("starting plugin", pluginName)
@@ -50,8 +49,6 @@ func (m *Manager) startPlugin(pluginName string, wg *sync.WaitGroup) {
 // StartPlugins starts the plugin manager and all the named plugins
 func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 	var pluginList []string
-
-	log := logger.New(&debugLevel)
 
 	// TODO: need to dynamically build this list of plugins
 	// pluginList = append(pluginList, "telegram", "solar", "calendar")
@@ -86,7 +83,6 @@ func (m *Manager) StartPlugins(plug *pluginManager.Plugin) {
 
 // callPluginObject is the call back function for when a plugin wants to fire an event
 func (m *Manager) callPluginObject(pluginName string, call string, obj map[string]interface{}) {
-	log := logger.New(&debugLevel)
 
 	log.Info("plugin triggered", pluginName, call)
 	//TODO: call client on trigger, need to work out the client script to run

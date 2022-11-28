@@ -2,7 +2,7 @@ package pluginManager
 
 import (
 	"encoding/json"
-	"server/logger"
+	log "server/logger"
 
 	"github.com/dop251/goja"
 )
@@ -16,8 +16,6 @@ type Caller struct {
 // Run sends a call to the remote plugin and waits for a response
 func (c *Caller) Run(values []goja.Value) map[string]interface{} {
 	var t trigger
-
-	log := logger.New(&debugLevel)
 
 	nextId := c.c.WaitAdd()
 

@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"server/logger"
+	log "server/logger"
 	"strings"
 )
 
@@ -28,8 +28,6 @@ type clientItem struct {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Actual web connection start
 	var err error
-
-	log := logger.New(&debugLevel)
 
 	req := requestInfoBlock{
 		Path:     cleanPath(r.URL.Path),

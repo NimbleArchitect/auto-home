@@ -2,12 +2,9 @@ package clientConnector
 
 import (
 	"errors"
-
 	"net/http"
-	"server/logger"
+	log "server/logger"
 )
-
-var debugLevel int
 
 type Manager struct {
 	writers map[string]*ClientWriter
@@ -22,7 +19,6 @@ type ClientWriter struct {
 
 // NewMagaer returns a new client connection manager object
 func NewManager() *Manager {
-	debugLevel = logger.GetDebugLevel()
 
 	return &Manager{
 		writers: make(map[string]*ClientWriter),
@@ -30,7 +26,6 @@ func NewManager() *Manager {
 }
 
 func (m *Manager) ClientWriter(clientId string) *ClientWriter {
-	log := logger.New(&debugLevel)
 
 	if len(m.writers) == 0 {
 		log.Debug("writers = nil")
@@ -49,7 +44,6 @@ func (m *Manager) ClientWriter(clientId string) *ClientWriter {
 }
 
 func (m *Manager) SetClient(clientId string, w http.ResponseWriter, r *http.Request) {
-	log := logger.New(&debugLevel)
 
 	log.Debug("clientId", clientId)
 	val, ok := m.writers[clientId]
@@ -84,7 +78,6 @@ func (m *Manager) SetClient(clientId string, w http.ResponseWriter, r *http.Requ
 
 // Write writes to the /actions/uuid channel opened from the client
 func (c *ClientWriter) Write(text string) (int, error) {
-	log := logger.New(&debugLevel)
 
 	log.Debug("http response Write:", text)
 	log.Debug("clientWrite:", c.responseWriter)

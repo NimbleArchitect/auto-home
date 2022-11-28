@@ -17,12 +17,10 @@ import (
 	"os"
 	"path"
 	"server/homeManager/clientConnector"
-	"server/logger"
+	log "server/logger"
 	"strings"
 	"sync"
 )
-
-var debugLevel int
 
 type Manager struct {
 	lock *sync.RWMutex
@@ -57,7 +55,6 @@ type onDiskDevice struct {
 // }
 
 func New(maxPropertyHistory int, configPath string, clientMgr *clientConnector.Manager) *Manager {
-	debugLevel = logger.GetDebugLevel()
 
 	return &Manager{
 		configPath:         configPath,
@@ -121,7 +118,7 @@ func (m *Manager) GetDeviceMatchClientID(clientId string) []*Device {
 }
 
 func (m *Manager) Save() {
-	log := logger.New(&debugLevel)
+
 	log.Debug("saving devices")
 
 	deviceList := make(map[string]onDiskDevice)
@@ -212,7 +209,6 @@ func (m *Manager) Save() {
 func (m *Manager) Load() {
 	var deviceList map[string]onDiskDevice
 	var virtList map[string]onDiskDevice
-	log := logger.New(&debugLevel)
 
 	file, err := os.ReadFile(path.Join(m.configPath, "devices.json"))
 	if !errors.Is(err, os.ErrNotExist) {

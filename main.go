@@ -11,7 +11,7 @@ import (
 	"runtime"
 	event "server/eventManager"
 	home "server/homeManager"
-	"server/logger"
+	log "server/logger"
 	webHandle "server/webHandle"
 	"syscall"
 	"time"
@@ -19,8 +19,6 @@ import (
 	"github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
 )
-
-var debugLevel int
 
 type settings struct {
 	HostAddress        string // servers address
@@ -36,9 +34,6 @@ type settings struct {
 }
 
 func main() {
-	debugLevel = logger.GetDebugLevel()
-
-	log := logger.New(&debugLevel)
 
 	log.Info("starting with", runtime.NumCPU(), "CPUs")
 	done := make(chan bool, 1)
@@ -145,7 +140,6 @@ func main() {
 // }
 
 func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
-	log := logger.New(&debugLevel)
 
 	quicConf := &quic.Config{
 		KeepAlivePeriod: 500 * time.Second,
@@ -171,7 +165,6 @@ func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 }
 
 func StartWebsite(handle *webHandle.Handler, homeDir string) {
-	log := logger.New(&debugLevel)
 
 	server := &http.Server{
 		Handler: handle,

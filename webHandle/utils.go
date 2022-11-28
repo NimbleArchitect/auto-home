@@ -2,7 +2,7 @@ package webHandle
 
 import (
 	"net/http"
-	"server/logger"
+	log "server/logger"
 )
 
 func cleanPath(rawPath string) string {
@@ -30,7 +30,6 @@ func cleanPath(rawPath string) string {
 
 // writeFlush attempts an immediate flush of the buffers after sending text
 func writeFlush(w http.ResponseWriter, text string) (int, error) {
-	log := logger.New(&debugLevel)
 
 	if len(text) > 0 {
 		log.Debug("text", text)

@@ -3,11 +3,10 @@ package webHandle
 import (
 	"encoding/json"
 	"io"
-	"server/logger"
+	log "server/logger"
 )
 
 func (h *Handler) showPage(req requestInfoBlock) {
-	log := logger.New(&debugLevel)
 
 	log.Debug(req.Components[0])
 

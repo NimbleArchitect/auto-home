@@ -5,11 +5,9 @@ import (
 	"errors"
 	"os"
 	"path"
-	"server/logger"
+	log "server/logger"
 	"sync"
 )
-
-var debugLevel int
 
 type Manager struct {
 	lock *sync.RWMutex
@@ -33,7 +31,6 @@ type onDiskGroup struct {
 }
 
 func New(configPath string) *Manager {
-	debugLevel = logger.GetDebugLevel()
 
 	return &Manager{
 		configPath: configPath,
@@ -44,7 +41,7 @@ func New(configPath string) *Manager {
 }
 
 func (m *Manager) Save() {
-	log := logger.New(&debugLevel)
+
 	log.Info("saving groups")
 
 	groupList := make(map[string]onDiskGroup)
@@ -73,8 +70,6 @@ func (m *Manager) Save() {
 
 func (m *Manager) Load() {
 	var groupList map[string]onDiskGroup
-
-	log := logger.New(&debugLevel)
 
 	file, err := os.ReadFile(path.Join(m.configPath, "groups.json"))
 	if !errors.Is(err, os.ErrNotExist) {

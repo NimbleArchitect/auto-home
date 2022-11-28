@@ -10,10 +10,7 @@ import (
 
 var isSystemd bool
 
-type logger struct {
-	// 0 = errors only, 1 = errors + debug, 2 = trace + debug + errors
-	level *int
-}
+var logLevel int
 
 func init() {
 	// if val, ok := os.LookupEnv("INVOCATION_ID"); ok {
@@ -21,13 +18,22 @@ func init() {
 	// 		isSystemd = true
 	// 	}
 	// }
+
+	if val, ok := os.LookupEnv("AH_LOGLEVEL"); ok {
+		if val == "debug" {
+			logLevel = 1
+		}
+		if val == "trace" {
+			logLevel = 2
+		}
+	}
 }
 
 // TODO: need to automatically pickup the function name the functions are called from
 
-func New(level *int) *logger {
-	return &logger{level: level}
-}
+// func New() *logger {
+// 	return &logger{level: &logLevel}
+// }
 
 func GetDebugLevel() int {
 	if val, ok := os.LookupEnv("AH_LOGLEVEL"); ok {
@@ -38,51 +44,51 @@ func GetDebugLevel() int {
 	return 0
 }
 
-func (l *logger) Info(msg ...interface{}) {
-	l.write("[INFO] ", msg...)
+func Info(msg ...interface{}) {
+	write("[INFO] ", msg...)
 }
 
-func (l *logger) Infof(msg string, any ...interface{}) {
-	l.writef("[INFO] ", msg, any...)
+func Infof(msg string, any ...interface{}) {
+	writef("[INFO] ", msg, any...)
 }
 
-func (l *logger) Panic(msg ...interface{}) {
-	l.write("[PANIC] ", msg...)
+func Panic(msg ...interface{}) {
+	write("[PANIC] ", msg...)
 	panic(msg)
 }
 
-func (l *logger) Error(msg ...interface{}) {
-	l.write("[ERROR] ", msg...)
+func Error(msg ...interface{}) {
+	write("[ERROR] ", msg...)
 }
 
-func (l *logger) Errorf(msg string, any ...interface{}) {
-	l.writef("[ERROR] ", msg, any...)
+func Errorf(msg string, any ...interface{}) {
+	writef("[ERROR] ", msg, any...)
 }
 
-func (l *logger) Warning(msg ...interface{}) {
-	l.write("[WARN] ", msg...)
+func Warning(msg ...interface{}) {
+	write("[WARN] ", msg...)
 }
 
-func (l *logger) Debug(msg ...interface{}) {
-	if *l.level > 0 {
-		l.write("[DEBUG] ", msg...)
+func Debug(msg ...interface{}) {
+	if logLevel > 0 {
+		write("[DEBUG] ", msg...)
 	}
 }
 
-func (l *logger) Trace(msg ...interface{}) {
-	if *l.level > 1 {
-		l.write("[TRACE] ", msg...)
+func Trace(msg ...interface{}) {
+	if logLevel > 1 {
+		write("[TRACE] ", msg...)
 	}
 }
 
-func (l *logger) write(logPrefix string, message ...interface{}) {
+func write(logPrefix string, message ...interface{}) {
 	msg := fmt.Sprintln(message...)
-	print(*l.level, logPrefix, msg)
+	print(logLevel, logPrefix, msg)
 }
 
-func (l *logger) writef(logPrefix string, message string, any ...interface{}) {
+func writef(logPrefix string, message string, any ...interface{}) {
 	msg := fmt.Sprintf(message, any...)
-	print(*l.level, logPrefix, msg)
+	print(logLevel, logPrefix, msg)
 }
 
 func print(level int, logPrefix string, msg string) {

@@ -2,14 +2,11 @@ package pluginManager
 
 import (
 	"encoding/json"
-	"server/logger"
-
 	"net"
 	"os"
+	log "server/logger"
 	"sync"
 )
-
-var debugLevel int
 
 type response struct {
 	Method string
@@ -24,9 +21,6 @@ type Manager struct {
 }
 
 func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{})) {
-	debugLevel = logger.GetDebugLevel()
-
-	log := logger.New(&debugLevel)
 
 	if err := os.RemoveAll(m.SockAddr); err != nil {
 		log.Error(err)
@@ -67,8 +61,6 @@ func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{}))
 func makeError(id int, err error) []byte {
 	var msg string
 
-	log := logger.New(&debugLevel)
-
 	ok := false
 	if err == nil {
 		ok = true
@@ -94,7 +86,6 @@ func makeError(id int, err error) []byte {
 }
 
 func makeResponse(id int, singleArg interface{}) []byte {
-	log := logger.New(&debugLevel)
 
 	arg := make(map[string]interface{})
 	arg["0"] = singleArg

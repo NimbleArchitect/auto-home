@@ -4,7 +4,7 @@ import (
 	"server/deviceManager"
 	"server/globals"
 	"server/homeManager/pluginManager"
-	"server/logger"
+	log "server/logger"
 	"strings"
 	"sync"
 	"time"
@@ -12,8 +12,6 @@ import (
 
 	"github.com/dop251/goja"
 )
-
-var debugLevel int
 
 type JavascriptVM struct {
 	waitGroup   sync.Mutex
@@ -45,8 +43,6 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 
 	var val *goja.Object
 	var ok bool
-
-	log := logger.New(&debugLevel)
 
 	if r.runtime == nil {
 		return nil, nil
@@ -133,8 +129,6 @@ func (r *JavascriptVM) RunJSPlugin(pluginName string, fName string, args map[str
 // Process main entry point after a trigger, this allows processing the event data
 func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList) {
 	var dev jsDevice
-
-	log := logger.New(&debugLevel)
 
 	log.Info("process triggered")
 

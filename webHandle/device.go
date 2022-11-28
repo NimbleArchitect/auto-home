@@ -4,7 +4,7 @@ import (
 	"errors"
 	"server/deviceManager"
 	home "server/homeManager"
-	"server/logger"
+	log "server/logger"
 	"strings"
 )
 
@@ -30,7 +30,6 @@ func (h *Handler) regHubList(d jsonHub, clientId string) error {
 }
 
 func (h *Handler) regDeviceList(d jsonDevice, clientId string) error {
-	log := logger.New(&debugLevel)
 
 	n := deviceManager.NewDevice(h.HomeManager.MaxPropertyHistory)
 	n.Description = d.Description

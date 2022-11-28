@@ -5,21 +5,18 @@ import (
 	"errors"
 	"os"
 	"path"
-	"sync"
-	"time"
-
 	"server/deviceManager"
 	"server/globals"
 	"server/groupManager"
 	"server/homeManager/clientConnector"
 	js "server/homeManager/js"
 	"server/homeManager/pluginManager"
-	"server/logger"
+	log "server/logger"
+	"sync"
+	"time"
 
 	"github.com/dop251/goja"
 )
-
-var debugLevel int
 
 type Manager struct {
 	// homeManager
@@ -63,7 +60,6 @@ type eventHistory struct {
 }
 
 func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, maxPropertyHistory int, homePath string) *Manager {
-	debugLevel = logger.GetDebugLevel()
 
 	// log := logger.New("NewManager", &debugLevel)
 
@@ -129,7 +125,6 @@ func (m *Manager) DeviceWindow(deviceId string) map[string]int64 {
 }
 
 func (m *Manager) SaveSystem() {
-	log := logger.New(&debugLevel)
 
 	// log.Println("saving system configuration")
 
@@ -150,7 +145,6 @@ func (m *Manager) SaveSystem() {
 
 func (m *Manager) LoadSystem() {
 	// var window map[string]map[string]int64
-	log := logger.New(&debugLevel)
 
 	log.Info("loading system configuration")
 
@@ -193,7 +187,6 @@ func (m *Manager) LoadSystem() {
 }
 
 func (m *Manager) initVMs(plugs *pluginManager.Plugin) {
-	log := logger.New(&debugLevel)
 
 	m.compiledScripts = js.LoadAllScripts(m.scriptPath)
 
@@ -221,7 +214,6 @@ func (m *Manager) initVMs(plugs *pluginManager.Plugin) {
 }
 
 func (m *Manager) ReloadVMs() {
-	log := logger.New(&debugLevel)
 
 	log.Info("reloading javascript VMs, please wait")
 	for {
@@ -249,13 +241,12 @@ func (m *Manager) ReloadVMs() {
 }
 
 func (m *Manager) PushVMID(id int) {
-	log := logger.New(&debugLevel)
+
 	log.Info("release VM id:", id)
 	m.chActiveVM <- id
 }
 
 func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
-	log := logger.New(&debugLevel)
 
 	tryagain := true
 
@@ -285,7 +276,6 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 
 // Trigger is called one at a time with the deviceid
 func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}) error {
-	log := logger.New(&debugLevel)
 
 	log.Info("start Trigger:", id)
 
@@ -355,7 +345,6 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 }
 
 func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props []map[string]interface{}) js.JSPropsList {
-	log := logger.New(&debugLevel)
 
 	newdev := js.NewJSDevice()
 
@@ -437,7 +426,7 @@ func (m *Manager) Shutdown() {
 }
 
 func (m *Manager) runStartScript() {
-	log := logger.New(&debugLevel)
+
 	// called during startup to run the server onstart function
 
 	vm, id := m.GetNextVM()

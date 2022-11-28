@@ -1,14 +1,11 @@
 package globals
 
 import (
-	"server/logger"
 	"sync"
 	"time"
 
 	"github.com/dop251/goja"
 )
-
-var debugLevel int
 
 type Global struct {
 	lock   sync.Mutex
@@ -17,8 +14,6 @@ type Global struct {
 }
 
 func New() *Global {
-	debugLevel = logger.GetDebugLevel()
-
 	return &Global{
 		lock:   sync.Mutex{},
 		vars:   make(map[string]interface{}),

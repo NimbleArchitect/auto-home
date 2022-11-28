@@ -9,11 +9,9 @@ import (
 	"path"
 	event "server/eventManager"
 	home "server/homeManager"
-	"server/logger"
+	log "server/logger"
 	"sync"
 )
-
-var debugLevel int
 
 type Handler struct {
 	ConfigPath string
@@ -49,7 +47,6 @@ type Handler struct {
 // }
 
 func (h *Handler) Shutdown() {
-	log := logger.New(&debugLevel)
 
 	log.Debug("lock start")
 	h.lockActionList.Lock()
@@ -65,8 +62,6 @@ func (h *Handler) Shutdown() {
 }
 
 func New(path string, publicPath string, evtMgr *event.Manager, homeMgr *home.Manager, hostAddress string) *Handler {
-	debugLevel = logger.GetDebugLevel()
-
 	return &Handler{
 		ConfigPath:   path,
 		EventManager: evtMgr,
@@ -81,7 +76,6 @@ func New(path string, publicPath string, evtMgr *event.Manager, homeMgr *home.Ma
 }
 
 func (h *Handler) SaveSystem() {
-	log := logger.New(&debugLevel)
 
 	log.Info("saving web configuration")
 
@@ -97,7 +91,6 @@ func (h *Handler) SaveSystem() {
 }
 
 func (h *Handler) LoadSystem() {
-	log := logger.New(&debugLevel)
 
 	log.Info("loading web configuration")
 

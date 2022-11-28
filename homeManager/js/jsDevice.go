@@ -3,7 +3,7 @@ package js
 import (
 	"server/booltype"
 	"server/deviceManager"
-	"server/logger"
+	log "server/logger"
 	"strconv"
 
 	"github.com/dop251/goja"
@@ -169,7 +169,6 @@ func (d *jsDevice) Get(name string) interface{} {
 }
 
 func (d *jsDevice) Set(name string, value string) {
-	log := logger.New(&debugLevel)
 
 	for _, v := range d.propDial {
 		if v.Name == name {
