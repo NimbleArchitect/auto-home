@@ -102,14 +102,6 @@ func (d *jsDevice) GetButton(name string) interface{} {
 				return nil
 			}),
 				nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
-
-			// jsObj.DefineAccessorProperty("last", d.js.runtime.ToValue(func(value int) interface{} {
-			// 	if val, ok := d.liveDevice.ButtonHistory(name, value); ok {
-			// 		return val
-			// 	}
-			// 	return nil
-			// }),
-			// 	nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
 		}
 
 		// also add previous as a readonly property

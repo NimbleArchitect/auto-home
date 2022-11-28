@@ -3,13 +3,26 @@ package logger
 import (
 	"fmt"
 	"os"
+	"time"
 )
+
+var isSystemd bool
 
 type logger struct {
 	location string
 	// 0 = errors only, 1 = errors + debug, 2 = trace + debug + errors
 	level *int
 }
+
+func init() {
+	// if val, ok := os.LookupEnv("INVOCATION_ID"); ok {
+	// 	if len(val) > 0 {
+	// 		isSystemd = true
+	// 	}
+	// }
+}
+
+// TODO: need to automatically pickup the function name the functions are called from
 
 func New(location string, level *int) *logger {
 	return &logger{location: location, level: level}
@@ -62,30 +75,25 @@ func (l *logger) Trace(msg ...interface{}) {
 }
 
 func (l *logger) write(logPrefix string, message ...interface{}) {
-	var msg string
-	var prefix string
-
-	msg = fmt.Sprintln(message...)
-
-	if *l.level > 0 {
-		prefix = logPrefix + "F:" + l.location + ":"
-	} else {
-		prefix = ""
-	}
-
-	fmt.Print(prefix, msg)
+	msg := fmt.Sprintln(message...)
+	print(*l.level, logPrefix, l.location, msg)
 }
 
-func (l *logger) writef(logPrefix string, msg string, any ...interface{}) {
+func (l *logger) writef(logPrefix string, message string, any ...interface{}) {
+	msg := fmt.Sprintf(message, any...)
+	print(*l.level, logPrefix, l.location, msg)
+}
+
+func print(level int, logPrefix string, location string, msg string) {
 	var prefix string
-
-	msg = fmt.Sprintf(msg, any...)
-
-	if *l.level > 0 {
-		prefix = logPrefix + "F:" + l.location + ":"
+	if level > 0 {
+		prefix = logPrefix + "F:" + location + ":"
 	} else {
 		prefix = ""
 	}
 
+	if !isSystemd {
+		fmt.Print(time.Now().Local().Format("2006/01/02 15:04:05 "))
+	}
 	fmt.Print(prefix, msg)
 }

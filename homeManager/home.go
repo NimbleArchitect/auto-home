@@ -265,7 +265,7 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 		select {
 		case id := <-m.chActiveVM:
 			if len(m.activeVMs) >= id {
-				log.Infof("selected javascript VM #%d", id)
+				log.Infof("selected javascript VM #%d\n", id)
 				return m.activeVMs[id], id
 			}
 			tryagain = false
