@@ -49,7 +49,7 @@ type Handler struct {
 // }
 
 func (h *Handler) Shutdown() {
-	log := logger.New("Shutdown", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Debug("lock start")
 	h.lockActionList.Lock()
@@ -81,7 +81,7 @@ func New(path string, publicPath string, evtMgr *event.Manager, homeMgr *home.Ma
 }
 
 func (h *Handler) SaveSystem() {
-	log := logger.New("SaveSystem", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("saving web configuration")
 
@@ -97,7 +97,7 @@ func (h *Handler) SaveSystem() {
 }
 
 func (h *Handler) LoadSystem() {
-	log := logger.New("LoadSystem", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("loading web configuration")
 

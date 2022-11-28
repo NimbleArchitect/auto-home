@@ -65,7 +65,7 @@ func (d *Device) SwitchAsMap() map[string]SwitchProperty {
 }
 
 func (d *Device) SetSwitch(name string, property *SwitchProperty) {
-	log := logger.New("SetSwitch", &debugLevel)
+	log := logger.New(&debugLevel)
 	prop, ok := d.PropertySwitch[name]
 	if !ok {
 		duration := d.repeatWindow[name]
@@ -102,7 +102,7 @@ func (d *Device) SwitchValue(name string) (booltype.BoolType, bool) {
 
 // updates the live device
 func (d *Device) WriteSwitchValue(name string, value string) {
-	log := logger.New("WriteSwitchValue", &debugLevel)
+	log := logger.New(&debugLevel)
 	log.Debug("d.Id =", d.Id)
 	if d.clientConnection != nil {
 		if writer := d.clientConnection.ClientWriter(d.ClientId); writer != nil {
@@ -116,7 +116,7 @@ func (d *Device) WriteSwitchValue(name string, value string) {
 
 // SetSwitchValue updates the internal value and calls the writer to send the updated value back to the cient
 func (d *Device) SetSwitchValue(name string, value string) {
-	log := logger.New("SetSwitchValue", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("set switch", name, value)
 
@@ -176,7 +176,7 @@ func (d *Device) Map2Switch(props map[string]interface{}) (*SwitchProperty, erro
 	var prop SwitchProperty
 	var err error
 
-	log := logger.New("Map2Switch", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("reading switch property")
 	if v, ok := props["name"]; !ok {

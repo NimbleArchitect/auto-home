@@ -3,13 +3,14 @@ package logger
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 	"time"
 )
 
 var isSystemd bool
 
 type logger struct {
-	location string
 	// 0 = errors only, 1 = errors + debug, 2 = trace + debug + errors
 	level *int
 }
@@ -24,8 +25,8 @@ func init() {
 
 // TODO: need to automatically pickup the function name the functions are called from
 
-func New(location string, level *int) *logger {
-	return &logger{location: location, level: level}
+func New(level *int) *logger {
+	return &logger{level: level}
 }
 
 func GetDebugLevel() int {
@@ -76,17 +77,29 @@ func (l *logger) Trace(msg ...interface{}) {
 
 func (l *logger) write(logPrefix string, message ...interface{}) {
 	msg := fmt.Sprintln(message...)
-	print(*l.level, logPrefix, l.location, msg)
+	print(*l.level, logPrefix, msg)
 }
 
 func (l *logger) writef(logPrefix string, message string, any ...interface{}) {
 	msg := fmt.Sprintf(message, any...)
-	print(*l.level, logPrefix, l.location, msg)
+	print(*l.level, logPrefix, msg)
 }
 
-func print(level int, logPrefix string, location string, msg string) {
+func print(level int, logPrefix string, msg string) {
 	var prefix string
 	if level > 0 {
+		pc := make([]uintptr, 2)
+		runtime.Callers(3, pc)
+		f := runtime.FuncForPC(pc[0])
+		location := f.Name()
+		if location == "server/logger.(*logger).Debug" {
+			f := runtime.FuncForPC(pc[1])
+			location = f.Name()
+		}
+
+		path := strings.Split(location, "/")
+		location = path[len(path)-1]
+
 		prefix = logPrefix + "F:" + location + ":"
 	} else {
 		prefix = ""

@@ -26,7 +26,7 @@ type Manager struct {
 func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{})) {
 	debugLevel = logger.GetDebugLevel()
 
-	log := logger.New("Start", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	if err := os.RemoveAll(m.SockAddr); err != nil {
 		log.Error(err)
@@ -67,7 +67,7 @@ func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{}))
 func makeError(id int, err error) []byte {
 	var msg string
 
-	log := logger.New("makeError", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	ok := false
 	if err == nil {
@@ -94,7 +94,7 @@ func makeError(id int, err error) []byte {
 }
 
 func makeResponse(id int, singleArg interface{}) []byte {
-	log := logger.New("makeResponse", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	arg := make(map[string]interface{})
 	arg["0"] = singleArg

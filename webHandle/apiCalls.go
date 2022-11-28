@@ -29,7 +29,7 @@ func (h *Handler) register(req requestInfoBlock) {
 	var tmp Generic
 	var hub jsonHub
 	var device jsonDevice
-	log := logger.New("register", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	err := json.Unmarshal(req.Body, &tmp)
 	if err != nil {
@@ -81,7 +81,7 @@ func (h *Handler) register(req requestInfoBlock) {
 func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 	var jEvent JsonEvent
 
-	log := logger.New("processEvent", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	// scanner := bufio.NewScanner(r.Body)
 	// for scanner.Scan() {
@@ -123,7 +123,7 @@ func (h *Handler) processEvent(req requestInfoBlock, clientId string) {
 }
 
 func (h *Handler) callV1api(req requestInfoBlock) {
-	log := logger.New("callV1api", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Debug("req.Components[1] =", req.Components[1])
 
@@ -189,7 +189,7 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 }
 
 func (h *Handler) isConnected(req requestInfoBlock) bool {
-	log := logger.New("isConnected", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Debug("header:", req.Request.Header)
 
@@ -212,7 +212,7 @@ func (h *Handler) isConnected(req requestInfoBlock) bool {
 func (h *Handler) doLogin(req requestInfoBlock) bool {
 	var login userLogin
 
-	log := logger.New("doLogin", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	now := time.Now()
 
@@ -272,7 +272,7 @@ func (h *Handler) doLogin(req requestInfoBlock) bool {
 
 // doAction checks the sessionid and actionid in the requestInfoBlock and returns a matching sessionState and a success bool
 func (h *Handler) doActions(req requestInfoBlock) (sessionState, bool) {
-	log := logger.New("doActions", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	val, ok := h.session[req.Session]
 	if !ok {

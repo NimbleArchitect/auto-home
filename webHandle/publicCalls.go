@@ -7,7 +7,7 @@ import (
 )
 
 func (h *Handler) showPage(req requestInfoBlock) {
-	log := logger.New("showPage", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Debug(req.Components[0])
 

@@ -128,7 +128,7 @@ func (c *PluginConnector) writeB(b []byte) {
 func (c *PluginConnector) handle() {
 	var buf []byte
 
-	log := logger.New("handle", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	defer c.c.Close()
 	chError := make(chan error)
@@ -184,7 +184,7 @@ func (c *PluginConnector) handle() {
 func (c *PluginConnector) decode(buf []byte) {
 	var generic Generic
 
-	log := logger.New("decode", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	err := json.Unmarshal(buf, &generic)
 	if err != nil {
@@ -199,7 +199,7 @@ func (c *PluginConnector) decode(buf []byte) {
 }
 
 func (c *PluginConnector) processMessage(obj Generic) error {
-	log := logger.New("processMessage", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	// runtime := goja.New()
 	// runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())

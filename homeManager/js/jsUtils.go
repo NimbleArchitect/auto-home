@@ -33,7 +33,7 @@ func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
 //
 // dev is then updated with the new properties and values
 func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props JSPropsList, dev *jsDevice) {
-	log := logger.New("processOnTrigger", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	_, ok := r.deviceState[deviceid]
 	if !ok {
@@ -122,7 +122,7 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int) {
 	var liveDevice *deviceManager.Device
 
-	log := logger.New("processOnChange", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	tmp, ok := r.deviceState[deviceid]
 	if ok {
@@ -213,7 +213,7 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 	var finishAfterGroups bool
 	var searchList []jsGroup
 
-	log := logger.New("processGroupChange", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	// first get a list of groups that have our device as a member
 	for _, group := range r.groups {
@@ -305,7 +305,7 @@ func (r *JavascriptVM) ParentsOf(name string) map[string]jsGroup {
 //
 //	change so need loading everytime the vm is called, currently sets up home and plugin obects
 func (r *JavascriptVM) setJsGlobal() jsHome {
-	log := logger.New("setJsGlobal", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	home := jsHome{
 		vm:      r,

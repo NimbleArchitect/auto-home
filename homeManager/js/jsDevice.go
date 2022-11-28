@@ -169,7 +169,7 @@ func (d *jsDevice) Get(name string) interface{} {
 }
 
 func (d *jsDevice) Set(name string, value string) {
-	log := logger.New("Set", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	for _, v := range d.propDial {
 		if v.Name == name {

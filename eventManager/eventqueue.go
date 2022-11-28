@@ -51,7 +51,7 @@ func NewManager(eventQueueLen int, bufferLen int) *Manager {
 }
 
 func (e *Manager) Shutdown() {
-	log := logger.New("Shutdown", &debugLevel)
+	log := logger.New(&debugLevel)
 	log.Trace("start")
 	e.closeEventManager <- true
 	e.closeEventLoop <- true
@@ -60,7 +60,7 @@ func (e *Manager) Shutdown() {
 
 func (e *Manager) EventManager() {
 	var eventCount, headPos int
-	log := logger.New("EventManager", &debugLevel)
+	log := logger.New(&debugLevel)
 	log.Info("starting EventManager")
 
 	for {
@@ -103,7 +103,7 @@ type EventLoop interface {
 }
 
 func (e *Manager) EventLoop(looper EventLoop) {
-	log := logger.New("EventLoop", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("starting EventLoop")
 	loopId := 0

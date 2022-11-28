@@ -129,7 +129,7 @@ func (m *Manager) DeviceWindow(deviceId string) map[string]int64 {
 }
 
 func (m *Manager) SaveSystem() {
-	log := logger.New("SaveSystem", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	// log.Println("saving system configuration")
 
@@ -150,7 +150,7 @@ func (m *Manager) SaveSystem() {
 
 func (m *Manager) LoadSystem() {
 	// var window map[string]map[string]int64
-	log := logger.New("LoadSystem", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("loading system configuration")
 
@@ -193,7 +193,7 @@ func (m *Manager) LoadSystem() {
 }
 
 func (m *Manager) initVMs(plugs *pluginManager.Plugin) {
-	log := logger.New("initVMs", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	m.compiledScripts = js.LoadAllScripts(m.scriptPath)
 
@@ -221,7 +221,7 @@ func (m *Manager) initVMs(plugs *pluginManager.Plugin) {
 }
 
 func (m *Manager) ReloadVMs() {
-	log := logger.New("ReloadVMs", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("reloading javascript VMs, please wait")
 	for {
@@ -249,13 +249,13 @@ func (m *Manager) ReloadVMs() {
 }
 
 func (m *Manager) PushVMID(id int) {
-	log := logger.New("PushVMID", &debugLevel)
+	log := logger.New(&debugLevel)
 	log.Info("release VM id:", id)
 	m.chActiveVM <- id
 }
 
 func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
-	log := logger.New("GetNextVM", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	tryagain := true
 
@@ -285,7 +285,7 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 
 // Trigger is called one at a time with the deviceid
 func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}) error {
-	log := logger.New("Trigger", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("start Trigger:", id)
 
@@ -355,7 +355,7 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 }
 
 func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props []map[string]interface{}) js.JSPropsList {
-	log := logger.New("verifyMap2jsDevice", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	newdev := js.NewJSDevice()
 
@@ -437,7 +437,7 @@ func (m *Manager) Shutdown() {
 }
 
 func (m *Manager) runStartScript() {
-	log := logger.New("runStartScript", &debugLevel)
+	log := logger.New(&debugLevel)
 	// called during startup to run the server onstart function
 
 	vm, id := m.GetNextVM()

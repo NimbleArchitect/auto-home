@@ -38,7 +38,7 @@ type settings struct {
 func main() {
 	debugLevel = logger.GetDebugLevel()
 
-	log := logger.New("main", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("starting with", runtime.NumCPU(), "CPUs")
 	done := make(chan bool, 1)
@@ -145,7 +145,7 @@ func main() {
 // }
 
 func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
-	log := logger.New("StartServer", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	quicConf := &quic.Config{
 		KeepAlivePeriod: 500 * time.Second,
@@ -171,7 +171,7 @@ func StartServer(done chan bool, handle *webHandle.Handler, homeDir string) {
 }
 
 func StartWebsite(handle *webHandle.Handler, homeDir string) {
-	log := logger.New("StartWebSite", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	server := &http.Server{
 		Handler: handle,

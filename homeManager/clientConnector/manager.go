@@ -30,7 +30,7 @@ func NewManager() *Manager {
 }
 
 func (m *Manager) ClientWriter(clientId string) *ClientWriter {
-	log := logger.New("ClientWriter", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	if len(m.writers) == 0 {
 		log.Debug("writers = nil")
@@ -49,7 +49,7 @@ func (m *Manager) ClientWriter(clientId string) *ClientWriter {
 }
 
 func (m *Manager) SetClient(clientId string, w http.ResponseWriter, r *http.Request) {
-	log := logger.New("SetClient", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Debug("clientId", clientId)
 	val, ok := m.writers[clientId]
@@ -84,7 +84,7 @@ func (m *Manager) SetClient(clientId string, w http.ResponseWriter, r *http.Requ
 
 // Write writes to the /actions/uuid channel opened from the client
 func (c *ClientWriter) Write(text string) (int, error) {
-	log := logger.New("Write", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Debug("http response Write:", text)
 	log.Debug("clientWrite:", c.responseWriter)

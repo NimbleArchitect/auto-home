@@ -17,7 +17,7 @@ type Caller struct {
 func (c *Caller) Run(values []goja.Value) map[string]interface{} {
 	var t trigger
 
-	log := logger.New("Run", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	nextId := c.c.WaitAdd()
 

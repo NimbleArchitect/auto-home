@@ -59,17 +59,17 @@ func (h *jsHome) GetDevicesStartName(s string) []jsDevice {
 	return out
 }
 
-func (h *jsHome) GetGroupByName(s string) []jsDevice {
-	var out []jsDevice
+// func (h *jsHome) GetGroupByName(s string) []jsDevice {
+// 	var out []jsDevice
 
-	for k, v := range h.devices {
-		if strings.HasPrefix(k, s) {
-			out = append(out, v)
-		}
-	}
+// 	for k, v := range h.devices {
+// 		if strings.HasPrefix(k, s) {
+// 			out = append(out, v)
+// 		}
+// 	}
 
-	return out
-}
+// 	return out
+// }
 
 // Sleep pauses the vm execution for the specified number of seconds
 func (h *jsHome) Sleep(seconds int) {

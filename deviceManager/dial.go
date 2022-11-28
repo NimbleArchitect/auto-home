@@ -66,7 +66,7 @@ func (d *Device) DialAsMap() map[string]DialProperty {
 }
 
 func (d *Device) SetDial(name string, property *DialProperty) {
-	log := logger.New("SetDial", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	prop, ok := d.PropertyDial[name]
 	if !ok {
@@ -104,7 +104,7 @@ func (d *Device) DialValue(name string) (int, bool) {
 
 // updates the live device
 func (d *Device) WriteDialValue(name string, value int) {
-	log := logger.New("WriteDialValue", &debugLevel)
+	log := logger.New(&debugLevel)
 	log.Debug("d.Id =", d.Id)
 
 	if d.clientConnection != nil {
@@ -117,7 +117,7 @@ func (d *Device) WriteDialValue(name string, value int) {
 
 // Was UpdateDial
 func (d *Device) SetDialValue(name string, value int) {
-	log := logger.New("SetDialValue", &debugLevel)
+	log := logger.New(&debugLevel)
 	log.Info("set dial", name, value)
 
 	property, ok := d.PropertyDial[name]
@@ -173,7 +173,7 @@ func (d *Device) Map2Dial(props map[string]interface{}) (*DialProperty, error) {
 	var prop DialProperty
 	var err error
 
-	log := logger.New("Map2Dial", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("reading dial property")
 	if v, ok := props["name"]; !ok {

@@ -44,7 +44,7 @@ func New(configPath string) *Manager {
 }
 
 func (m *Manager) Save() {
-	log := logger.New("Save", &debugLevel)
+	log := logger.New(&debugLevel)
 	log.Info("saving groups")
 
 	groupList := make(map[string]onDiskGroup)
@@ -74,7 +74,7 @@ func (m *Manager) Save() {
 func (m *Manager) Load() {
 	var groupList map[string]onDiskGroup
 
-	log := logger.New("Load", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	file, err := os.ReadFile(path.Join(m.configPath, "groups.json"))
 	if !errors.Is(err, os.ErrNotExist) {

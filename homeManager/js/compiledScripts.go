@@ -18,7 +18,7 @@ func loadScript(filename string) *goja.Program {
 	var prog *goja.Program
 	var err error
 
-	log := logger.New("loadScript", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	cfile, err := os.ReadFile(filename)
 	if err != nil {
@@ -43,7 +43,7 @@ func loadScript(filename string) *goja.Program {
 func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *globals.Global) (*JavascriptVM, error) {
 	var console jsConsole
 
-	log := logger.New("NewVM", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	runtime := goja.New()
 	runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
@@ -105,7 +105,7 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *global
 func LoadAllScripts(path string) CompiledScripts {
 	debugLevel = logger.GetDebugLevel()
 
-	log := logger.New("LoadAllScripts", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	compiled := make(map[string]*goja.Program)
 

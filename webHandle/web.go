@@ -29,7 +29,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Actual web connection start
 	var err error
 
-	log := logger.New("ServeHTTP", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	req := requestInfoBlock{
 		Path:     cleanPath(r.URL.Path),

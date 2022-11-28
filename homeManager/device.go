@@ -6,7 +6,7 @@ import (
 )
 
 func (m *Manager) AddHub(h Hub) error {
-	log := logger.New("AddHub", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("adding Hub:", h.Id)
 
@@ -37,7 +37,7 @@ func (m *Manager) DeviceExistsWithClientId(deviceId string, clientId string) boo
 }
 
 func (m *Manager) AddDevice(d *deviceManager.Device, clientId string) error {
-	log := logger.New("AddDevice", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	// TODO: this needs to be merged with NewDevice
 	log.Info("adding device:", d.Id)

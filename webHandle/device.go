@@ -30,7 +30,7 @@ func (h *Handler) regHubList(d jsonHub, clientId string) error {
 }
 
 func (h *Handler) regDeviceList(d jsonDevice, clientId string) error {
-	log := logger.New("regDeviceList", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	n := deviceManager.NewDevice(h.HomeManager.MaxPropertyHistory)
 	n.Description = d.Description

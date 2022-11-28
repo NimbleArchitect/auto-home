@@ -46,7 +46,7 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	var val *goja.Object
 	var ok bool
 
-	log := logger.New("RunJS", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	if r.runtime == nil {
 		return nil, nil
@@ -134,7 +134,7 @@ func (r *JavascriptVM) RunJSPlugin(pluginName string, fName string, args map[str
 func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPropsList) {
 	var dev jsDevice
 
-	log := logger.New("Process", &debugLevel)
+	log := logger.New(&debugLevel)
 
 	log.Info("process triggered")
 
