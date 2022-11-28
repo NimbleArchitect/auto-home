@@ -20,7 +20,7 @@ type jsDevice struct {
 	liveDevice *deviceManager.Device // points back to the device stored within the deviceManager
 }
 
-func (d *jsDevice) GetDial(name string) interface{} {
+func (d *jsDevice) GetDial(name string) *goja.Object {
 	if val, ok := d.propDial[name]; ok {
 		// create a js object so we cn add a new property
 		jsVal := d.js.runtime.ToValue(val)
@@ -48,7 +48,7 @@ func (d *jsDevice) GetDial(name string) interface{} {
 	return nil
 }
 
-func (d *jsDevice) GetSwitch(name string) interface{} {
+func (d *jsDevice) GetSwitch(name string) *goja.Object {
 
 	if val, ok := d.propSwitch[name]; ok {
 		// create a js object so we cn add a new property
@@ -85,7 +85,7 @@ func (d *jsDevice) GetSwitch(name string) interface{} {
 	return nil
 }
 
-func (d *jsDevice) GetButton(name string) interface{} {
+func (d *jsDevice) GetButton(name string) *goja.Object {
 	if val, ok := d.propButton[name]; ok {
 		// create a js object so we cn add a new property
 		jsVal := d.js.runtime.ToValue(val)
@@ -121,7 +121,7 @@ func (d *jsDevice) GetButton(name string) interface{} {
 	return nil
 }
 
-func (d *jsDevice) GetText(name string) interface{} {
+func (d *jsDevice) GetText(name string) *goja.Object {
 	if val, ok := d.propText[name]; ok {
 		// create a js object so we cn add a new property
 		jsVal := d.js.runtime.ToValue(val)
@@ -149,7 +149,8 @@ func (d *jsDevice) GetText(name string) interface{} {
 	return nil
 }
 
-func (d *jsDevice) Get(name string) interface{} {
+func (d *jsDevice) Get(name string) *goja.Object {
+	// TODO: check if the get function needs to return a goja object rather than an interface
 	if obj := d.GetDial(name); obj != nil {
 		return obj
 	}
