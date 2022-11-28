@@ -222,6 +222,8 @@ func (s *settings) eventDecode(data string) {
 			for _, event := range eventMsg.Data {
 				fmt.Println("event.Kind", event.Kind)
 				switch event.Kind {
+				case "zigbee_connectivity":
+					// slient ignore connectivity update
 				case "light":
 					parts := strings.Split(event.Id_v1, "/")
 					kind := parts[1]
