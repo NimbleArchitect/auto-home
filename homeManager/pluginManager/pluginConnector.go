@@ -208,6 +208,9 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 		}
 
 		switch field := m.Fields.(type) {
+		case nil:
+			// the recieved field is empty so run the jsCallBack with empty arguments
+			c.jsCallBack(m.Name, m.Call, make(map[string]interface{}))
 		case map[string]interface{}:
 			// TODO: is is worth capturing the return vars from the js call?
 			// run the js callback caller.Run
