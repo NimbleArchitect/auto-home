@@ -45,7 +45,10 @@ func (c *calendar) start() {
 			}
 			lastKnownTime = now
 			if next.date.Sub(now).Seconds() <= 0 {
-				go c.fireEvent(next.data)
+				// remove the event from the linked list
+				c.remove(next)
+				// then call fireEvent
+				c.fireEvent(next.data)
 				c.loadNextEvent()
 			}
 			time.Sleep(1 * time.Second)
@@ -90,7 +93,9 @@ func (c *calendar) add(t time.Time, event interface{}) error {
 		c.eventStart = &calendarEvent{nextEvent: &evt}
 		c.nextEvent = c.eventStart
 	} else {
+		// first we set the start point
 		this := c.eventStart
+		// then we can loop through each event one after the other
 		for {
 			if this.nextEvent.date.After(t) || this.nextEvent.nextEvent == nil {
 				evt.nextEvent = this.nextEvent
@@ -110,12 +115,40 @@ func (c *calendar) add(t time.Time, event interface{}) error {
 	return nil
 }
 
+func (c *calendar) remove(event *calendarEvent) {
+	var previous *calendarEvent
+	if event == nil {
+		return
+	}
+	if event == c.eventEnd {
+		return
+	}
+	if event == c.eventStart {
+		return
+	}
+
+	current := c.eventStart
+	for {
+		if current == event {
+			previous.nextEvent = current.nextEvent
+		}
+
+		previous = current
+		current = current.nextEvent
+		if current == c.eventEnd {
+			break
+		}
+	}
+}
+
 func (c *calendar) latest() *calendarEvent {
 	c.lock.Lock()
 	out := c.nextEvent
-	if out.nextEvent == nil {
+	c.lock.Unlock()
+
+	if out == nil {
 		out = nil
 	}
-	c.lock.Unlock()
+
 	return out
 }

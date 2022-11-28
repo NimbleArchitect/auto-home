@@ -134,7 +134,11 @@ func (p *plugin) Done() error {
 }
 
 func Connect() *plugin {
-	addr := os.Getenv("autohome_sockaddr")
+	addr, ok := os.LookupEnv("autohome_sockaddr")
+	if !ok {
+		log.Println("unable to get host address, are you running from within auto-home")
+		os.Exit(1)
+	}
 
 	conn, err := net.Dial("unix", addr)
 	if err != nil {
