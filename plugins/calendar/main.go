@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -62,12 +63,12 @@ func LoadEvents(c *calendar) {
 		RepeatCount: 4,
 		RepeatEvery: FLAG_MINUTE,
 	}
-	c.AddEvent(evt)
+	c.addEvent(evt)
 
 	evt = Event{
 		Id:          "newrand",
 		Created:     time.Now(),
-		NextTrigger: time.Date(2022, 11, 7, 16, 57, 00, 0, time.Local),
+		NextTrigger: time.Date(2022, 11, 28, 11, 20, 30, 0, time.Local),
 		CreatedBy:   "me",
 		Notify:      []string{"me"},
 		Msg:         "go home",
@@ -75,11 +76,11 @@ func LoadEvents(c *calendar) {
 		RepeatCount: 1,
 		RepeatEvery: FLAG_DAY,
 	}
-	c.AddEvent(evt)
+	c.addEvent(evt)
 
 }
 
-func (c *calendar) AddEvent(event Event) {
+func (c *calendar) addEvent(event Event) {
 
 	event.updateNextTrigger()
 
@@ -89,6 +90,17 @@ func (c *calendar) AddEvent(event Event) {
 	if err := c.add(d, event); err != nil {
 		fmt.Println("error adding event:", err)
 	}
+}
+
+func (c *calendar) AddEvent(data []byte) {
+	var event Event
+
+	err := json.Unmarshal(data, &event)
+	if err != nil {
+
+	}
+
+	c.addEvent(event)
 }
 
 func (c *calendar) fireEvent(event interface{}) {

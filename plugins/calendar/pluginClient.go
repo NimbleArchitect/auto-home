@@ -266,6 +266,8 @@ func (p *plugin) processMessage(obj Generic) error {
 		} else {
 			v := reflect.ValueOf(raw)
 			callArgs = []reflect.Value{v}
+
+			// TODO: callArgs has to be a string, this means I need a way to convert between the json string and the actual struct
 			response = function.Call(callArgs)
 		}
 
