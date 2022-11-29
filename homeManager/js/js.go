@@ -31,6 +31,7 @@ type JavascriptVM struct {
 
 func (r *JavascriptVM) Wait() {
 	r.waitGroup.Lock()
+
 	r.waitGroup.Unlock()
 }
 
@@ -72,7 +73,7 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	call, ok := goja.AssertFunction(jsFunction)
 	if !ok || call == nil {
 		// slient ignore as the function dosent exist in javascript
-		log.Infof("function %s doesn't exist for %s, skipping", fName, deviceid)
+		log.Infof("function %s doesn't exist for %s, skipping\n", fName, deviceid)
 		return nil, nil
 	}
 
