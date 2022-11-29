@@ -18,6 +18,11 @@ func init() {
 	// 	}
 	// }
 
+	parentpid := os.Getppid()
+	if parentpid == 1 {
+		isSystemd = true
+	}
+
 	if val, ok := os.LookupEnv("AH_LOGLEVEL"); ok {
 		if val == "debug" {
 			logLevel = 1
