@@ -123,9 +123,11 @@ func (m *Manager) WebCallPlugin(pluginName string, callName string, postData map
 	if plugin := m.plugins.Get(pluginName); plugin != nil {
 		if caller := plugin.Get(callName); caller != nil {
 			if len(postData) > 0 {
-				out = caller.Run([]goja.Value{goja.New().ToValue(postData)})
+				v := goja.New().ToValue(postData)
+				out = caller.Run(v.Export())
 			} else {
-				out = caller.Run([]goja.Value{})
+				var empty goja.Value
+				out = caller.Run(empty)
 			}
 			data, _ := json.Marshal(out)
 			return data

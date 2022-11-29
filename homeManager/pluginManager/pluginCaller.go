@@ -14,10 +14,7 @@ type Caller struct {
 }
 
 // Run sends a call to the remote plugin and waits for a response
-func (c *Caller) Run(values []goja.Value) map[string]interface{} {
-	var t trigger
-
-	nextId := c.c.WaitAdd()
+func (c *Caller) RunMultiArgs(values []goja.Value) map[string]interface{} {
 
 	fields := make(map[int]interface{})
 
@@ -25,6 +22,16 @@ func (c *Caller) Run(values []goja.Value) map[string]interface{} {
 	for i, v := range values {
 		fields[i] = v.Export()
 	}
+
+	return c.Run(fields)
+
+}
+
+func (c *Caller) Run(fields interface{}) map[string]interface{} {
+	var t trigger
+
+	nextId := c.c.WaitAdd()
+
 	t.Name = c.Name
 	t.Call = c.Call
 	t.Fields = fields

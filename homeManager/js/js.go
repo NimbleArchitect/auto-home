@@ -17,14 +17,14 @@ type JavascriptVM struct {
 	waitGroup   sync.Mutex
 	global      *globals.Global
 	runtime     *goja.Runtime
-	deviceCode  map[string]*goja.Object
-	deviceState map[string]jsDevice
-	groupCode   map[string]*goja.Object
+	deviceCode  map[string]*goja.Object // list of compiled javascript device code that has been registered using the javascript set function, used to store onchange functions
+	deviceState map[string]jsDevice     //list of devices that the javascrip VM can use
+	groupCode   map[string]*goja.Object // list of compiled javascript group code that has been registered using the javascript set function
 	groups      map[string]jsGroup
 	userCode    map[string]*goja.Object
 	plugins     map[string]*goja.Object //vm's copy of all plugins attached to the plugin object
-	pluginCode  map[string]*goja.Object
-	pluginList  *pluginManager.Plugin // plugin connections, shared across all VMs
+	pluginCode  map[string]*goja.Object // list of compiled javascript plugin code that has been registered using the javascript set function
+	pluginList  *pluginManager.Plugin   // plugin connections, shared across all VMs
 	// users      map[string]jsUser
 	Updater DeviceUpdator
 }

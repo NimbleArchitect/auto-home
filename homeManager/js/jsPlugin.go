@@ -22,7 +22,7 @@ func (r *JavascriptVM) loadPlugins() {
 			localCall := *caller
 
 			thisPlugin.Set(name, func(values ...goja.Value) goja.Value {
-				out := localCall.Run(values)
+				out := localCall.RunMultiArgs(values)
 				if len(out) == 0 {
 					return goja.Undefined()
 				}
