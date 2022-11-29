@@ -61,7 +61,7 @@ Its also completly possible to script the kitchen lights group to automatically 
 the below table provides a list of devices and their current status
 | Client name | Device type | Description | Status |
 | ----------- | ----------- | ----------- | ------ |
-| device-hue | lights | Philips Hue (V2 Hub) | light on/off and brightness work eventstram |
+| device-hue | lights | Philips Hue (V2 Hub) | light on/off and brightness work eventstram also works |
 | device-custom | custom | custom switch provides a unix file device that forwards the incomming text to the server | working |
 
 
@@ -69,9 +69,9 @@ the below table provides a list of devices and their current status
 list of current plugins along with their status
 | Plugin name | Description | Status |
 | ------------- | ----------- |-------------|
-| Solar | detects sunrise/sunset | only isLight() and isDark() functions work |
+| Solar | detects sunrise/sunset | working, supports isLight/isDark and triggers onSunrise/onSunset events |
 | Telegram | sends bot message to group | working |
-| Calendar | allows setting events, also triggers on date/time events | broken |
+| Calendar | allows setting events, also triggers on date/time events | working |
 
 
 

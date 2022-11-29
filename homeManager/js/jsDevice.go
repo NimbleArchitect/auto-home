@@ -53,12 +53,15 @@ func (d *jsDevice) GetSwitch(name string) *goja.Object {
 	if val, ok := d.propSwitch[name]; ok {
 		// create a js object so we cn add a new property
 		jsVal := d.js.runtime.ToValue(val)
-		jsObj := d.js.runtime.CreateObject(jsVal.ToObject(d.js.runtime))
+		// jsObj := d.js.runtime.CreateObject(jsVal.ToObject(d.js.runtime))
+		jsProtoObj := jsVal.ToObject(d.js.runtime)
+		jsObj := d.js.runtime.CreateObject(jsProtoObj)
+
 		// add a readonly .latest propery that gets the live device property value
 		if d.liveDevice != nil {
-			jsObj.DefineAccessorProperty("latest", d.js.runtime.ToValue(func() interface{} {
+			jsObj.DefineAccessorProperty("latest", d.js.runtime.ToValue(func() *jsBool {
 				if val, ok := d.liveDevice.SwitchValue(name); ok {
-					return jsBool{
+					return &jsBool{
 						s: val.String(),
 						b: val.GetBool(),
 					}
@@ -69,10 +72,10 @@ func (d *jsDevice) GetSwitch(name string) *goja.Object {
 		}
 
 		// also add previous as a readonly property
-		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() jsBool {
+		jsObj.DefineAccessorProperty("previous", d.js.runtime.ToValue(func() *jsBool {
 			boolVal := booltype.BoolType{}
 			boolVal.Set(val.previous)
-			return jsBool{
+			return &jsBool{
 				s: boolVal.String(),
 				b: boolVal.GetBool(),
 			}

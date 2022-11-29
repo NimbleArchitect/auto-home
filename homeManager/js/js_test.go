@@ -100,36 +100,18 @@ func TestJsHomeObject(t *testing.T) {
 			funcScript: `return home.getDeviceById('test-1-id').get('switch1').previous.valueOf()`,
 			expected:   bool(false),
 		},
-		// TODO: needs finishing, values recieved are not correct
-		// {
-		// 	funcName:   "test_getDeviceById_switch2_value",
-		// 	funcScript: `return home.getDeviceById('test-1-id').get('switch2').value.valueOf()`,
-		// 	expected:   bool(false),
-		// }, {
-		// 	funcName:   "test_getDeviceById_switch2_previous",
-		// 	funcScript: `return home.getDeviceById('test-1-id').get('switch2').previous.valueOf()`,
-		// 	expected:   bool(true),
-		// },
+		// TODO: needs finishing, values recieved are not correct, object prototype isnt being called.
+		//  I shouldn't need to call .valueOf() manually
+		{
+			funcName:   "test_getDeviceById_switch2_value",
+			funcScript: `return home.getDeviceById('test-1-id').get('switch2').value.valueOf()`,
+			expected:   bool(false),
+		}, {
+			funcName:   "test_getDeviceById_switch2_previous",
+			funcScript: `return home.getDeviceById('test-1-id').get('switch2').previous.valueOf()`,
+			expected:   bool(true),
+		},
 	}
-
-	scriptFunctions := ""
-	for _, v := range table {
-		scriptFunctions += fmt.Sprintf(`%s(props) {
-		%s
-	},
-	`, v.funcName, v.funcScript)
-	}
-
-	jsScriptCode := fmt.Sprintf(`set("test1", {
-	%s
-})`, scriptFunctions[:len(scriptFunctions)-1])
-
-	vm, err := buildVmFromScript(jsScriptCode)
-	if err != nil {
-		t.Error("unable to build script:", err)
-	}
-
-	vm.deviceState = make(map[string]jsDevice)
 
 	dial := make(map[string]jsDial)
 	dial["dial1"] = jsDial{
@@ -157,6 +139,13 @@ func TestJsHomeObject(t *testing.T) {
 		flag:     jsFlag{},
 	}
 
+	jsScriptCode := createSetScriptFromTable("test1", table)
+	vm, err := buildVmFromScript(jsScriptCode)
+	if err != nil {
+		t.Error("unable to build script:", err)
+	}
+
+	vm.deviceState = make(map[string]jsDevice)
 	vm.deviceState["test-1-id"] = jsDevice{
 		js:         vm,
 		Name:       "test-1",
@@ -165,24 +154,24 @@ func TestJsHomeObject(t *testing.T) {
 		propSwitch: swi,
 	}
 
-	for i, v := range table {
-		out, err := vm.RunJS("test1", v.funcName, goja.Undefined())
+	for _, value := range table {
+		out, err := vm.RunJS("test1", value.funcName, goja.Undefined())
 		if err != nil {
-			t.Error("unable to call function", v.funcName, ":", err)
+			t.Error("unable to call function", value.funcName, ":", err)
 		}
 
-		switch v := v.expected.(type) {
+		switch v := value.expected.(type) {
 		case int64:
 			if out.ToInteger() != v {
-				t.Fatalf("check %d expected \"%d\", recieved \"%d\"", i, v, out.ToInteger())
+				t.Fatalf("check %s expected \"%d\", recieved \"%d\"", value.funcName, v, out.ToInteger())
 			}
 		case string:
 			if out.ToString().String() != v {
-				t.Fatalf("check %d expected \"%s\", recieved \"%s\"", i, v, out.ToString().String())
+				t.Fatalf("check %s expected \"%s\", recieved \"%s\"", value.funcName, v, out.ToString().String())
 			}
 		case bool:
 			if out.ToBoolean() != v {
-				t.Fatalf("check %d expected %t, recieved %t\"", i, v, out.ToBoolean())
+				t.Fatalf("check \"%s\" expected %t, recieved %t\"", value.funcName, v, out.ToBoolean())
 			}
 		default:
 			fmt.Printf("I don't know about type %T!\n", v)
@@ -190,6 +179,22 @@ func TestJsHomeObject(t *testing.T) {
 
 		// fmt.Println("out >>", out)
 	}
+}
+
+func createSetScriptFromTable(setName string, table []HomeObjectResult) string {
+	scriptFunctions := ""
+	for _, v := range table {
+		scriptFunctions += fmt.Sprintf(`%s(props) {
+		%s
+	},
+	`, v.funcName, v.funcScript)
+	}
+
+	jsScriptCode := fmt.Sprintf(`set("%s", {
+	%s
+})`, setName, scriptFunctions[:len(scriptFunctions)-1])
+
+	return jsScriptCode
 }
 
 func buildVmFromScript(script string) (*JavascriptVM, error) {
