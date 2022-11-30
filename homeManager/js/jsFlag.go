@@ -12,17 +12,11 @@ type jsFlag struct {
 }
 
 func (f *jsFlag) Has(flag int) bool {
-	if f.flag == flag {
-		return true
-	}
-	return false
+	return f.flag == flag
 }
 
 func (f *jsFlag) Not(flag int) bool {
-	if f.flag != flag {
-		return true
-	}
-	return false
+	return f.flag != flag
 }
 
 // set the should we process flag
