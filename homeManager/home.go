@@ -20,8 +20,9 @@ import (
 
 type Manager struct {
 	// homeManager
-	RecordHistory bool              // true = capture the history and save it to the history file, false = dont save history
-	eventHistory  *historyProcessor //TODO: finish history capture
+	RecordHistory   bool              // true = capture the history and save it to the history file, false = dont save history
+	isExternalEvent bool              // internal flag used to signal if the event happened from outside the house
+	eventHistory    *historyProcessor //TODO: finish history capture
 	// devices       map[string]Device
 	devices *deviceManager.Manager
 	hubs    map[string]Hub // hubs store a list of device references
@@ -77,12 +78,13 @@ func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, max
 	// p := pluginManager.Plugin{}
 
 	m := Manager{
-		configPath:    path.Join(homePath, "system"),
-		RecordHistory: recordHistory,
-		eventHistory:  &eventProc,
-		MaxVMCount:    preAllocateVMs,
-		chActiveVM:    make(chan int, preAllocateVMs),
-		scriptPath:    path.Join(homePath, "scripts"),
+		configPath:      path.Join(homePath, "system"),
+		RecordHistory:   recordHistory,
+		isExternalEvent: false, // by default events are considured internal to the house
+		eventHistory:    &eventProc,
+		MaxVMCount:      preAllocateVMs,
+		chActiveVM:      make(chan int, preAllocateVMs),
+		scriptPath:      path.Join(homePath, "scripts"),
 		// plugins:            &p,
 		devices:            deviceMgr,
 		groups:             groupManager.New(systemPath),
@@ -287,6 +289,17 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 	if vm == nil {
 		log.Error("invalid javascript vm")
 	} else {
+
+		// TODO: need to write a proper check function that disables the history recording when an external event happens
+		//  external events can be the doorbell being pressed or an external door being opened
+		//  for now I have hard coded two external events so I can test the history recording works as expected
+		if deviceid == "door-bell" || deviceid == "front-door" {
+			// setting isExternalEvent to false will disable the history recording while an external event is in play
+			m.isExternalEvent = false
+			// re-enable recording
+			defer func() { m.isExternalEvent = true }()
+		}
+
 		// TODO: somewhere I need to validate the properties so I only save valid states
 		log.Debug("state:", m.devices)
 
@@ -314,10 +327,11 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 
 		vm.Wait()
 
-		//now we have finished processing save the event to out history list
+		//now we have finished processing save the event to our internal history list
 		m.eventHistory.Add(event)
 
-		if m.RecordHistory {
+		// only record the history to a file if the user wants recording (RecordHistory) and if we are not processing an external event
+		if m.RecordHistory && !m.isExternalEvent {
 			// save history to file, we do this after processing the event so we have a quicker response to the event
 			fileData, err := json.Marshal(event)
 			if err != nil {

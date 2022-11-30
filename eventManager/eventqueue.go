@@ -24,7 +24,7 @@ type Manager struct {
 // }
 
 type EventMsg struct {
-	Id         string
+	Id         string // incomming message device ID
 	EventId    string
 	Properties []map[string]interface{}
 	Timestamp  time.Time

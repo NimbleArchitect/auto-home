@@ -63,6 +63,8 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *global
 		return nil, err
 	}
 
+	// TODO: the calling vm needs to wait for all threaded calls to finish before running to completion,
+	//  doing so will mean that threaded calls dont accidently get added to the history when they are external
 	err = runtime.Set("thread", vm.runAsThread)
 	if err != nil {
 		return nil, err
