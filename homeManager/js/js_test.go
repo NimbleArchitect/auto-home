@@ -96,6 +96,10 @@ func TestJsHomeObject(t *testing.T) {
 			funcScript: `return home.getDeviceById('test-1-id').get('switch1').value`,
 			expected:   bool(true),
 		}, {
+			funcName:   "test_getDeviceById_switch1_valueOf",
+			funcScript: `return home.getDeviceById('test-1-id').get('switch1').valueOf()`,
+			expected:   bool(true),
+		}, {
 			funcName:   "test_getDeviceById_switch1_previous",
 			funcScript: `return home.getDeviceById('test-1-id').get('switch1').previous.valueOf()`,
 			expected:   bool(false),
@@ -104,7 +108,7 @@ func TestJsHomeObject(t *testing.T) {
 		//  I shouldn't need to call .valueOf() manually
 		{
 			funcName:   "test_getDeviceById_switch2_value",
-			funcScript: `return home.getDeviceById('test-1-id').get('switch2').value.valueOf()`,
+			funcScript: `return home.getDeviceById('test-1-id').get('switch2').valueOf()`,
 			expected:   bool(false),
 		}, {
 			funcName:   "test_getDeviceById_switch2_previous",
