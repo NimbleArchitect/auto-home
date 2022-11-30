@@ -95,9 +95,10 @@ func (c *calendar) addEvent(event Event) {
 func (c *calendar) AddEvent(data []byte) {
 	var event Event
 
+	// TODO: need a better way to convert to the Event type auto-magically
 	err := json.Unmarshal(data, &event)
 	if err != nil {
-
+		return
 	}
 
 	c.addEvent(event)
