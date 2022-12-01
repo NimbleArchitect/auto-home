@@ -113,7 +113,7 @@ func NewClient(address string, clientId string, token string) *AhClient {
 
 	go func() {
 		// setup random relogin timer, currently it refreshes the login token every 22 hours with the server set to expire the token every 24 hours
-		rnd := rand.Intn(3)
+		rnd := rand.Intn(30)
 		for {
 			if out.Connect(clientId, token) {
 				// connection was successfull
@@ -121,9 +121,7 @@ func NewClient(address string, clientId string, token string) *AhClient {
 					*ready <- true
 					ready = nil
 				}
-				fmt.Println(">> sleeping for ", rnd)
-				time.Sleep(1*(1*time.Minute) + (time.Minute * time.Duration(rnd)))
-				fmt.Println(">> relogin")
+				time.Sleep(22*60*time.Minute + (time.Minute * time.Duration(rnd)))
 			} else {
 				// connection failed so we sleep for a bit and try again
 				if ready != nil {
@@ -429,7 +427,6 @@ func (c *AhClient) makeRequest(url string, method string, data string) (*http.Re
 	// set the request header Content-Type for json
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if len(c.sessionId) > 0 {
-		log.Println("using header", c.sessionId)
 		req.Header.Set("session", c.sessionId)
 	}
 	r, err := c.http.Do(req)
@@ -450,7 +447,6 @@ func (c *AhClient) makeActionRequest(url string, method string, data string) (*h
 	// set the request header Content-Type for json
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if len(c.sessionId) > 0 {
-		log.Println("using header", c.sessionId)
 		req.Header.Set("session", c.sessionId)
 	}
 
