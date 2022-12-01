@@ -32,6 +32,7 @@ func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
 // processOnTrigger call processes the properties and call the *_ontrigger for each property
 //
 // dev is then updated with the new properties and values
+// TODO: needs merging with processGroupChange as the ontrigger event is being removed
 func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props JSPropsList, dev *jsDevice) {
 
 	_, ok := r.deviceState[deviceid]

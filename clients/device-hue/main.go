@@ -47,7 +47,7 @@ func main() {
 	json.Unmarshal(byteValue, &conf)
 
 	client := homeClient.NewClient(conf.ServerURL, "com.ah.huehubv2", token)
-	conf.client = &client
+	conf.client = client
 	transport := &http2.Transport{
 		TLSClientConfig: &tls.Config{
 			// RootCAs:            pool,
@@ -60,7 +60,7 @@ func main() {
 
 	conf.http = &http.Client{Transport: transport}
 
-	conf.hueRegisterHub(conf.Username, conf.HubAddress, &client)
+	conf.hueRegisterHub(conf.Username, conf.HubAddress, client)
 	go conf.listenEvents()
 
 	event, err := client.ListenEvents(conf.callback)
@@ -78,7 +78,7 @@ func main() {
 		case msg := <-event:
 			switch msg {
 			case homeClient.EVENT_RELOAD:
-				conf.hueRegisterHub(conf.Username, conf.HubAddress, &client)
+				conf.hueRegisterHub(conf.Username, conf.HubAddress, client)
 
 			case homeClient.EVENT_SHUTDOWN:
 				finished = true

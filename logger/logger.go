@@ -33,12 +33,6 @@ func init() {
 	}
 }
 
-// TODO: need to automatically pickup the function name the functions are called from
-
-// func New() *logger {
-// 	return &logger{level: &logLevel}
-// }
-
 func GetDebugLevel() int {
 	if val, ok := os.LookupEnv("AH_LOGLEVEL"); ok {
 		if val == "debug" {

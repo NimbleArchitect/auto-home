@@ -141,6 +141,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPro
 	// log.Println("state:", m.devices)
 
 	// lookup changes and trigger change notifications
+	// TODO: the client devices tell the server their state now so processOnTrigger needs removing as its now redundent
 	r.processOnTrigger(deviceid, timestamp, props, &dev)
 
 	// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
