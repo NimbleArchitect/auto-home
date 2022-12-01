@@ -295,9 +295,9 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 		//  for now I have hard coded two external events so I can test the history recording works as expected
 		if deviceid == "door-bell" || deviceid == "front-door" {
 			// setting isExternalEvent to false will disable the history recording while an external event is in play
-			m.isExternalEvent = false
+			m.isExternalEvent = true
 			// re-enable recording
-			defer func() { m.isExternalEvent = true }()
+			defer func() { m.isExternalEvent = false }()
 		}
 
 		// TODO: somewhere I need to validate the properties so I only save valid states
