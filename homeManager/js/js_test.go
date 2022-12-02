@@ -17,9 +17,9 @@ func setupJsVM() JavascriptVM {
 	runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
 	return JavascriptVM{
-		waitLock: sync.Mutex{},
-		global:   g,
-		runtime:  runtime,
+		countdownLock: sync.Mutex{},
+		global:        g,
+		runtime:       runtime,
 	}
 }
 

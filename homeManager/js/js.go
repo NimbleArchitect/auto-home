@@ -14,23 +14,27 @@ import (
 )
 
 type JavascriptVM struct {
-	waitLock    sync.Mutex
-	global      *globals.Global
-	runtime     *goja.Runtime
-	deviceCode  map[string]*goja.Object // list of compiled javascript device code that has been registered using the javascript set function, used to store onchange functions
-	deviceState map[string]jsDevice     //list of devices that the javascrip VM can use
-	groupCode   map[string]*goja.Object // list of compiled javascript group code that has been registered using the javascript set function
-	groups      map[string]jsGroup
-	userCode    map[string]*goja.Object
-	plugins     map[string]*goja.Object //vm's copy of all plugins attached to the plugin object
-	pluginCode  map[string]*goja.Object // list of compiled javascript plugin code that has been registered using the javascript set function
-	pluginList  *pluginManager.Plugin   // plugin connections, shared across all VMs
+	// TODO: the countdown lock might not be needed any more now that im using a waitgroup
+	countdownLock sync.Mutex //used to lock the countdown timer
+	global        *globals.Global
+	runtime       *goja.Runtime
+	deviceCode    map[string]*goja.Object // list of compiled javascript device code that has been registered using the javascript set function, used to store onchange functions
+	deviceState   map[string]jsDevice     //list of devices that the javascrip VM can use
+	groupCode     map[string]*goja.Object // list of compiled javascript group code that has been registered using the javascript set function
+	groups        map[string]jsGroup
+	userCode      map[string]*goja.Object
+	plugins       map[string]*goja.Object //vm's copy of all plugins attached to the plugin object
+	pluginCode    map[string]*goja.Object // list of compiled javascript plugin code that has been registered using the javascript set function
+	pluginList    *pluginManager.Plugin   // plugin connections, shared across all VMs
 	// users      map[string]jsUser
+	Updater     DeviceUpdator
 	vmInUseLock *sync.WaitGroup // locked when the vm is in use and when threaded go routines are running
 }
 
 func (r *JavascriptVM) Wait() {
-	r.waitLock.Lock()
+	r.countdownLock.Lock()
+
+	r.countdownLock.Unlock()
 
 	r.vmInUseLock.Wait()
 }
@@ -148,6 +152,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPro
 	// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
 	continueFlag := r.processGroupChange(deviceid, props)
 	r.processOnChange(deviceid, &dev, continueFlag)
+
 	r.vmInUseLock.Done()
 }
 

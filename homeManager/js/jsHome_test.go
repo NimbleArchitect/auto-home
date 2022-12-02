@@ -14,8 +14,8 @@ func setupVM() JavascriptVM {
 	g := globals.New()
 
 	return JavascriptVM{
-		waitLock: sync.Mutex{},
-		global:   g,
+		countdownLock: sync.Mutex{},
+		global:        g,
 	}
 }
 
