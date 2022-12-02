@@ -14,7 +14,7 @@ import (
 )
 
 type JavascriptVM struct {
-	waitGroup   sync.Mutex
+	waitLock    sync.Mutex
 	global      *globals.Global
 	runtime     *goja.Runtime
 	deviceCode  map[string]*goja.Object // list of compiled javascript device code that has been registered using the javascript set function, used to store onchange functions
@@ -30,9 +30,9 @@ type JavascriptVM struct {
 }
 
 func (r *JavascriptVM) Wait() {
-	r.waitGroup.Lock()
+	r.waitLock.Lock()
 
-	r.waitGroup.Unlock()
+	r.waitLock.Unlock()
 }
 
 // RunJS loads the js object attached to the specified deviceId and runs the function fName passing in props as an argument

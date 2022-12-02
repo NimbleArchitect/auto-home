@@ -88,11 +88,11 @@ func (h *jsHome) Countdown(name string, sec float64, function goja.Value) {
 		jsCall, ok = goja.AssertFunction(function)
 	}
 
-	h.vm.waitGroup.TryLock()
+	h.vm.waitLock.TryLock()
 
 	h.vm.global.SetTimer(name, sec, func(success bool) {
 		if !success {
-			h.vm.waitGroup.Unlock()
+			h.vm.waitLock.Unlock()
 			return
 		}
 
@@ -101,7 +101,7 @@ func (h *jsHome) Countdown(name string, sec float64, function goja.Value) {
 			jsCall(goja.Undefined())
 		}
 
-		h.vm.waitGroup.Unlock()
+		h.vm.waitLock.Unlock()
 	})
 }
 
