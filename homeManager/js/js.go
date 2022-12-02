@@ -26,13 +26,13 @@ type JavascriptVM struct {
 	pluginCode  map[string]*goja.Object // list of compiled javascript plugin code that has been registered using the javascript set function
 	pluginList  *pluginManager.Plugin   // plugin connections, shared across all VMs
 	// users      map[string]jsUser
-	Updater DeviceUpdator
+	vmInUseLock *sync.WaitGroup // locked when the vm is in use and when threaded go routines are running
 }
 
 func (r *JavascriptVM) Wait() {
 	r.waitLock.Lock()
 
-	r.waitLock.Unlock()
+	r.vmInUseLock.Wait()
 }
 
 // RunJS loads the js object attached to the specified deviceId and runs the function fName passing in props as an argument
@@ -133,6 +133,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPro
 
 	log.Info("process triggered")
 
+	r.vmInUseLock.Add(1)
 	dev.propSwitch = make(map[string]jsSwitch)
 	dev.propDial = make(map[string]jsDial)
 	dev.propButton = make(map[string]jsButton)
@@ -147,6 +148,7 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPro
 	// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
 	continueFlag := r.processGroupChange(deviceid, props)
 	r.processOnChange(deviceid, &dev, continueFlag)
+	r.vmInUseLock.Done()
 }
 
 // SaveDeviceState copies the current device sate and properties to the vm ready for processing/usage

@@ -6,6 +6,7 @@ import (
 	"server/homeManager/pluginManager"
 	log "server/logger"
 	"strings"
+	"sync"
 
 	"github.com/dop251/goja"
 )
@@ -44,6 +45,8 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *global
 	runtime := goja.New()
 	runtime.SetFieldNameMapper(goja.UncapFieldNameMapper())
 
+	waitGroup := sync.WaitGroup{}
+
 	vm := JavascriptVM{
 		runtime:     runtime,
 		global:      global,
@@ -54,6 +57,7 @@ func (c *CompiledScripts) NewVM(pluginList *pluginManager.Plugin, global *global
 		pluginList:  pluginList,
 		pluginCode:  make(map[string]*goja.Object),
 		plugins:     make(map[string]*goja.Object),
+		vmInUseLock: &waitGroup,
 	}
 
 	vm.loadPlugins()

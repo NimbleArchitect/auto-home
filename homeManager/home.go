@@ -38,6 +38,7 @@ type Manager struct {
 	MaxVMCount         int                // maximum number of VMs to start
 	activeVMs          []*js.JavascriptVM // list of active initalised VM's
 	chActiveVM         chan int           // stores a list of usable VM id's that are ready for use
+	vmWaits            []*sync.WaitGroup
 
 	compiledScripts js.CompiledScripts    // list of pre compiled script code
 	plugins         *pluginManager.Plugin // manages the plugins and connestions exspose a caller object to allow the server to run remote functions
