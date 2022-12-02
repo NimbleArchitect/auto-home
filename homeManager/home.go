@@ -62,8 +62,6 @@ type eventHistory struct {
 
 func NewManager(recordHistory bool, maxEventHistory int, preAllocateVMs int, maxPropertyHistory int, homePath string) *Manager {
 
-	// log := logger.New("NewManager", &debugLevel)
-
 	eventProc := historyProcessor{
 		lock: sync.RWMutex{},
 		max:  maxEventHistory,
@@ -278,6 +276,7 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 
 // Trigger is called one at a time with the deviceid
 func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}) error {
+	// TODO: need to wait for all threaded functions to finish before exiting this function
 
 	log.Info("start Trigger:", id)
 
