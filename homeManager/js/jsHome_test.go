@@ -15,6 +15,7 @@ func setupVM() JavascriptVM {
 
 	return JavascriptVM{
 		countdownLock: sync.Mutex{},
+		vmInUseLock:   &sync.WaitGroup{},
 		global:        g,
 	}
 }
