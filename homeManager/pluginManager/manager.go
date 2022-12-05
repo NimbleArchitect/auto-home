@@ -21,7 +21,6 @@ type Manager struct {
 }
 
 func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{})) {
-
 	if err := os.RemoveAll(m.SockAddr); err != nil {
 		log.Error(err)
 		os.Exit(1)
@@ -34,6 +33,7 @@ func (m *Manager) Start(jsCallBack func(string, string, map[string]interface{}))
 	}
 
 	for {
+		log.Debug("wait connection Accept")
 		incoming, err := l.Accept()
 		if err != nil {
 			log.Error("unable to accept connection:", err)

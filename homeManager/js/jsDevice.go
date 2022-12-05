@@ -153,7 +153,6 @@ func (d *jsDevice) GetText(name string) *goja.Object {
 }
 
 func (d *jsDevice) Get(name string) *goja.Object {
-	// TODO: check if the get function needs to return a goja object rather than an interface
 	if obj := d.GetDial(name); obj != nil {
 		return obj
 	}

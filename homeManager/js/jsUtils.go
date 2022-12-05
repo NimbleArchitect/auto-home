@@ -285,7 +285,7 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props []interface{}) 
 			}
 		}
 
-		// TODO: incorrect object is exposed to javascript, props needs to be changed as it currently exposes addButton,addDial,addSwitch,addText
+		// expose groupObj to javascript
 		continueFlag, err := r.RunJSGroup(group.Id, groupObj)
 		if err != nil {
 			log.Error("group error", err)
