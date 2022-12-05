@@ -79,9 +79,11 @@ func (c *PluginConnector) WaitAdd() int {
 	c.nextId++
 
 	wait := make(chan result, 1)
+	log.Debug("lock")
 	c.lock.Lock()
 	c.responseWait[i] = &wait
 	c.lock.Unlock()
+	log.Debug("unlock")
 
 	return i
 }
@@ -106,12 +108,14 @@ func (c *PluginConnector) WaitDone(i int, msg *string, data map[string]interface
 }
 
 func (c *PluginConnector) WaitOn(i int) (string, map[string]interface{}, bool) {
+	log.Debug("lock")
 	c.lock.Lock()
 	wait := *c.responseWait[i]
 	c.lock.Unlock()
+	log.Debug("unlock")
 
 	out := <-wait
-
+	log.Debug("wait done")
 	return out.Message, out.Data, out.Ok
 }
 
@@ -130,7 +134,7 @@ func (c *PluginConnector) handle() {
 	chError := make(chan error)
 
 	go func() {
-
+		log.Debug("start reciever")
 		for {
 			tmp := make([]byte, 256)
 			n, err := c.c.Read(tmp)
@@ -159,6 +163,7 @@ func (c *PluginConnector) handle() {
 				}
 			}
 		}
+		log.Debug("finish reciever")
 	}()
 
 	for {
@@ -259,6 +264,7 @@ func (c *PluginConnector) processMessage(obj Generic) error {
 				Call: name,
 				c:    c,
 			}
+			log.Debug("add function:", caller)
 			c.funcList[name] = &caller
 			callList = append(callList, name)
 		}
