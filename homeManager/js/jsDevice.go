@@ -63,7 +63,7 @@ func (d *jsDevice) GetSwitch(name string) *goja.Object {
 				if val, ok := d.liveDevice.SwitchValue(name); ok {
 					return &jsBool{
 						s: val.String(),
-						b: val.GetBool(),
+						b: val.Bool(),
 					}
 				}
 				return nil
@@ -77,7 +77,7 @@ func (d *jsDevice) GetSwitch(name string) *goja.Object {
 			boolVal.Set(val.previous)
 			return &jsBool{
 				s: boolVal.String(),
-				b: boolVal.GetBool(),
+				b: boolVal.Bool(),
 			}
 		}),
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)
@@ -99,7 +99,7 @@ func (d *jsDevice) GetButton(name string) *goja.Object {
 				if val, ok := d.liveDevice.ButtonValue(name); ok {
 					return jsBool{
 						s: val.String(),
-						b: val.GetBool(),
+						b: val.Bool(),
 					}
 				}
 				return nil
@@ -113,7 +113,7 @@ func (d *jsDevice) GetButton(name string) *goja.Object {
 			boolVal.Set(val.previous)
 			return jsBool{
 				s: boolVal.String(),
-				b: boolVal.GetBool(),
+				b: boolVal.Bool(),
 			}
 		}),
 			nil, goja.FLAG_FALSE, goja.FLAG_FALSE)

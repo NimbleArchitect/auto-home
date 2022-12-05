@@ -74,13 +74,13 @@ func MapToJsSwitch(prop map[string]interface{}) (jsSwitch, error) {
 		f, isBool := c.(bool)
 		if isBool {
 			tmpBool.SetBool(f)
-			swi.state = tmpBool.GetBool()
+			swi.state = tmpBool.Bool()
 			swi.Value = tmpBool.String()
 		} else {
 			s, isString := c.(string)
 			if isString {
 				tmpBool.Set(s)
-				swi.state = tmpBool.GetBool()
+				swi.state = tmpBool.Bool()
 				swi.Value = tmpBool.String()
 			} else {
 				return jsSwitch{}, errors.New("error converting property value")
@@ -146,13 +146,13 @@ func MapToJsButton(prop map[string]interface{}) (jsButton, error) {
 		f, isBool := c.(bool)
 		if isBool {
 			tmpBool.SetBool(f)
-			button.state = tmpBool.GetBool()
+			button.state = tmpBool.Bool()
 			button.Value = tmpBool.String()
 		} else {
 			s, isString := c.(string)
 			if isString {
 				tmpBool.Set(s)
-				button.state = tmpBool.GetBool()
+				button.state = tmpBool.Bool()
 				button.Value = tmpBool.String()
 			} else {
 				return jsButton{}, errors.New("error converting property value")

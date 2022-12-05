@@ -129,9 +129,9 @@ func (d *Device) SetButtonValue(name string, value string) {
 		}
 
 		if property.history.max-1 >= len(property.history.values) {
-			property.history.values = append(property.history.values, property.data.Value.GetBool())
+			property.history.values = append(property.history.values, property.data.Value.Bool())
 		} else {
-			property.history.values[property.history.index] = property.data.Value.GetBool()
+			property.history.values[property.history.index] = property.data.Value.Bool()
 		}
 		property.history.index++
 

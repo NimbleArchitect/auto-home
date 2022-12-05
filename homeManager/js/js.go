@@ -187,7 +187,7 @@ func (r *JavascriptVM) SaveDeviceState(devices *deviceManager.Manager) {
 			newDev.propSwitch[key] = jsSwitch{
 				Name:     property.Name,
 				Value:    property.Value.String(),
-				state:    property.Value.GetBool(),
+				state:    property.Value.Bool(),
 				previous: property.Value.String(),
 			}
 		}
@@ -196,7 +196,7 @@ func (r *JavascriptVM) SaveDeviceState(devices *deviceManager.Manager) {
 			newDev.propButton[key] = jsButton{
 				Name:     property.Name,
 				Value:    property.Value.String(),
-				state:    property.Value.GetBool(),
+				state:    property.Value.Bool(),
 				previous: property.Value.String(),
 			}
 		}

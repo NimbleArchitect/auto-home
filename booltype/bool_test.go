@@ -7,26 +7,25 @@ func TestSet(t *testing.T) {
 		data           string
 		expectedString string
 		expectedBool   bool
-		expectedType   uint
 	}
 
 	table := []Result{
-		{data: "OFF", expectedType: ONOFF, expectedString: "off", expectedBool: false},
-		{data: "ON", expectedType: ONOFF, expectedString: "on", expectedBool: true},
+		{data: "OFF", expectedString: "off", expectedBool: false},
+		{data: "ON", expectedString: "on", expectedBool: true},
 
-		{data: "UP", expectedType: UPDOWN, expectedString: "up", expectedBool: true},
-		{data: "DOWN", expectedType: UPDOWN, expectedString: "down", expectedBool: false},
+		{data: "UP", expectedString: "up", expectedBool: true},
+		{data: "DOWN", expectedString: "down", expectedBool: false},
 
-		{data: "OPEN", expectedType: OPENCLOSE, expectedString: "open", expectedBool: true},
-		{data: "CLOSE", expectedType: OPENCLOSE, expectedString: "close", expectedBool: false},
+		{data: "OPEN", expectedString: "open", expectedBool: true},
+		{data: "CLOSE", expectedString: "close", expectedBool: false},
 
-		{data: "YES", expectedType: YESNO, expectedString: "yes", expectedBool: true},
-		{data: "NO", expectedType: YESNO, expectedString: "no", expectedBool: false},
+		{data: "YES", expectedString: "yes", expectedBool: true},
+		{data: "NO", expectedString: "no", expectedBool: false},
 
-		{data: "TRUE", expectedType: TRUEFALSE, expectedString: "true", expectedBool: true},
-		{data: "FALSE", expectedType: TRUEFALSE, expectedString: "false", expectedBool: false},
+		{data: "TRUE", expectedString: "true", expectedBool: true},
+		{data: "FALSE", expectedString: "false", expectedBool: false},
 
-		{data: "invalid", expectedType: TRUEFALSE, expectedString: "false", expectedBool: false},
+		{data: "invalid", expectedString: "false", expectedBool: false},
 	}
 
 	for i, v := range table {
@@ -36,11 +35,8 @@ func TestSet(t *testing.T) {
 		if b.String() != v.expectedString {
 			t.Fatalf("check %d expected \"%s\", recieved \"%s\"", i, v.expectedString, b.String())
 		}
-		if b.GetBool() != v.expectedBool {
-			t.Fatalf("check %d expected \"%t\", recieved \"%t\"", i, v.expectedBool, b.GetBool())
-		}
-		if b.kind != v.expectedType {
-			t.Fatalf("check %d expected \"%d\", recieved \"%d\"", i, v.expectedType, b.kind)
+		if b.Bool() != v.expectedBool {
+			t.Fatalf("check %d expected \"%t\", recieved \"%t\"", i, v.expectedBool, b.Bool())
 		}
 	}
 }
@@ -54,8 +50,8 @@ func TestSetBool(t *testing.T) {
 	}
 
 	table := []Result{
-		{data: true, expectedType: TRUEFALSE, expectedString: "true", expectedBool: true},
-		{data: false, expectedType: TRUEFALSE, expectedString: "false", expectedBool: false},
+		{data: true, expectedString: "true", expectedBool: true},
+		{data: false, expectedString: "false", expectedBool: false},
 	}
 
 	for i, v := range table {
@@ -65,11 +61,9 @@ func TestSetBool(t *testing.T) {
 		if b.String() != v.expectedString {
 			t.Fatalf("check %d expected \"%s\", recieved \"%s\"", i, v.expectedString, b.String())
 		}
-		if b.GetBool() != v.expectedBool {
-			t.Fatalf("check %d expected \"%t\", recieved \"%t\"", i, v.expectedBool, b.GetBool())
+		if b.Bool() != v.expectedBool {
+			t.Fatalf("check %d expected \"%t\", recieved \"%t\"", i, v.expectedBool, b.Bool())
 		}
-		if b.kind != v.expectedType {
-			t.Fatalf("check %d expected \"%d\", recieved \"%d\"", i, v.expectedType, b.kind)
-		}
+
 	}
 }
