@@ -97,8 +97,8 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 	return result, err
 }
 
-func (r *JavascriptVM) RunJSGroup(groupId string, props JSPropsList) (int64, error) {
-	val, err := r.RunJS("group/"+groupId, "onchange", r.runtime.ToValue(props))
+func (r *JavascriptVM) RunJSGroup(groupId string, groupObj groupObject) (int64, error) {
+	val, err := r.RunJS("group/"+groupId, "onchange", r.runtime.ToValue(groupObj))
 	if err != nil {
 		return 0, err
 	} else {
@@ -147,11 +147,12 @@ func (r *JavascriptVM) Process(deviceid string, timestamp time.Time, props JSPro
 
 	// lookup changes and trigger change notifications
 	// TODO: the client devices tell the server their state now so processOnTrigger needs removing as its now redundent
-	r.processOnTrigger(deviceid, timestamp, props, &dev)
-
-	// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
-	continueFlag := r.processGroupChange(deviceid, props)
-	r.processOnChange(deviceid, &dev, continueFlag)
+	propArray := r.processOnTrigger(deviceid, timestamp, props, &dev)
+	if propArray != nil {
+		// TODO: not sure this is the correct order as it depends on if we wnat groups to return a no further processing argument
+		continueFlag := r.processGroupChange(deviceid, propArray)
+		r.processOnChange(deviceid, &dev, continueFlag)
+	}
 
 	r.vmInUseLock.Done()
 }

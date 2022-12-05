@@ -11,16 +11,16 @@ import (
 	"github.com/dop251/goja"
 )
 
-type DeviceUpdator interface {
-	GetNextVM() (*JavascriptVM, int)
-	PushVMID(int)
-}
-
 const (
 	StrOnTrigger = "ontrigger"
 	StrOnChange  = "onchange"
 	StrOnStart   = "onstart"
 )
+
+type DeviceUpdator interface {
+	GetNextVM() (*JavascriptVM, int)
+	PushVMID(int)
+}
 
 func BuildOnAction(values ...string) string {
 	if len(values) == 1 {

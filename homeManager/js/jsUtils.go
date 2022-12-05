@@ -9,6 +9,12 @@ import (
 	"github.com/dop251/goja"
 )
 
+type groupObject struct {
+	Id       string
+	Name     string
+	Property interface{}
+}
+
 // objLoader entry point for javascript set function
 func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
 	// TODO: make name safe as its user input
@@ -33,27 +39,29 @@ func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
 //
 // dev is then updated with the new properties and values
 // TODO: needs merging with processGroupChange as the ontrigger event is being removed
-func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props JSPropsList, dev *jsDevice) {
+func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, props JSPropsList, dev *jsDevice) []interface{} {
+	var propsArray []interface{}
 
 	_, ok := r.deviceState[deviceid]
 	if !ok {
 		log.Error("processTrigger device not found", deviceid)
-		return
+		return nil
 	}
 
 	for name, swi := range props.propSwitch {
 		oldValue := r.deviceState[deviceid].propSwitch[name].state
-		val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(swi.Value))
-		if err != nil {
-			log.Error(err)
-		} else {
-			if val != nil {
-				swi.flag.Set(r.runtime.ToValue(val).ToInteger())
-			}
-		}
+		// val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(swi.Value))
+		// if err != nil {
+		// 	log.Error(err)
+		// } else {
+		// 	if val != nil {
+		// 		swi.flag.Set(r.runtime.ToValue(val).ToInteger())
+		// 	}
+		// }
 
 		if oldValue != swi.state {
 			dev.propSwitch[name] = swi
+			propsArray = append(propsArray, swi)
 		}
 		r.deviceState[deviceid].propSwitch[name] = swi
 	}
@@ -68,17 +76,18 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 		if dial.Value < oldValue.min {
 			dial.Value = oldValue.min
 		}
-		val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(dial.Value))
-		if err != nil {
-			log.Error(err)
-		} else {
-			if val != nil {
-				dial.flag.Set(r.runtime.ToValue(val).ToInteger())
-			}
-		}
+		// val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(dial.Value))
+		// if err != nil {
+		// 	log.Error(err)
+		// } else {
+		// 	if val != nil {
+		// 		dial.flag.Set(r.runtime.ToValue(val).ToInteger())
+		// 	}
+		// }
 
 		if oldValue.Value != dial.Value {
 			dev.propDial[name] = dial
+			propsArray = append(propsArray, dial)
 		}
 		r.deviceState[deviceid].propDial[name] = dial
 	}
@@ -86,17 +95,18 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 	for name, button := range props.propButton {
 		oldValue := r.deviceState[deviceid].propButton[name].Value
 
-		val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(button.Value))
-		if err != nil {
-			log.Error(err)
-		} else {
-			if val != nil {
-				button.flag.Set(r.runtime.ToValue(val).ToInteger())
-			}
-		}
+		// val, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(button.Value))
+		// if err != nil {
+		// 	log.Error(err)
+		// } else {
+		// 	if val != nil {
+		// 		button.flag.Set(r.runtime.ToValue(val).ToInteger())
+		// 	}
+		// }
 
 		if oldValue != button.Value {
 			dev.propButton[name] = button
+			propsArray = append(propsArray, button)
 		}
 		r.deviceState[deviceid].propButton[name] = button
 	}
@@ -104,16 +114,19 @@ func (r *JavascriptVM) processOnTrigger(deviceid string, timestamp time.Time, pr
 	for name, text := range props.propText {
 		oldValue := r.deviceState[deviceid].propText[name].Value
 
-		_, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(text.Value))
-		if err != nil {
-			log.Error(err)
-		}
+		// _, err := r.RunJS(deviceid, BuildOnAction(name, StrOnTrigger), r.runtime.ToValue(text.Value))
+		// if err != nil {
+		// 	log.Error(err)
+		// }
 
 		if oldValue != text.Value {
 			dev.propText[name] = text
+			propsArray = append(propsArray, text)
 		}
 		r.deviceState[deviceid].propText[name] = text
 	}
+
+	return propsArray
 }
 
 // processOnChange call loops through all the properties and call the *_onchange for each property
@@ -207,9 +220,10 @@ func (r *JavascriptVM) processOnChange(deviceid string, dev *jsDevice, FLAG int)
 	}
 }
 
-func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) int {
+func (r *JavascriptVM) processGroupChange(deviceid string, props []interface{}) int {
 	var finishAfterGroups bool
 	var searchList []jsGroup
+	var deviceName string
 
 	// first get a list of groups that have our device as a member
 	for _, group := range r.groups {
@@ -252,6 +266,17 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 		}
 	}
 
+	if value, ok := r.deviceState[deviceid]; ok {
+		deviceName = value.Name
+	}
+	// great a new group properties object to pass over to RunJsGroup()
+	// this sends the deviceID, name and supplied properties that have changed
+	groupObj := groupObject{
+		Id:       deviceid,
+		Name:     deviceName,
+		Property: props,
+	}
+
 	// TODO: need to call jsRun for every group from closest to device to furthest
 	for _, group := range jsRunList {
 		if group.liveGroup != nil {
@@ -260,7 +285,8 @@ func (r *JavascriptVM) processGroupChange(deviceid string, props JSPropsList) in
 			}
 		}
 
-		continueFlag, err := r.RunJSGroup(group.Id, props)
+		// TODO: incorrect object is exposed to javascript, props needs to be changed as it currently exposes addButton,addDial,addSwitch,addText
+		continueFlag, err := r.RunJSGroup(group.Id, groupObj)
 		if err != nil {
 			log.Error("group error", err)
 			continue

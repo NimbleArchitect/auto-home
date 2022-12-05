@@ -277,8 +277,6 @@ func (m *Manager) GetNextVM() (*js.JavascriptVM, int) {
 
 // Trigger is called one at a time with the deviceid
 func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []map[string]interface{}) error {
-	// TODO: need to wait for all threaded functions to finish before exiting this function
-
 	log.Info("start Trigger:", id)
 
 	//get next avaliable vm
@@ -401,12 +399,9 @@ func (m *Manager) verifyMap2jsDevice(deviceid string, timestamp time.Time, props
 					dial.Value = p.Min
 				}
 
+				// check we are outside of our repeat window
 				if dev.DialWindow(name, timestamp) {
-					// check we are outside of our repeat window
 					newdev.AddDial(name, dial)
-					// 	fmt.Println("**>> update allowed")
-					// } else {
-					// 	fmt.Println("**>> update blocked")
 				}
 
 			case "button":
