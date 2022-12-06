@@ -56,7 +56,9 @@ func (h *Handler) showPage(req requestInfoBlock) {
 }
 
 func (h *Handler) makePluginCall(elements []string, postData map[string]interface{}) []byte {
-	// TODO: needs safety checks adding
+	if len(elements) <= 1 {
+		return []byte{}
+	}
 
 	pluginName := elements[0]
 	callName := elements[1]

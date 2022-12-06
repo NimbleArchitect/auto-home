@@ -14,7 +14,6 @@ import (
 )
 
 type JavascriptVM struct {
-	// TODO: the countdown lock might not be needed any more now that im using a waitgroup
 	countdownLock sync.Mutex //used to lock the countdown timer
 	global        *globals.Global
 	runtime       *goja.Runtime
@@ -53,7 +52,7 @@ func (r *JavascriptVM) RunJS(deviceid string, fName string, props goja.Value) (g
 		return nil, nil
 	}
 
-	parts := strings.Split(deviceid, "/")
+	parts := strings.Split(deviceid, setNameSplitCharacter)
 	switch parts[0] {
 	case "plugin":
 		val, ok = r.pluginCode[deviceid]
@@ -213,3 +212,8 @@ func (r *JavascriptVM) SaveDeviceState(devices *deviceManager.Manager) {
 	}
 
 }
+
+// func (r *JavascriptVM) RecordEvent(id string, name string) {
+// 	r.ignoreEventList
+
+// }

@@ -291,6 +291,7 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 		// TODO: need to write a proper check function that disables the history recording when an external event happens
 		//  external events can be the doorbell being pressed or an external door being opened
 		//  for now I have hard coded two external events so I can test the history recording works as expected
+		//  this almost works but I think Im going to have to track changes that are supposed to happen and compare them to the change that have happened
 		if deviceid == "door-bell" || deviceid == "front-door" {
 			// setting isExternalEvent to false will disable the history recording while an external event is in play
 			m.isExternalEvent = true
@@ -324,6 +325,12 @@ func (m *Manager) Trigger(id int, deviceid string, timestamp time.Time, props []
 		vm.Process(deviceid, timestamp, devList)
 
 		vm.Wait()
+		// eventChangeList, ok := vm.EventsSeen()
+		// if ok {
+		// 	if eventMatch(eventChangeList, devList) {
+
+		// 	}
+		// }
 
 		//now we have finished processing save the event to our internal history list
 		m.eventHistory.Add(event)

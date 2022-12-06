@@ -9,6 +9,9 @@ import (
 	"github.com/dop251/goja"
 )
 
+const setNameIgnoreString = "!`¬\"£^*|'~<>" // list of chars that we dont accept in a set name
+const setNameSplitCharacter = "/"
+
 type groupObject struct {
 	Id       string
 	Name     string
@@ -17,10 +20,13 @@ type groupObject struct {
 
 // objLoader entry point for javascript set function
 func (r *JavascriptVM) objLoader(name goja.Value, object goja.Value) {
-	// TODO: make name safe as its user input
 	n := name.String()
+	if strings.ContainsAny(n, setNameIgnoreString) {
+		log.Errorf("Invalid charactors detected in set name, the following charactors are invalid: \"%s\"", setNameIgnoreString)
+		return
+	}
 
-	parts := strings.Split(n, "/")
+	parts := strings.Split(n, setNameSplitCharacter)
 	switch parts[0] {
 	case "plugin":
 		r.pluginCode[n] = object.(*goja.Object)

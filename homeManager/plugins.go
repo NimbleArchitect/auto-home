@@ -119,6 +119,10 @@ func (m *Manager) callPluginObject(pluginName string, call string, obj map[strin
 func (m *Manager) WebCallPlugin(pluginName string, callName string, postData map[string]interface{}) []byte {
 	var out map[string]interface{}
 
+	if len(pluginName) <= 0 || len(callName) <= 0 {
+		return []byte{}
+	}
+
 	if plugin := m.plugins.Get(pluginName); plugin != nil {
 		if caller := plugin.Get(callName); caller != nil {
 			if len(postData) > 0 {

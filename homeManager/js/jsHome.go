@@ -88,6 +88,8 @@ func (h *jsHome) Countdown(name string, sec float64, function goja.Value) {
 		jsCall, ok = goja.AssertFunction(function)
 	}
 
+	// we use a sync.Mutex here so we can try to lock the mutex during every call, this allows
+	//  us to unlock when the coutdown expires, without hitting strange it wasnt locked errors
 	h.vm.countdownLock.TryLock()
 
 	h.vm.global.SetTimer(name, sec, func(success bool) {
