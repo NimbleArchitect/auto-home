@@ -16,10 +16,11 @@ import (
 type Client int
 
 type Telegram struct {
-	conf settings
+	conf map[string]settings
 }
 
 type settings struct {
+	Name   string
 	BotID  string
 	Key    string
 	ChatId string
@@ -28,23 +29,33 @@ type settings struct {
 func (t *Telegram) SendMessage(raw []byte) {
 	// var m event
 	var val map[int]interface{}
+	var accountName string
 
 	err := json.Unmarshal(raw, &val)
 	if err != nil {
 		fmt.Println("e>>", err)
 	}
 
-	msg := val[0].(string)
+	args := val[0].(map[string]interface{})
+	msg := args["message"].(string)
+	name, ok := args["account"]
+	if ok {
+		accountName = name.(string)
+	}
+	if len(accountName) <= 0 {
+		accountName = "default"
+	}
 
+	account := t.conf[accountName]
 	// fmt.Println("sending telegram>>", msg)
 
 	// Global variables
 	var response *http.Response
 
 	// Send the message
-	url := "https://api.telegram.org/" + t.conf.BotID + ":" + t.conf.Key + "/sendMessage"
+	url := "https://api.telegram.org/" + account.BotID + ":" + account.Key + "/sendMessage"
 	body, _ := json.Marshal(map[string]string{
-		"chat_id": t.conf.ChatId,
+		"chat_id": account.ChatId,
 		"text":    msg,
 	})
 
@@ -99,8 +110,13 @@ func main() {
 
 	byteValue, _ := io.ReadAll(jsonFile)
 
-	var conf settings
-	json.Unmarshal(byteValue, &conf)
+	var onDiskSettings []settings
+	json.Unmarshal(byteValue, &onDiskSettings)
+
+	conf := make(map[string]settings)
+	for _, v := range onDiskSettings {
+		conf[v.Name] = v
+	}
 
 	p := Connect()
 
