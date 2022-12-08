@@ -169,7 +169,7 @@ func (d *jsDevice) Get(name string) *goja.Object {
 		return obj
 	}
 
-	log.Errorf("Get - property \"%s\" not found in device \"$s\"", name, d.Name)
+	log.Errorf("Get - property \"%s\" not found in device \"%s\"", name, d.Name)
 	return nil
 }
 
