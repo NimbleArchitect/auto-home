@@ -1,6 +1,7 @@
 package js
 
 import (
+	log "server/logger"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ func (h *jsHome) GetDeviceByName(name string) jsDevice {
 		}
 	}
 
+	log.Errorf("GetDeviceByName - device \"%s\" not found", name)
 	return jsDevice{}
 }
 
@@ -35,6 +37,7 @@ func (h *jsHome) GetDeviceById(deviceId string) jsDevice {
 		}
 	}
 
+	log.Errorf("GetDeviceById - device \"%s\" not found", deviceId)
 	return jsDevice{}
 }
 
