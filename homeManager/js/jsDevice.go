@@ -168,6 +168,8 @@ func (d *jsDevice) Get(name string) *goja.Object {
 	if obj := d.GetText(name); obj != nil {
 		return obj
 	}
+
+	log.Errorf("Get - property \"%s\" not found in device \"$s\"", name, d.Name)
 	return nil
 }
 
