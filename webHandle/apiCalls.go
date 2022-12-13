@@ -13,16 +13,17 @@ import (
 )
 
 type sessionState struct {
-	clientid  string
-	actionId  string
+	clientid  string // id of the connecting client
+	actionId  string // new generated action id
 	timestamp time.Time
-	InUse     bool
-	Done      chan bool
+	InUse     bool      // is this session state currently in use and registered
+	Done      chan bool // chennel recieves true when this session has completed
 }
 
 type userLogin struct {
-	User string `json:"user"`
-	Pass string `json:"pass"`
+	ReturnId bool   `json:"returnid"` // if true we want the action id and the event id to be returned
+	User     string `json:"user"`
+	Pass     string `json:"pass"`
 }
 
 func (h *Handler) register(req requestInfoBlock) {
@@ -206,6 +207,8 @@ func (h *Handler) isConnected(req requestInfoBlock) bool {
 
 func (h *Handler) doLogin(req requestInfoBlock) bool {
 	var login userLogin
+	var newActionID string
+	var jsonResponse string
 
 	now := time.Now()
 
@@ -242,7 +245,21 @@ func (h *Handler) doLogin(req requestInfoBlock) bool {
 
 	// user login is ok so generate session id and and action id then attach clientid
 	newSessionID := uuid.New().String()
-	newActionID := uuid.New().String()
+
+	// are we expected to return an action id along with the session id
+	if login.ReturnId {
+		newActionID = uuid.New().String()
+		jsonResponse = fmt.Sprintf(
+			`{"result":{"status":"ok","msg":""},"data":{"session":"%s","actionid":"%s"}}`,
+			newSessionID, newActionID,
+		)
+	} else {
+		jsonResponse = fmt.Sprintf(
+			`{"result":{"status":"ok","msg":""},"data":{"session":"%s"}}`,
+			newSessionID,
+		)
+	}
+
 	h.session[newSessionID] = sessionState{
 		clientid:  login.User,
 		actionId:  newActionID,
@@ -253,12 +270,7 @@ func (h *Handler) doLogin(req requestInfoBlock) bool {
 
 	req.Response.Header().Set("session", newSessionID)
 	req.Response.WriteHeader(200)
-	writeFlush(req.Response,
-		fmt.Sprintf(
-			`{"result":{"status":"ok","msg":""},"data":{"session":"%s","actionid":"%s"}}`,
-			newSessionID, newActionID,
-		),
-	)
+	writeFlush(req.Response, jsonResponse)
 
 	return true
 }

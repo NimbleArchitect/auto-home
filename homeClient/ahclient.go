@@ -141,7 +141,7 @@ func NewClient(address string, clientId string, token string) *AhClient {
 func (c *AhClient) Connect(clientId string, token string) bool {
 	var result Result
 
-	msgOut := fmt.Sprintf(`{"data":{"user": "%s", "pass": "%s"}}`, clientId, token)
+	msgOut := fmt.Sprintf(`{"data":{"returnId": true, "user": "%s", "pass": "%s"}}`, clientId, token)
 	r, err := c.makeRequest(c.address+"/connect", http.MethodPost, msgOut)
 
 	if err != nil {
