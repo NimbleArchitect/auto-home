@@ -22,6 +22,7 @@ import (
 	"github.com/lucas-clemente/quic-go/http3"
 )
 
+const eventCount = 402
 const registerDevices = true
 
 const serverUrl = "https://localhost:4242/v1"
@@ -114,7 +115,7 @@ func main() {
 
 	// login
 	// connect and get a session id
-	auth_data := []byte(fmt.Sprintf(`{"data":{"user": "%s", "pass": "%s"}}`, "virtual.custom.light", "secretclientid"))
+	auth_data := []byte(fmt.Sprintf(`{"data":{"returnId": true, "user": "%s", "pass": "%s"}}`, "virtual.custom.light", "secretclientid"))
 	req, err := http.NewRequest(http.MethodPost, serverUrl+"/connect", bytes.NewBuffer(auth_data))
 	if err != nil {
 		log.Println(err)
@@ -270,6 +271,7 @@ func main() {
 	s2 := rand.NewSource(42)
 	r2 := rand.New(s2)
 	// fmt.Print(r2.Intn(100), ",")
+	start := time.Now()
 
 	for i := 1; i <= 402; i = i + 1 {
 
@@ -311,6 +313,8 @@ func main() {
 	wg.Done()
 	wg.Wait()
 
+	elapsed := time.Since(start)
+
 	////////////////////////////////////////////////////////////
 	// if sentValues != matchCount {
 	// 	log.Panicln("sent count does not match recieved count")
@@ -319,6 +323,7 @@ func main() {
 	// 	fmt.Println("sent count matches recieve count")
 	// }
 
+	fmt.Printf("sent %d events in %f seconds\n", eventCount, elapsed.Seconds())
 	os.Exit(0)
 
 }

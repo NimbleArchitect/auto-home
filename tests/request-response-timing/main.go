@@ -123,7 +123,7 @@ func main() {
 
 	// login
 	// connect and get a session id
-	auth_data := []byte(fmt.Sprintf(`{"data":{"user": "%s", "pass": "%s"}}`, "virtual.custom.light", "secretclientid"))
+	auth_data := []byte(fmt.Sprintf(`{"data":{"returnId": true, "user": "%s", "pass": "%s"}}`, "virtual.custom.light", "secretclientid"))
 	req, err := http.NewRequest(http.MethodPost, serverUrl+"/connect", bytes.NewBuffer([]byte(auth_data)))
 	if err != nil {
 		log.Println(err)
