@@ -27,9 +27,9 @@ func init() {
 		if val == "debug" {
 			logLevel = 1
 		}
-		if val == "trace" {
-			logLevel = 2
-		}
+		// if val == "trace" {
+		// 	logLevel = 2
+		// }
 	}
 }
 
@@ -70,12 +70,6 @@ func Warning(msg ...interface{}) {
 func Debug(msg ...interface{}) {
 	if logLevel > 0 {
 		write("[DEBUG] ", msg...)
-	}
-}
-
-func Trace(msg ...interface{}) {
-	if logLevel > 1 {
-		write("[TRACE] ", msg...)
 	}
 }
 
