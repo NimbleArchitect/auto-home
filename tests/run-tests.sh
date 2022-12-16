@@ -18,6 +18,15 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "$out"
 
+############################
+out=$(go run ./high-event-count/*.go 2> /dev/null)
+if [[ $? -ne 0 ]]; then
+    echo "$out"
+    exit 1
+fi
+echo "$out"
+
+
 
 
 
