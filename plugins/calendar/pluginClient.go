@@ -237,6 +237,7 @@ func (p *plugin) decode(buf []byte) {
 }
 
 func (p *plugin) processMessage(obj Generic) error {
+	var err error
 	raw, _ := obj.Data.MarshalJSON()
 	switch obj.Method {
 
@@ -246,13 +247,15 @@ func (p *plugin) processMessage(obj Generic) error {
 		json.Unmarshal(raw, &m)
 
 	case "trigger":
-		// call the methods that where regestered from the object
+		// call the methods that where registered from the object
 		var m action
 		json.Unmarshal(raw, &m)
 
-		raw, err := m.Fields.MarshalJSON()
-		if err != nil {
-			return err
+		if m.Fields != nil {
+			raw, err = m.Fields.MarshalJSON()
+			if err != nil {
+				return err
+			}
 		}
 
 		fmt.Println("raw:", string(raw))

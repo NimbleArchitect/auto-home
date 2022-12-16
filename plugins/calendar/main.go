@@ -18,15 +18,16 @@ const (
 )
 
 type Event struct {
-	Id          string
-	Created     time.Time
-	NextTrigger time.Time
-	CreatedBy   string
-	Notify      []string // users/groups to notify when this event fires
-	Msg         string
-	Location    string
-	RepeatCount int // how many times to repeat
-	RepeatEvery int // repeat evey "RepeatCount" minute/hour/day/week/month/year
+	Id           string
+	Created      time.Time
+	NextTrigger  time.Time
+	firstTrigger time.Time
+	CreatedBy    string
+	Notify       []string // users/groups to notify when this event fires
+	Msg          string
+	Location     string
+	RepeatCount  int // how many times to repeat
+	RepeatEvery  int // repeat evey "RepeatCount" minute/hour/day/week/month/year
 }
 
 func main() {
@@ -80,18 +81,6 @@ func LoadEvents(c *calendar) {
 
 }
 
-func (c *calendar) addEvent(event Event) {
-
-	event.updateNextTrigger()
-
-	d := event.NextTrigger
-	fmt.Println("adding:", event.NextTrigger)
-
-	if err := c.add(d, event); err != nil {
-		fmt.Println("error adding event:", err)
-	}
-}
-
 func (c *calendar) AddEvent(data []byte) {
 	var event Event
 
@@ -102,6 +91,134 @@ func (c *calendar) AddEvent(data []byte) {
 	}
 
 	c.addEvent(event)
+}
+
+func (c *calendar) GetEvent(data []byte) *Event {
+	var eventid struct {
+		Id string
+	}
+
+	err := json.Unmarshal(data, &eventid)
+	if err != nil {
+		return nil
+	}
+
+	return c.getEvent(eventid.Id)
+}
+
+func (c *calendar) GetAllEvents(data []byte) []Event {
+
+	return c.getAllEvents()
+}
+
+func (c *calendar) GetEventByDate(data []byte) []Event {
+	var arguments struct {
+		Start time.Time
+		End   time.Time
+	}
+
+	err := json.Unmarshal(data, &arguments)
+	if err != nil {
+		fmt.Println("json decode error:", err)
+		return nil
+	}
+
+	fmt.Println("start:", arguments.Start)
+	fmt.Println("end:", arguments.End)
+	return c.getEventByDate(arguments.Start, arguments.End)
+}
+
+func (c *calendar) GetEventToday(data []byte) []Event {
+	n := time.Now()
+
+	start := time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, n.Location())
+	end := time.Date(n.Year(), n.Month(), n.Day(), 23, 59, 59, 999999999, n.Location())
+	fmt.Println("start:", start)
+	fmt.Println("end:", end)
+	return c.getEventByDate(start, end)
+}
+
+func (c *calendar) addEvent(event Event) {
+
+	event.firstTrigger = event.NextTrigger
+
+	event.updateNextTrigger()
+
+	d := event.NextTrigger
+
+	fmt.Println("adding:", event.NextTrigger)
+
+	if err := c.add(d, event); err != nil {
+		fmt.Println("error adding event:", err)
+	}
+}
+
+func (c *calendar) getEvent(id string) *Event {
+	var event Event
+
+	current := c.eventStart
+	for {
+		current = current.nextEvent
+		if current == c.eventEnd {
+			break
+		}
+		event = current.data.(Event)
+		if id == event.Id {
+			return &event
+		}
+	}
+	return nil
+}
+
+func (c *calendar) getEventByDate(start time.Time, end time.Time) []Event {
+	var validEvents []Event
+
+	events := c.getAllEvents()
+
+	for _, event := range events {
+		if event.RepeatCount > FLAG_NOTSET {
+			// calculate if events fall within range
+			nextDate := event.firstTrigger
+			counter := 0
+			for {
+				counter++
+				if counter > 1000 {
+					// TODO: needs a proper error merror message
+					fmt.Println("too many events, reduce your time frame")
+					break
+				}
+
+				newDate := event.calculateNextTrigger(nextDate, start)
+				if newDate.After(end) {
+					break
+				}
+				event.NextTrigger = newDate
+				validEvents = append(validEvents, event)
+				start = newDate
+			}
+		} else {
+			if event.NextTrigger.After(start) && event.NextTrigger.Before(end) {
+				validEvents = append(validEvents, event)
+			}
+		}
+	}
+
+	return validEvents
+}
+
+func (c *calendar) getAllEvents() []Event {
+	var event []Event
+
+	current := c.eventStart
+	for {
+		current = current.nextEvent
+		if current == c.eventEnd {
+			break
+		}
+		event = append(event, current.data.(Event))
+	}
+
+	return event
 }
 
 func (c *calendar) fireEvent(event interface{}) {
@@ -118,26 +235,58 @@ func (e *Event) updateNextTrigger() {
 	now := time.Now()
 	if e.NextTrigger.Before(now) {
 		if e.RepeatCount > FLAG_NOTSET {
-			nextDate := e.NextTrigger
-			for {
-				if nextDate.After(now) {
-					break
-				}
-
-				switch e.RepeatEvery {
-				case FLAG_MINUTE:
-					nextDate = nextDate.Add(time.Duration(e.RepeatCount) * time.Minute)
-				case FLAG_HOUR:
-					nextDate = nextDate.Add(time.Duration(e.RepeatCount) * time.Hour)
-				case FLAG_DAY:
-					nextDate = nextDate.AddDate(0, 0, e.RepeatCount)
-				case FLAG_MONTH:
-					nextDate = nextDate.AddDate(0, e.RepeatCount, 0)
-				case FLAG_YEAR:
-					nextDate = nextDate.AddDate(e.RepeatCount, 0, 0)
-				}
-			}
+			nextDate := e.calculateNextTrigger(e.NextTrigger, now)
 			e.NextTrigger = nextDate
 		}
 	}
 }
+
+func (e *Event) calculateNextTrigger(nextDate time.Time, now time.Time) time.Time {
+	for {
+		if nextDate.After(now) {
+			break
+		}
+
+		switch e.RepeatEvery {
+		case FLAG_MINUTE:
+			nextDate = nextDate.Add(time.Duration(e.RepeatCount) * time.Minute)
+		case FLAG_HOUR:
+			nextDate = nextDate.Add(time.Duration(e.RepeatCount) * time.Hour)
+		case FLAG_DAY:
+			nextDate = nextDate.AddDate(0, 0, e.RepeatCount)
+		case FLAG_MONTH:
+			nextDate = nextDate.AddDate(0, e.RepeatCount, 0)
+		case FLAG_YEAR:
+			nextDate = nextDate.AddDate(e.RepeatCount, 0, 0)
+		}
+	}
+	return nextDate
+}
+
+// func (e *Event) calculateNextTrigger() {
+// 	now := time.Now()
+// 	if e.NextTrigger.Before(now) {
+// 		if e.RepeatCount > FLAG_NOTSET {
+// 			nextDate := e.NextTrigger
+// 			for {
+// 				if nextDate.After(now) {
+// 					break
+// 				}
+
+// 				switch e.RepeatEvery {
+// 				case FLAG_MINUTE:
+// 					nextDate = nextDate.Add(time.Duration(e.RepeatCount) * time.Minute)
+// 				case FLAG_HOUR:
+// 					nextDate = nextDate.Add(time.Duration(e.RepeatCount) * time.Hour)
+// 				case FLAG_DAY:
+// 					nextDate = nextDate.AddDate(0, 0, e.RepeatCount)
+// 				case FLAG_MONTH:
+// 					nextDate = nextDate.AddDate(0, e.RepeatCount, 0)
+// 				case FLAG_YEAR:
+// 					nextDate = nextDate.AddDate(e.RepeatCount, 0, 0)
+// 				}
+// 			}
+// 			e.NextTrigger = nextDate
+// 		}
+// 	}
+// }

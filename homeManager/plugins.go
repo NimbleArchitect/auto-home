@@ -132,8 +132,25 @@ func (m *Manager) WebCallPlugin(pluginName string, callName string, postData map
 				var empty goja.Value
 				out = caller.Run(empty)
 			}
-			data, _ := json.Marshal(out)
-			return data
+
+			mapLen := len(out)
+			fmt.Println("mapLen:", mapLen)
+			if mapLen == 0 {
+				fmt.Println("return empty")
+				return []byte{}
+			} else if mapLen < 2 {
+				fmt.Println("return 1")
+				data, _ := json.Marshal(out["0"])
+				fmt.Println("return data:", string(data))
+				return data
+			} else {
+				fmt.Println("return all")
+				data, _ := json.Marshal(out)
+				fmt.Println("return data:", string(data))
+				return data
+			}
+			// data, _ := json.Marshal(out)
+			// return data
 		}
 	}
 	return []byte{}
