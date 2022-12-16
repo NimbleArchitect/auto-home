@@ -119,6 +119,18 @@ func (c *PluginConnector) WaitOn(i int) (string, map[string]interface{}, bool) {
 	return out.Message, out.Data, out.Ok
 }
 
+// CloseInactive terminates all open requests
+func (c *PluginConnector) CloseInactive() {
+	c.lock.Lock()
+	for i := 0; i < len(c.responseWait); i++ {
+		wait, ok := c.responseWait[i]
+		if ok {
+			*wait <- result{Ok: false, Message: "plugin error", Data: nil}
+		}
+	}
+	c.lock.Unlock()
+}
+
 func (c *PluginConnector) writeB(b []byte) {
 	//fmt.Println("Mgr ->> sending", string(b))
 	c.c.Write(b)
@@ -174,6 +186,7 @@ func (c *PluginConnector) handle() {
 					c.decode(buf)
 				}
 				log.Error(c.name, "dropped connection", err)
+				c.CloseInactive()
 				return
 			}
 		case <-time.After(1 * time.Minute):

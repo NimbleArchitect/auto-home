@@ -41,18 +41,20 @@ func NewManager(eventQueueLen int, bufferLen int) *Manager {
 		chAdd:             make(chan EventMsg),
 		chCurrentEvent:    make(chan int, bufferLen),
 		chRemove:          make(chan int, bufferLen),
-		closeEventManager: make(chan bool),
-		closeEventLoop:    make(chan bool),
+		closeEventManager: make(chan bool, 2),
+		closeEventLoop:    make(chan bool, 2),
 	}
 	return &m
 }
 
 func (e *Manager) Shutdown() {
 
-	log.Trace("start")
+	log.Debug("start")
 	e.closeEventManager <- true
+	log.Debug("eventManager close signal complete")
 	e.closeEventLoop <- true
-	log.Trace("stop")
+	log.Debug("eventLoop close signal complete")
+	log.Debug("stop")
 }
 
 func (e *Manager) EventManager() {
