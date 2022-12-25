@@ -100,6 +100,7 @@ func (s *settings) Put(url string, data string) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	resp, err := s.http.Do(req)
 	if err != nil {
+		fmt.Println("Put error - url " + url + ": " + err.Error())
 		return nil, err
 	}
 
@@ -131,7 +132,7 @@ func (s *settings) listenEvents() {
 		req.Header.Set("Accept", "text/event-stream")
 		res, err := s.http.Do(req)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("listenEvents() error:", err)
 		}
 
 		scanner := bufio.NewScanner(res.Body)
