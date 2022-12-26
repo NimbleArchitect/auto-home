@@ -19,13 +19,14 @@ type Dial struct {
 	repeatWindowDuration  time.Duration
 }
 type DialProperty struct {
-	Id          string `json:"id"`
+	// Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Min         int    `json:"min"`
 	Max         int    `json:"max"`
 	Value       int    `json:"value"`
 	Mode        uint   `json:"mode"`
+	Kind        string `json:"type"`
 	// Previous              int
 }
 
@@ -172,6 +173,7 @@ func (d *Device) Map2Dial(props map[string]interface{}) (*DialProperty, error) {
 	var prop DialProperty
 	var err error
 
+	prop.Kind = "dial"
 	log.Info("reading dial property")
 	if v, ok := props["name"]; !ok {
 		return nil, ErrMissingPropertyName

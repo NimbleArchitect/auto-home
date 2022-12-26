@@ -19,11 +19,12 @@ type Text struct {
 	repeatWindowDuration  time.Duration
 }
 type TextProperty struct {
-	Id          string `json:"id"`
+	// Id          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Value       string `json:"value"`
 	Mode        uint   `json:"mode"`
+	Kind        string `json:"type"`
 	// Previous              string
 }
 
@@ -170,6 +171,7 @@ func (d *Device) Map2Text(props map[string]interface{}) (*TextProperty, error) {
 	var prop TextProperty
 	var err error
 
+	prop.Kind = "text"
 	log.Info("reading text property")
 	if v, ok := props["name"]; !ok {
 		return nil, ErrMissingPropertyName

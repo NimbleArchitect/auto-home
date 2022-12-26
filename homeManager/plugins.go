@@ -155,3 +155,27 @@ func (m *Manager) WebCallPlugin(pluginName string, callName string, postData map
 	}
 	return []byte{}
 }
+
+// AllDeviceAsJson returns a byte array containing a json list of all currently known devices and their properties,
+// only to be called from web interfaces
+func (m *Manager) AllDeviceAsJson() []byte {
+	var jsonDeviceList []byte
+
+	jsonDeviceList = append(jsonDeviceList, []byte("[")...)
+	deviceList := m.devices.Iterate()
+	for deviceList.Next() {
+		_, device := deviceList.Get()
+		bytesout, err := device.AsJson()
+		if err != nil {
+			log.Error("unable to convert device to json:", err)
+		} else {
+			jsonDeviceList = append(jsonDeviceList, append(bytesout, []byte(",")...)...)
+		}
+	}
+
+	if len(jsonDeviceList) > 1 {
+		return append(jsonDeviceList[:len(jsonDeviceList)-1], []byte("]")...)
+	}
+
+	return []byte("[]")
+}

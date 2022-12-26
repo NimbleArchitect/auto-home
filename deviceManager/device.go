@@ -1,6 +1,9 @@
 package deviceManager
 
-import "server/homeManager/clientConnector"
+import (
+	"encoding/json"
+	"server/homeManager/clientConnector"
+)
 
 type Device struct {
 	Id          string
@@ -26,6 +29,15 @@ type Device struct {
 	repeatWindow       map[string]int64
 	maxPropertyHistory int
 	// Uploads []*Upload
+}
+
+// used as output for the /device api
+type jsonDevice struct {
+	Id          string
+	Name        string
+	Description string
+	Help        string
+	Property    []interface{}
 }
 
 // NewDevice retuarns a new initalizsed device object
@@ -98,6 +110,33 @@ func (d Device) MakeAction(deviceid string, propName string, propType int, value
 	}
 	json := `{"Method": "action","data": {"id": "` + deviceid + `", "properties": [{"name": "` + propName + `","type": "` + kind + `","value": ` + val + `}]}}`
 	return json
+}
+
+func (d *Device) AsJson() ([]byte, error) {
+	var device jsonDevice
+
+	device.Id = d.Id
+	device.Name = d.Name
+	device.Description = d.Description
+	device.Help = d.Help
+
+	for _, v := range d.PropertyButton {
+		device.Property = append(device.Property, v.data)
+	}
+
+	for _, v := range d.PropertySwitch {
+		device.Property = append(device.Property, v.data)
+	}
+
+	for _, v := range d.PropertyDial {
+		device.Property = append(device.Property, v.data)
+	}
+
+	for _, v := range d.PropertyText {
+		device.Property = append(device.Property, v.data)
+	}
+
+	return json.Marshal(device)
 }
 
 // setActionWriter sets the outgoing connection to allow writes back to the client

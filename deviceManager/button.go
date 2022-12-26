@@ -20,11 +20,12 @@ type Button struct {
 	repeatWindowDuration  time.Duration
 }
 type ButtonProperty struct {
-	Id          string            `json:"id"`
+	// Id          string            `json:"id"`
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
 	Value       booltype.BoolType `json:"value"`
 	Mode        uint              `json:"mode"`
+	Kind        string            `json:"type"`
 	// Previous              bool
 }
 
@@ -176,6 +177,7 @@ func (d *Device) Map2Button(props map[string]interface{}) (*ButtonProperty, erro
 	var prop ButtonProperty
 	var err error
 
+	prop.Kind = "button"
 	log.Info("reading button property")
 	if v, ok := props["name"]; !ok {
 		return nil, ErrMissingPropertyName

@@ -20,11 +20,12 @@ type Switch struct {
 	repeatWindowDuration  time.Duration
 }
 type SwitchProperty struct {
-	Id          string            `json:"id"`
+	// Id          string            `json:"id"`
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
 	Value       booltype.BoolType `json:"value"`
 	Mode        uint              `json:"mode"`
+	Kind        string            `json:"type"`
 	// Previous              booltype.BoolType
 }
 
@@ -175,6 +176,7 @@ func (d *Device) Map2Switch(props map[string]interface{}) (*SwitchProperty, erro
 	var prop SwitchProperty
 	var err error
 
+	prop.Kind = "switch"
 	log.Info("reading switch property")
 	if v, ok := props["name"]; !ok {
 		return nil, ErrMissingPropertyName

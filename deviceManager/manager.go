@@ -131,7 +131,7 @@ func (m *Manager) Save() {
 		for key, property := range device.PropertyDial {
 			property.lock.RLock()
 			dial[key] = DialProperty{
-				Id:          property.data.Id,
+				// Id:          property.data.Id,
 				Name:        property.data.Name,
 				Description: property.data.Description,
 				Min:         property.data.Min,
@@ -146,7 +146,7 @@ func (m *Manager) Save() {
 		for key, property := range device.PropertySwitch {
 			property.lock.RLock()
 			swi[key] = SwitchProperty{
-				Id:          property.data.Id,
+				// Id:          property.data.Id,
 				Name:        property.data.Name,
 				Description: property.data.Description,
 				Value:       property.data.Value,
@@ -159,7 +159,7 @@ func (m *Manager) Save() {
 		for key, property := range device.PropertyButton {
 			property.lock.RLock()
 			button[key] = ButtonProperty{
-				Id:          property.data.Id,
+				// Id:          property.data.Id,
 				Name:        property.data.Name,
 				Description: property.data.Description,
 				Value:       property.data.Value,
@@ -172,7 +172,7 @@ func (m *Manager) Save() {
 		for key, property := range device.PropertyText {
 			property.lock.RLock()
 			text[key] = TextProperty{
-				Id:          property.data.Id,
+				// Id:          property.data.Id,
 				Name:        property.data.Name,
 				Description: property.data.Description,
 				Value:       property.data.Value,
@@ -251,15 +251,19 @@ func (m *Manager) Load() {
 		dev.clientConnection = m.clientConnections
 
 		for name, property := range device.Dial {
+			property.Kind = "dial"
 			dev.SetDial(name, &property)
 		}
 		for name, property := range device.Switch {
+			property.Kind = "switch"
 			dev.SetSwitch(name, &property)
 		}
 		for name, property := range device.Button {
+			property.Kind = "button"
 			dev.SetButton(name, &property)
 		}
 		for name, property := range device.Text {
+			property.Kind = "text"
 			dev.SetText(name, &property)
 		}
 		m.SetDevice(id, dev)
