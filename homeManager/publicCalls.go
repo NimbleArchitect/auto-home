@@ -74,6 +74,7 @@ func (m *Manager) AllDeviceAsJson() []byte {
 	return []byte("[]")
 }
 
+// DeviceAsJson searches for a device matching the provided id and returns the json string in bytes representing the device
 func (m *Manager) DeviceAsJson(id string) []byte {
 
 	device, ok := m.devices.Device(id)
@@ -83,6 +84,35 @@ func (m *Manager) DeviceAsJson(id string) []byte {
 			log.Error("unable to convert device to json:", err)
 		} else {
 			return jsonDevice
+		}
+	}
+
+	return []byte{}
+}
+
+// DevicePropertyAsJson searches for a device and property matching the provided deviceid and property name and returns the property value
+func (m *Manager) DevicePropertyAsJson(deviceid string, propertyName string) []byte {
+
+	device, ok := m.devices.Device(deviceid)
+	if ok {
+		if val, found := device.ButtonValue(propertyName); found {
+			bytesout := fmt.Sprintf(`{"type":"button", "state":%s, "value":"%t"}`, val.String(), val.Bool())
+			return []byte(bytesout)
+		}
+
+		if val, found := device.DialValue(propertyName); found {
+			bytesout := fmt.Sprintf(`{"type":"dial", "state":%d}`, val)
+			return []byte(bytesout)
+		}
+
+		if val, found := device.SwitchValue(propertyName); found {
+			bytesout := fmt.Sprintf(`{"type":"switch", "state":%s, "value":"%t"}`, val.String(), val.Bool())
+			return []byte(bytesout)
+		}
+
+		if val, found := device.TextValue(propertyName); found {
+			bytesout := fmt.Sprintf(`{"type":"text", "state":%s}`, val)
+			return []byte(bytesout)
 		}
 	}
 

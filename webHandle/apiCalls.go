@@ -177,15 +177,20 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 			log.Info("/device")
 			if req.Request.Method == "GET" {
 				switch len(req.Components) {
-				case 2:
+				case 2: // v1/device
 					bytesout := h.HomeManager.AllDeviceAsJson()
 					req.Response.WriteHeader(http.StatusOK)
 					writeFlush(req.Response, string(bytesout))
-				case 3:
+				case 3: // v1/device/deviceid
 					bytesout := h.HomeManager.DeviceAsJson(req.Components[2])
 					req.Response.WriteHeader(http.StatusOK)
 					writeFlush(req.Response, string(bytesout))
+				case 4: // v1/device/deviceid/propertyname
+					bytesout := h.HomeManager.DevicePropertyAsJson(req.Components[2], req.Components[3])
+					req.Response.WriteHeader(http.StatusOK)
+					writeFlush(req.Response, string(bytesout))
 				}
+
 			}
 
 		default:
