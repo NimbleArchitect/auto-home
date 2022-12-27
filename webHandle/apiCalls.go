@@ -175,6 +175,18 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 
 		case "device":
 			log.Info("/device")
+			if req.Request.Method == "GET" {
+				switch len(req.Components) {
+				case 2:
+					bytesout := h.HomeManager.AllDeviceAsJson()
+					req.Response.WriteHeader(http.StatusOK)
+					writeFlush(req.Response, string(bytesout))
+				case 3:
+					bytesout := h.HomeManager.DeviceAsJson(req.Components[2])
+					req.Response.WriteHeader(http.StatusOK)
+					writeFlush(req.Response, string(bytesout))
+				}
+			}
 
 		default:
 			log.Error("unknown url:", req.Path)
