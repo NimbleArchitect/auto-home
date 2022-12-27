@@ -10,5 +10,13 @@ if [[ $status == "ok" ]]; then
     sessionid=$(echo $connect_response |jq -r '.data.session')
 
     # use the session id for the curl command
+    # to get all known devices and their state
     curl -k -H "session: $sessionid" https://127.0.0.1:4242/v1/device
+
+    # get all peoperties of device 123-echo-321
+    # curl -k -H "session: $sessionid" https://127.0.0.1:4242/v1/device/123-echo-321
+
+    # get dialdelay peoperty of device 123-echo-321
+    # curl -k -H "session: $sessionid" https://127.0.0.1:4242/v1/device/123-echo-321/dialdelay
+
 fi
