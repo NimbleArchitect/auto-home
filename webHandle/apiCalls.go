@@ -178,18 +178,40 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 			if req.Request.Method == "GET" {
 				switch len(req.Components) {
 				case 2: // v1/device
-					bytesout := h.HomeManager.AllDeviceAsJson()
+					bytesout := h.HomeManager.WebAllDeviceAsJson()
 					req.Response.WriteHeader(http.StatusOK)
 					writeFlush(req.Response, string(bytesout))
 				case 3: // v1/device/deviceid
-					bytesout := h.HomeManager.DeviceAsJson(req.Components[2])
+					bytesout := h.HomeManager.WebDeviceAsJson(req.Components[2])
 					req.Response.WriteHeader(http.StatusOK)
 					writeFlush(req.Response, string(bytesout))
 				case 4: // v1/device/deviceid/propertyname
-					bytesout := h.HomeManager.DevicePropertyAsJson(req.Components[2], req.Components[3])
-					req.Response.WriteHeader(http.StatusOK)
-					writeFlush(req.Response, string(bytesout))
+					if len(req.Query) == 0 { // no options provided so we return the property state
+						bytesout := h.HomeManager.WebDevicePropertyAsJson(req.Components[2], req.Components[3])
+						req.Response.WriteHeader(http.StatusOK)
+						writeFlush(req.Response, string(bytesout))
+					} else { // if we have options then this coud be a set request
+						if value := req.Query.Get("setstate"); len(value) > 0 {
+							ok := h.HomeManager.WebSetDeviceProperty(req.Components[2], req.Components[3], value)
+							if ok {
+								req.Response.WriteHeader(http.StatusOK)
+								writeFlush(req.Response, "")
+							}
+						} else if percent := req.Query.Get("setpercent"); len(percent) > 0 {
+							ok := h.HomeManager.WebSetDevicePropertyPercent(req.Components[2], req.Components[3], percent)
+							if ok {
+								req.Response.WriteHeader(http.StatusOK)
+								writeFlush(req.Response, "")
+							}
+						} else { // return error
+							req.Response.WriteHeader(http.StatusBadRequest)
+							writeFlush(req.Response, "")
+						}
+
+					}
 				}
+
+				// } else if req.Request.Method == "PATCH" {
 
 			}
 

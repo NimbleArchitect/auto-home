@@ -13,10 +13,15 @@ if [[ $status == "ok" ]]; then
     # to get all known devices and their state
     curl -k -H "session: $sessionid" https://127.0.0.1:4242/v1/device
 
-    # get all peoperties of device 123-echo-321
+    # get all properties of device 123-echo-321
     # curl -k -H "session: $sessionid" https://127.0.0.1:4242/v1/device/123-echo-321
 
-    # get dialdelay peoperty of device 123-echo-321
+    # get dialdelay property of device 123-echo-321
     # curl -k -H "session: $sessionid" https://127.0.0.1:4242/v1/device/123-echo-321/dialdelay
 
-fi
+    # set dialdelay property of device 123-echo-321 to 181
+    # curl -k -H "session: $sessionid" https://127.0.0.1:4242/v1/device/123-echo-321/dialdelay?setstate=181
+
+    # set dialdelay property of device 123-echo-321 to 25 percent
+    # curl -k -H "session: $sessionid" https://127.0.0.1:4242/v1/device/123-echo-321/dialdelay?setpercent=25
+fi    

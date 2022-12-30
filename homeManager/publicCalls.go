@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	log "server/logger"
+	"strconv"
 
 	"github.com/dop251/goja"
 )
@@ -50,9 +51,9 @@ func (m *Manager) WebCallPlugin(pluginName string, callName string, postData map
 	return []byte{}
 }
 
-// AllDeviceAsJson returns a byte array containing a json list of all currently known devices and their properties,
+// WebAllDeviceAsJson returns a byte array containing a json list of all currently known devices and their properties,
 // only to be called from web interfaces
-func (m *Manager) AllDeviceAsJson() []byte {
+func (m *Manager) WebAllDeviceAsJson() []byte {
 	var jsonDeviceList []byte
 
 	jsonDeviceList = append(jsonDeviceList, []byte("[")...)
@@ -74,8 +75,8 @@ func (m *Manager) AllDeviceAsJson() []byte {
 	return []byte("[]")
 }
 
-// DeviceAsJson searches for a device matching the provided id and returns the json string in bytes representing the device
-func (m *Manager) DeviceAsJson(id string) []byte {
+// WebDeviceAsJson searches for a device matching the provided id and returns the json string in bytes representing the device
+func (m *Manager) WebDeviceAsJson(id string) []byte {
 
 	device, ok := m.devices.Device(id)
 	if ok {
@@ -90,8 +91,8 @@ func (m *Manager) DeviceAsJson(id string) []byte {
 	return []byte{}
 }
 
-// DevicePropertyAsJson searches for a device and property matching the provided deviceid and property name and returns the property value
-func (m *Manager) DevicePropertyAsJson(deviceid string, propertyName string) []byte {
+// WebDevicePropertyAsJson searches for a device and property matching the provided deviceid and property name and returns the property value
+func (m *Manager) WebDevicePropertyAsJson(deviceid string, propertyName string) []byte {
 
 	device, ok := m.devices.Device(deviceid)
 	if ok {
@@ -117,4 +118,40 @@ func (m *Manager) DevicePropertyAsJson(deviceid string, propertyName string) []b
 	}
 
 	return []byte{}
+}
+
+func (m *Manager) WebSetDeviceProperty(deviceid string, propertyName string, strValue string) bool {
+	device, ok := m.devices.Device(deviceid)
+	if ok {
+		if _, found := device.ButtonValue(propertyName); found {
+			device.SetButtonValue(propertyName, strValue)
+			return true
+		}
+
+		if _, found := device.DialValue(propertyName); found {
+			val, err := strconv.Atoi(strValue)
+			if err == nil {
+				device.SetDialValue(propertyName, val)
+				return true
+			}
+		}
+
+		if _, found := device.SwitchValue(propertyName); found {
+			device.SetSwitchValue(propertyName, strValue)
+			return true
+		}
+
+		if _, found := device.TextValue(propertyName); found {
+			device.SetTextValue(propertyName, strValue)
+			return true
+		}
+	}
+
+	return false
+}
+
+func (m *Manager) WebSetDevicePropertyPercent(deviceid string, propertyName string, strValue string) bool {
+	// TODO: needs finishing
+	log.Error("not implemented")
+	return false
 }
