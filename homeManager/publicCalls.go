@@ -120,7 +120,9 @@ func (m *Manager) WebDevicePropertyAsJson(deviceid string, propertyName string) 
 	return []byte{}
 }
 
-func (m *Manager) WebSetDeviceProperty(deviceid string, propertyName string, strValue string) bool {
+// WebSetDeviceProperty set the property propertyName of the device with deviceid to strValue
+func (m *Manager) WebSetDeviceProperty(user string, deviceid string, propertyName string, strValue string) bool {
+	// TODO: check username has access to make changes to the properties/device
 	device, ok := m.devices.Device(deviceid)
 	if ok {
 		if _, found := device.ButtonValue(propertyName); found {

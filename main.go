@@ -81,11 +81,12 @@ func main() {
 		s := <-sigc
 		log.Info(" caught signal", s.String(), "closing connections, please wait")
 
-		www.SaveSystem()
 		www.Shutdown()
+		// TODO: when a plugin crashes during startup this saves an empty file... why???
+		www.SaveSystem()
 		evtMgr.Shutdown()
-		homeMgr.SaveSystem()
 		homeMgr.Shutdown()
+		homeMgr.SaveSystem()
 
 		done <- true
 	}()

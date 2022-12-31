@@ -14,7 +14,8 @@ type requestInfoBlock struct {
 	Components  []string
 	Query       url.Values
 	Body        []byte
-	Session     string
+	Session     string // current session id
+	User        string // user id used to retrieve the session
 	Request     *http.Request
 	Response    http.ResponseWriter
 	JsonMessage Generic

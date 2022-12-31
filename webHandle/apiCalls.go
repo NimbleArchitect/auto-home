@@ -140,6 +140,7 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 		}
 
 	} else {
+		req.User = h.session[req.Session].clientid
 		// all ok
 		switch req.Components[1] {
 		case "connect":
@@ -192,7 +193,7 @@ func (h *Handler) callV1api(req requestInfoBlock) {
 						writeFlush(req.Response, string(bytesout))
 					} else { // if we have options then this coud be a set request
 						if value := req.Query.Get("setstate"); len(value) > 0 {
-							ok := h.HomeManager.WebSetDeviceProperty(req.Components[2], req.Components[3], value)
+							ok := h.HomeManager.WebSetDeviceProperty(req.User, req.Components[2], req.Components[3], value)
 							if ok {
 								req.Response.WriteHeader(http.StatusOK)
 								writeFlush(req.Response, "")

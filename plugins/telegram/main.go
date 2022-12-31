@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -24,6 +25,57 @@ type settings struct {
 	BotID  string
 	Key    string
 	ChatId string
+}
+
+// opena telegram connection to read any messages sent to the bot
+func (t *Telegram) getMessage(accountName string) {
+	account := t.conf[accountName]
+
+	// Send the message
+	// TODO: need to record and reuse the offset
+	url := "https://api.telegram.org/" + account.BotID + ":" + account.Key + "/getUpdates" //?offset=972164103"
+
+	client := http.Client{
+		Timeout: 300 * time.Second,
+	}
+
+	for {
+		// isConnected := false
+		req, err := http.NewRequest(http.MethodGet, url, bytes.NewBuffer([]byte{}))
+		if err != nil {
+			fmt.Println("eventstream read error:", err)
+			break
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			log.Fatal("listenEvents() error:", err)
+		}
+
+		scanner := bufio.NewScanner(res.Body)
+		if scanner.Err() != nil {
+			log.Println("unable to start scanner:", scanner.Err())
+			break
+		}
+
+		for scanner.Scan() {
+			// on a read error this loop breaks out
+
+			ln := scanner.Text()
+			if len(ln) == 0 {
+				//recieved empty line from the server
+				// treat it as a connection test and ignore
+				fmt.Println("scanner empty")
+				continue
+			}
+
+			fmt.Println("scanner recieved", ln)
+
+		}
+	}
+
+	// Log
+	log.Printf("listen connection closed")
+
 }
 
 func (t *Telegram) SendMessage(raw []byte) {
@@ -124,18 +176,13 @@ func main() {
 	cal.conf = conf
 	p.Register("telegram", cal)
 
+	// TODO: this wont work how I want, as I cant match the users telegram id to their auto-home user id.
+	//  until I work out how user messages are going to work I have disabled the below go func
 	// go func() {
-	// 	ev := event{
-	// 		Label:    "car Mot",
-	// 		Date:     time.Now(),
-	// 		Location: "home",
-	// 		Notes:    "",
+	// 	for name, _ := range conf {
+	// 		fmt.Println(">> setting listener for account:", name)
+	// 		cal.getMessage(name)
 	// 	}
-
-	// 	time.Sleep(4 * time.Second)
-
-	// 	// TODO: callback dosent work, looks like im not recieving the result or its not being sent needs more investigation
-	// 	p.Call("onEvent", ev)
 	// }()
 
 	err = p.Done()
